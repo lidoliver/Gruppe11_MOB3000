@@ -11,13 +11,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import My.Application.ui.components.AppTopBar
 import My.Application.ui.theme.MyApplicationTheme
 
 @Composable
-fun StartRoundScreen() {
+fun StartRoundScreen(navController: NavController) {
     Scaffold(
-        topBar = { AppTopBar() } // Using our reusable TopBar
+        topBar = { AppTopBar(title = "Start Round", canNavigateBack = true, navController = navController) } // Using our reusable TopBar
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -50,6 +52,6 @@ fun StartRoundScreen() {
 @Composable
 fun StartRoundScreenPreview() {
     MyApplicationTheme {
-        StartRoundScreen()
+        StartRoundScreen(navController = rememberNavController())
     }
 }
