@@ -25,7 +25,7 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun MyProfileScreen(navController: NavController) {
     Scaffold(
-        topBar = { AppTopBar(title = "My Profile", canNavigateBack = true, navController = navController) }
+        topBar = { AppTopBar(title = "Min Profil", canNavigateBack = true, navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier

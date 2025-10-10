@@ -19,7 +19,7 @@ import My.Application.ui.theme.MyApplicationTheme
 @Composable
 fun StartRoundScreen(navController: NavController) {
     Scaffold(
-        topBar = { AppTopBar(title = "Start Round", canNavigateBack = true, navController = navController) } // Using our reusable TopBar
+        topBar = { AppTopBar(title = "Start runde", canNavigateBack = true, navController = navController) } // Using our reusable TopBar
     ) { innerPadding ->
         Column(
             modifier = Modifier

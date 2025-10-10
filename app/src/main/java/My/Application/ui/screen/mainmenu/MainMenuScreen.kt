@@ -18,7 +18,7 @@ import My.Application.ui.theme.MyApplicationTheme
 @Composable
 fun MainMenuScreen(navController: NavController) {
     Scaffold(
-        topBar = { AppTopBar(title = "Main Menu", canNavigateBack = false, navController = navController) }
+        topBar = { AppTopBar(title = "Hovedmeny", canNavigateBack = false, navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
