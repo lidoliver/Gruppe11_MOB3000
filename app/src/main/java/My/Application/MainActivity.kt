@@ -9,7 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import My.Application.ui.screen.mainmenu.MainMenuScreen // <-- Add this import
+import My.Application.ui.screen.mainmenu.MainMenuScreen
+import My.Application.ui.screen.myprofile.MyProfileScreen
 import My.Application.ui.screen.startround.StartRoundScreen
 import My.Application.ui.theme.MyApplicationTheme
 
@@ -30,12 +31,13 @@ fun AppNavigation() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "main_menu") {
         composable("main_menu") {
-            // This now correctly calls the function from the other file
             MainMenuScreen(navController = navController)
         }
         composable("start_round") {
-            // Your StartRoundScreen file is already organized correctly
-            StartRoundScreen()
+            StartRoundScreen(navController = navController)
+        }
+        composable("my_profile") {
+            MyProfileScreen(navController = navController)
         }
     }
 }

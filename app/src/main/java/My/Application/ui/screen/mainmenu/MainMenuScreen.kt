@@ -1,5 +1,5 @@
 // In app/src/main/java/My/Application/ui/screen/mainmenu/MainMenuScreen.kt
-package My.Application.ui.screen.mainmenu // Add this line
+package My.Application.ui.screen.mainmenu
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -18,7 +18,7 @@ import My.Application.ui.theme.MyApplicationTheme
 @Composable
 fun MainMenuScreen(navController: NavController) {
     Scaffold(
-        topBar = { AppTopBar() }
+        topBar = { AppTopBar(title = "Hovedmeny", canNavigateBack = false, navController = navController) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -44,6 +44,15 @@ fun MainMenuScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Spillehistorikk")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate("my_profile") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("My Profile")
             }
         }
     }
