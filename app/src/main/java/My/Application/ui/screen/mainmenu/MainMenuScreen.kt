@@ -17,8 +17,13 @@ import My.Application.ui.theme.MyApplicationTheme
 
 @Composable
 fun MainMenuScreen(navController: NavController) {
-    Scaffold(
-        topBar = { AppTopBar(title = "Hovedmeny", canNavigateBack = false, navController = navController) }
+    Scaffold(topBar = {
+        AppTopBar(
+            title = "=Disc", // Your app's main title
+            canNavigateBack = false, // The main menu doesn't have a back button
+            navController = navController
+        )
+    }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -52,7 +57,7 @@ fun MainMenuScreen(navController: NavController) {
                 onClick = { navController.navigate("my_profile") },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("My Profile")
+                Text("Min Profil")
             }
         }
     }
