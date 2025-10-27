@@ -1,0 +1,1782 @@
+import postgres from "postgres";
+import 'dotenv/config';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import { get } from "node:http";
+
+
+const SALT_ROUNDS = 10; // For bcrypt passord-hashing
+
+async function hashPassword(password) {
+    return await bcrypt.hash(password, SALT_ROUNDS);
+}
+
+async function comparePassword(plainPassword, hashedPassword) {
+    return await bcrypt.compare(plainPassword, hashedPassword);
+}
+
+function hashEmail(email) {
+    // Hasher epostadressen for å beskytte personvern
+    return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex');
+}
+
+const sql = postgres(process.env.DB_CONNECTION_STRING,{
+    ssl: "require",
+    options: '--search_path=mydb'
+});
+
+async function validateConnection() {
+    try {
+        await sql`SELECT 1`;
+        console.log('✅ PostgreSQL tilkobling vellykket');
+    } catch (error) {
+        console.error('❌ PostgreSQL tilkobling mislykket:', error);
+        process.exit(1); // stopper prosessen
+    }
+}
+
+async function createUser(email, password) {
+    const hashedPassword = await hashPassword(password);
+    const emailHash = hashEmail(email); 
+    
+    const result = await sql`
+        INSERT INTO mydb.bruker (epost, passord, brukernavn, email_hash)
+        VALUES (${email}, ${hashedPassword}, ${email}, ${emailHash})
+        RETURNING epost;
+    `;
+    return result[0];
+}
+
+// fullstendig innlogging funksjon
+async function logInn(email, password) {
+    const result = await sql`
+        SELECT * FROM mydb.bruker WHERE epost = ${email}
+    `;
+    
+    if (result.length === 0) {
+        return null; // om bruker ikke finnes
+    }
+    
+    const user = result[0];
+    
+    // ser om brukeren er utestengt
+    if (user.role === 'banned') {
+        throw new Error('This account has been banned');
+    }
+    
+    // bruker bycrypt for å sammenligne passord
+    const passwordMatch = await comparePassword(password, user.passord);
+    
+    if (passwordMatch) {
+        return user;
+    }
+    
+    return null; // om passordet ikke stemmer 
+}
+
+//henter bruker med epost
+async function getBruker(email) {
+    const result = await sql`
+        SELECT epost, enavn, fnavn, brukernavn, passord, role, visible, klubb_id_klubb
+        FROM mydb.bruker
+        WHERE epost = ${email};
+    `;
+    return result[0];
+}
+
+//henter bruker med brukernavn, nyttig om bruker bruker brukernavn i stedet for epost
+async function getBrukerByUsername(username) {
+    const result = await sql`
+        SELECT epost, enavn, fnavn, brukernavn, passord, role, visible
+        FROM mydb.bruker
+        WHERE brukernavn = ${username};
+    `;
+    return result[0];
+}
+
+async function redigerBruker(email, bruker) {
+    try {
+        console.log('Attempting to update user:', { email, bruker });
+
+        if (!email || !bruker) {
+            console.error('Missing required parameters:', { email, bruker });
+            throw new Error('Missing required parameters');
+        }
+
+        
+        const currentUser = await sql`
+            SELECT * FROM mydb.bruker WHERE epost = ${email}
+        `;
+
+        if (!currentUser || currentUser.length === 0) {
+            console.error('User not found:', email);
+            throw new Error('User not found');
+        }
+
+      
+        const validatedData = {
+            brukernavn: bruker.brukernavn || currentUser[0].brukernavn,
+            fnavn: bruker.fnavn || currentUser[0].fnavn,
+            enavn: bruker.enavn || currentUser[0].enavn,
+            passord: bruker.passord,
+            visible: typeof bruker.visible === 'boolean' ? bruker.visible : currentUser[0].visible
+        };
+
+        
+        let finalPassword = currentUser[0].passord; 
+        if (validatedData.passord && validatedData.passord !== currentUser[0].passord) {
+          
+            if (!validatedData.passord.startsWith('$2')) {
+
+                finalPassword = await hashPassword(validatedData.passord);
+            } else {
+                finalPassword = validatedData.passord;
+            }
+        }
+
+
+        
+        const result = await sql`
+            UPDATE mydb.bruker
+            SET 
+                brukernavn = ${validatedData.brukernavn},
+                fnavn = ${validatedData.fnavn},
+                enavn = ${validatedData.enavn},
+                passord = ${finalPassword},
+                visible = ${validatedData.visible}
+            WHERE epost = ${email}
+            RETURNING epost, brukernavn, fnavn, enavn, visible;
+        `;
+
+        if (!result || result.length === 0) {
+            console.error('Update failed - no rows returned');
+            throw new Error('Update failed');
+        }
+
+
+        return result[0];
+    } catch (error) {
+        console.error('Error in redigerBruker:', error);
+        console.error('Error stack:', error.stack);
+        throw error;
+    }
+}  
+
+async function deleteBruker(email) {
+    const result = await sql`
+        DELETE FROM mydb.bruker
+        WHERE epost = ${email}
+        RETURNING epost;
+    `;
+    return result[0];
+}
+/*
+* Denne funksjonen henter poengkort for en bruker fra databasen. 
+* Den tar inn brukerens e-postadresse som parameter og returnerer en liste med poengkort.
+* Utviklet av: Oliver Fiveland
+*/
+async function getPoengkort(email) {
+    try {
+       
+        const result = await sql`
+            SELECT 
+                p.pointcard_id, 
+                p.bane_id, 
+                p.spiller_navn, 
+                p.score,
+                p.total_score,
+                (p.dato AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Oslo') as dato,
+                (p.oppdatert_dato AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Oslo') as oppdatert_dato
+            FROM mydb.pointcard p
+            WHERE p.spiller_navn = ${email}
+            ORDER BY p.opprettet_dato DESC
+            LIMIT 10;
+        `;
+        
+        console.log(`Query completed, found ${result.length} records`);
+        return result;
+    } catch (error) {
+        console.error('ERROR IN BASIC QUERY:', error);
+        return [];
+    }
+}
+
+/*
+* Denne funksjonen oppretter et nytt poengkort for en bane i databasen.
+* Den tar inn bane-ID, spillernavn, og poengdata for hvert hull som parametere.
+* Github Copilot hjalp med å lage denne spørringen
+* Utviklet av: Oliver Fiveland
+*/
+async function createPoengkortForCourse(bane_id, spiller_navn, hullPoeng) {
+    try {
+
+        const total_score = hullPoeng.reduce((sum, hp) => sum + (hp.poeng || 0), 0);
+        
+        const fieldValues = hullPoeng.map(hp => 
+            `('${hp.hull_id}', ${hp.poeng})`
+        ).join(', ');
+        
+        const query = `
+            INSERT INTO mydb.pointcard (
+                bane_id, 
+                spiller_navn, 
+                score,
+                total_score, 
+                opprettet_dato
+            ) 
+            VALUES (
+                '${bane_id}', 
+                '${spiller_navn}', 
+                (SELECT jsonb_agg(json_build_object('hull_id', t.id, 'score', t.score)) FROM (VALUES ${fieldValues}) AS t(id, score)),
+                ${total_score}, 
+                (NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Oslo'
+            )
+            RETURNING pointcard_id, bane_id, spiller_navn, score, total_score, opprettet_dato
+        `;
+        
+        
+        const result = await sql.unsafe(query);
+        
+        if (!result || result.length === 0) {
+            throw new Error('No result returned from database insertion');
+        }
+        
+        return result[0];
+    } catch (error) {
+        console.error('Error in createPoengkortForCourse:', error);
+        throw error;
+    }
+}
+
+/*
+* Denne funksjonen sletter et poengkort fra databasen basert på ID.
+* Den tar inn poengkort-ID som parameter og returnerer det slettede poengkortet.
+* Utviklet av: Oliver Fiveland
+*/
+async function deletePoengkort(pointcard_id) {
+    const result = await sql`
+        DELETE FROM mydb.pointcard
+        WHERE pointcard_id = ${pointcard_id}
+        RETURNING 
+            pointcard_id, 
+            bane_id, 
+            spiller_navn, 
+            opprettet_dato;
+    `;
+    return result[0];
+}
+
+/*
+* Denne funksjonen oppdaterer et eksisterende poengkort i databasen.
+* Den tar inn poengkort-ID og oppdaterte poengdata som parametere.
+* Brukte Githhub Copilot til å lage denne funksjonen.
+* Utviklet av: Oliver Fiveland
+*/
+async function updatePoengkort(pointcard_id, scoreData) {
+    try {
+        const hullPoeng = scoreData.hullPoeng || scoreData.holes || [];
+        
+        const total_score = hullPoeng.reduce((sum, hole) => sum + (hole.poeng || 0), 0);
+        
+        const fieldValues = hullPoeng.map(hp => 
+            `('${hp.hull_id}', ${hp.poeng})`
+        ).join(', ');
+        
+        const query = `
+            UPDATE mydb.pointcard
+            SET 
+                score = (SELECT jsonb_agg(json_build_object('hull_id', t.id, 'score', t.score)) FROM (VALUES ${fieldValues}) AS t(id, score)),
+                total_score = ${total_score},
+                oppdatert_dato = NOW() AT TIME ZONE 'Europe/Oslo'
+            WHERE pointcard_id = ${pointcard_id}
+            RETURNING pointcard_id, bane_id, spiller_navn, score, total_score, dato, oppdatert_dato
+        `;
+        
+        const result = await sql.unsafe(query);
+        
+        if (!result || result.length === 0) {
+            throw new Error('No result returned from database update');
+        }
+        
+        return result[0];
+    } catch (error) {
+        console.error('Error in updatePoengkort:', error);
+        throw error;
+    }
+}
+
+async function getCompleteRound(pointcard_id) {
+    const result = await sql`
+        SELECT p.pointcard_id, p.bane_id, p.spiller_navn, 
+               p.score, p.total_score, p.opprettet_dato
+        FROM mydb.pointcard p
+        WHERE p.pointcard_id = ${pointcard_id};
+    `;
+    return result[0];
+}
+
+async function getBaneInfo(bane_id) {
+    const result = await sql`
+        SELECT *
+        FROM mydb.bane
+        WHERE bane_id = ${bane_id};
+    `;
+    return result[0];
+}
+
+async function getRoundsForUser(email) {
+    const result = await sql`
+        SELECT p.pointcard_id, p.bane_id, b.navn AS bane_navn, 
+               p.dato, p.total_score, p.opprettet_dato
+        FROM mydb.pointcard p
+        JOIN mydb.bane b ON p.bane_id = b.bane_id
+        WHERE p.spiller_navn = ${email}
+        ORDER BY p.opprettet_dato DESC
+        LIMIT 10;
+    `;
+    return result;
+}
+
+/**
+ * Lager en ny bane i databasen
+ * @param {Object} trackData - inneholder bane data som: navn, beskrivelse, hull, markører osv.
+ * @returns {Promise<Object>} - lagde banen med id
+ */
+async function createTrack(trackData) {
+    try {
+        // Handle obLines data - ensure it's an array
+        const obLines = Array.isArray(trackData.obLines) ? trackData.obLines : 
+                       (trackData.ob_lines && Array.isArray(trackData.ob_lines) ? trackData.ob_lines : []);
+        
+        // Log for debugging
+        console.log(`Creating track ${trackData.trackName} with ${obLines.length} OB lines`);
+        console.log(`Club ID for track: ${trackData.klubb_id_klubb}`);
+        
+        // IMPORTANT: Only set klubb_id_klubb if it's a valid value
+        const clubId = trackData.klubb_id_klubb && trackData.klubb_id_klubb > 0 ? 
+                      trackData.klubb_id_klubb : null;
+        
+        const trackResult = await sql`
+            INSERT INTO mydb.bane (
+                navn, 
+                beskrivelse, 
+                total_distance, 
+                total_par, 
+                antall_hull, 
+                markers, 
+                lines,
+                ob_lines, 
+                klubb_id_klubb,
+                rating,
+                bane_bilde,
+                opprettet_dato
+            ) VALUES (
+                ${trackData.trackName}, 
+                ${trackData.description || ''}, 
+                ${trackData.totalDistance || 0}, 
+                ${trackData.totalPar || 0}, 
+                ${trackData.holeCount || 0},
+                ${JSON.stringify(trackData.markers || [])}::jsonb,
+                ${JSON.stringify(trackData.lines || [])}::jsonb,
+                ${JSON.stringify(obLines)}::jsonb,
+                ${clubId}, 
+                ${trackData.rating || 0},
+                ${trackData.imageData || null},
+                NOW()
+            )
+            RETURNING bane_id;
+        `;
+        
+        if (!trackResult || trackResult.length === 0 || !trackResult[0].bane_id) {
+            throw new Error('Failed to create track - database did not generate ID');
+        }
+        
+        const bane_id = trackResult[0].bane_id;
+        console.log(`Successfully created track with ID: ${bane_id}`);
+        
+        return getTrackById(bane_id);
+    } catch (error) {
+        console.error('Error in createTrack:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get bane med ID
+ * @param {number} bane_id - bane ID
+ * @returns {Promise<Object>} bane dataen
+ */
+async function getTrackById(bane_id) {
+    try {
+        // console.log(`Retrieving track with ID: ${bane_id}`); <- debuging redskap
+        
+        const result = await sql`
+            SELECT 
+                bane_id,
+                navn AS trackName,
+                beskrivelse AS description,
+                total_distance AS totalDistance,
+                total_par AS totalPar,
+                antall_hull AS holeCount,
+                markers,
+                lines,
+                ob_lines AS obLines,
+                rating,
+                bane_bilde AS imageData,
+                klubb_id_klubb,
+                opprettet_dato AS created,
+                oppdatert_dato AS updated
+            FROM mydb.bane
+            WHERE bane_id = ${bane_id};
+        `;
+        
+        // forsikre at banen har data
+        if (!result || result.length === 0) {
+           // console.log(`No track found with ID: ${bane_id}`); <- debuging redskap
+            return null;
+        }
+        
+        // Add detailed OB lines debugging
+        console.log(`Track ${bane_id} OB lines raw data:`, result[0].obLines);
+        console.log(`Track ${bane_id} OB lines type:`, typeof result[0].obLines);
+        
+        // Process OB lines - ensure they're parsed correctly
+        let processedObLines = [];
+        if (result[0].obLines) {
+            try {
+                // If it's already an array, use it directly
+                if (Array.isArray(result[0].obLines)) {
+                    processedObLines = result[0].obLines;
+                    console.log(`Track ${bane_id} OB lines are already an array with length:`, processedObLines.length);
+                } 
+                // If it's a string, parse it
+                else if (typeof result[0].obLines === 'string') {
+                    processedObLines = JSON.parse(result[0].obLines);
+                    console.log(`Track ${bane_id} OB lines parsed from string:`, processedObLines);
+                } 
+                // Handle PostgreSQL JSONB format
+                else if (typeof result[0].obLines === 'object') {
+                    processedObLines = result[0].obLines;
+                    console.log(`Track ${bane_id} OB lines are in object format:`, processedObLines);
+                }
+            } catch (e) {
+                console.error(`Error processing OB lines for track ${bane_id}:`, e);
+                processedObLines = [];
+            }
+        }
+        
+        // Set both fields for consistency
+        result[0].obLines = processedObLines;
+        result[0].ob_lines = processedObLines;
+        
+        console.log(`Track ${bane_id} final OB lines count:`, processedObLines.length);
+        if (processedObLines.length > 0) {
+            console.log(`Track ${bane_id} first OB line sample:`, processedObLines[0]);
+        }
+        
+        // Use the helper function to ensure image fields are consistent
+        const track = ensureImageDataFields(result[0]);
+        
+        return track;
+    } catch (error) {
+        console.error(`Error retrieving track with ID ${bane_id}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Get alle baner i databasen
+ * @returns {Promise<Array>} liste av alle baner
+ */
+async function getAllTracks() {
+    try {
+        console.log("Retrieving all tracks");
+        
+        const result = await sql`
+            SELECT 
+                bane_id,
+                navn AS trackName,
+                beskrivelse AS description,
+                total_distance AS totalDistance,
+                total_par AS totalPar,
+                antall_hull AS holeCount,
+                markers,
+                lines,
+                ob_lines AS obLines,
+                rating,
+                bane_bilde,
+                klubb_id_klubb,
+                opprettet_dato AS created,
+                oppdatert_dato AS updated
+            FROM mydb.bane
+            ORDER BY opprettet_dato DESC;
+        `;
+        
+        // Process each track to include parsed OB lines and ensure image data consistency
+        const processedTracks = result.map(track => {
+            // Add OB lines processing similar to getTrackById
+            let processedObLines = [];
+            if (track.obLines) {
+                try {
+                    // If it's already an array, use it directly
+                    if (Array.isArray(track.obLines)) {
+                        processedObLines = track.obLines;
+                    } 
+                    // If it's a string, parse it
+                    else if (typeof track.obLines === 'string') {
+                        processedObLines = JSON.parse(track.obLines);
+                    } 
+                    // Handle PostgreSQL JSONB format
+                    else if (typeof track.obLines === 'object') {
+                        processedObLines = track.obLines;
+                    }
+                } catch (e) {
+                    console.error(`Error processing OB lines for track ${track.bane_id}:`, e);
+                    processedObLines = [];
+                }
+            }
+            
+            // Set both fields for consistency
+            track.obLines = processedObLines;
+            track.ob_lines = processedObLines;
+            
+            // Log OB lines count for debugging
+            console.log(`Track ${track.bane_id || track.trackName} OB lines count: ${processedObLines.length}`);
+            
+            // Also ensure image data fields are consistent
+            return ensureImageDataFields(track);
+        });
+        
+        console.log(`Retrieved ${processedTracks.length} tracks, ${processedTracks.filter(t => t.imageData).length} with images, ${processedTracks.filter(t => t.obLines && t.obLines.length > 0).length} with OB lines`);
+        return processedTracks;
+    } catch (error) {
+        console.error("Error retrieving all tracks:", error);
+        throw error;
+    }
+} 
+
+/**
+ * oppdaterer en eksisterende bane
+ * @param {number} bane_id - bane iden som skal oppdateres
+ * @param {Object} trackData - den nye bane dataen
+ * @returns {Promise<Object>} den oppdaterte banen
+ */
+async function updateTrack(bane_id, trackData) {
+    try {
+        // console.log(`Updating track with ID: ${bane_id}`); <- debuging redskap
+        
+        // først sikkre at bildefilene er konsistente
+        const preparedTrackData = ensureImageDataFields(trackData);
+        
+        // field sikkrer at vi bruker riktig bildedata felt
+        const imageData = preparedTrackData.imageData || preparedTrackData.bane_bilde || null;
+        
+       /*   if (imageData) {
+            console.log(`Track update includes image data (length: ${imageData.length})`);
+            
+           if (typeof imageData === 'string' && imageData.startsWith('data:image/')) {
+                console.log("✅ Image data format appears valid");
+            } else {
+                console.warn("⚠️ Image data format may be invalid");
+                if (typeof imageData === 'string') {
+                    console.warn("First 30 chars:", imageData.substring(0, 30));
+                } else {
+                    console.warn("Image data type:", typeof imageData);
+                }
+            }
+        } else {
+            console.log("Track update has no image data");
+        }  dette er for debugging */
+        
+        const result = await sql`
+            UPDATE mydb.bane
+            SET 
+                navn = ${preparedTrackData.trackName},
+                beskrivelse = ${preparedTrackData.description || ''},
+                total_distance = ${preparedTrackData.totalDistance || 0},
+                total_par = ${preparedTrackData.totalPar || 0},
+                antall_hull = ${preparedTrackData.holeCount || 0},
+                markers = ${JSON.stringify(preparedTrackData.markers || [])}::jsonb,
+                lines = ${JSON.stringify(preparedTrackData.lines || [])}::jsonb,
+                ob_lines = ${JSON.stringify(preparedTrackData.obLines || [])}::jsonb,
+                rating = ${preparedTrackData.rating || 0},
+                bane_bilde = ${imageData},
+                oppdatert_dato = NOW()
+            WHERE bane_id = ${bane_id}
+            RETURNING bane_id;
+        `;
+        
+        if (!result[0]) {
+            throw new Error('Track not found');
+        }
+        
+        // returnerer den oppdaterte banen med konsistente bilde felt
+        const updatedTrack = await getTrackById(bane_id);
+        return updatedTrack;
+    } catch (error) {
+        console.error(`Error updating track with ID ${bane_id}:`, error);
+        throw error;
+    }
+}
+
+async function deleteTrack(bane_id) {
+    try {
+        // bruker transaksjon for å slette banen og dens relaterte data som sørger for at alt eller ingen ting blir slettet
+        const result = await sql.begin(async sql => {
+            // First check if track exists
+            const exists = await sql`
+                SELECT bane_id FROM mydb.bane WHERE bane_id = ${bane_id}
+            `;
+
+            if (!exists || exists.length === 0) {
+                console.log(`No track found with ID: ${bane_id}`);
+                return null;
+            }
+
+            // Get track data before deletion (for logging/debugging purposes)
+            const trackInfo = await sql`
+                SELECT 
+                    navn, 
+                    markers, 
+                    lines, 
+                    ob_lines
+                FROM mydb.bane 
+                WHERE bane_id = ${bane_id}
+            `;
+            
+            const obLinesCount = trackInfo[0]?.ob_lines ? 
+                (Array.isArray(JSON.parse(trackInfo[0].ob_lines)) ? 
+                 JSON.parse(trackInfo[0].ob_lines).length : 0) : 0;
+            
+            console.log(`Deleting track "${trackInfo[0]?.navn || 'unnamed'}" with ${obLinesCount} OB lines`);
+
+            // Delete in a specific order to handle dependencies
+            // 1. Delete game_players entries related to game_sessions for this track
+            await sql`
+                DELETE FROM mydb.game_players
+                WHERE session_id IN (
+                    SELECT session_id 
+                    FROM mydb.game_sessions 
+                    WHERE bane_id = ${bane_id}
+                );
+            `;
+
+            // 2. Delete game_sessions
+            await sql`
+                DELETE FROM mydb.game_sessions 
+                WHERE bane_id = ${bane_id};
+            `;
+
+            // 3. Delete pointcards
+            await sql`
+                DELETE FROM mydb.pointcard 
+                WHERE bane_id = ${bane_id};
+            `;
+            
+            // 4. Delete any track images
+            await sql`
+                DELETE FROM mydb.track_images
+                WHERE bane_id = ${bane_id};
+            `;
+
+            // 5. Finally delete the track (which also removes markers, lines and ob_lines since they're stored in the track row)
+            const deleted = await sql`
+                DELETE FROM mydb.bane
+                WHERE bane_id = ${bane_id}
+                RETURNING bane_id;
+            `;
+
+            return deleted[0];
+        });
+
+        // console.log(`Successfully deleted track with ID: ${bane_id}`); <- debuging redskap
+        return result;
+
+    } catch (error) {
+        console.error(`Error deleting track ${bane_id}:`, error);
+        // ser etter spesefikk feil
+        if (error.code === '23503') { // Fkey feil
+            console.error('Foreign key constraint violation. Check all relations.');
+        }
+        throw error;
+    }
+}
+
+//for å hente alle spillere i databasen, om de er satt til synlig. Marcus jobbe her
+async function getAllSpillere() {
+    try {
+        const result = await sql`
+            WITH player_stats AS (
+                SELECT 
+                    p.spiller_navn,
+                    COUNT(DISTINCT p.pointcard_id) as total_rounds,
+                    SUM(p.total_score) as total_score,
+                    ROUND(AVG(p.total_score), 1) as average_score_per_round,
+                    MIN(p.total_score) as best_round,
+                    MAX(p.total_score) as worst_round,
+                    ROUND(AVG(p.total_score / 18), 1) as average_score_per_hole,
+                    MAX(p.dato) as last_played
+                FROM mydb.pointcard p
+                GROUP BY p.spiller_navn
+            )
+            SELECT 
+                b.epost,
+                b.brukernavn,
+                b.fnavn,
+                b.enavn,
+                COALESCE(ps.total_rounds, 0) as total_rounds,
+                COALESCE(ps.total_score, 0) as total_score,
+                COALESCE(ps.average_score_per_round, 0) as average_score_per_round,
+                COALESCE(ps.average_score_per_hole, 0) as average_score_per_hole,
+                COALESCE(ps.best_round, 0) as best_round,
+                COALESCE(ps.worst_round, 0) as worst_round,
+                ps.last_played
+            FROM 
+                mydb.bruker b
+            LEFT JOIN 
+                player_stats ps ON b.epost = ps.spiller_navn
+            WHERE 
+                (b.visible = true OR b.visible IS NULL)
+            ORDER BY 
+                b.brukernavn;
+        `;
+
+        return result.map(row => ({
+            epost: row.epost,
+            brukernavn: row.brukernavn,
+            fnavn: row.fnavn,
+            enavn: row.enavn,
+            statistics: {
+                total_rounds: parseInt(row.total_rounds),
+                total_score: parseInt(row.total_score),
+                average_score_per_round: parseFloat(row.average_score_per_round),
+                average_score_per_hole: parseFloat(row.average_score_per_hole),
+                best_round: parseInt(row.best_round),
+                worst_round: parseInt(row.worst_round),
+                last_played: row.last_played ? new Date(row.last_played).toLocaleDateString('nb-NO') : null
+            }
+        }));
+    } catch (error) {
+        console.error('Error fetching players:', error);
+        throw error;
+    }
+}
+
+// denne funksjonen oppdaterer brukerens rolle i databasen. denne blir brukt av admin og klubbadmin
+async function updateUserRole(email, role, klubb_id = null) {
+    // om rollen er klubbadmin, oppdaterer vi også klubb_id_klubb feltet så klubbadmin er tilknyttet en klubb
+    if (role === 'klubbadmin' && klubb_id) {
+        const result = await sql`
+            UPDATE mydb.bruker
+            SET role = ${role}, klubb_id_klubb = ${klubb_id}
+            WHERE epost = ${email}
+            RETURNING epost, role, klubb_id_klubb;
+        `;
+        return result[0];
+    } else {
+        // om ikke klubbadmin, eller ingen klubb spesifisert, oppdaterer vi bare rollen
+        const result = await sql`
+            UPDATE mydb.bruker
+            SET role = ${role}
+            WHERE epost = ${email}
+            RETURNING epost, role;
+        `;
+        return result[0];
+    }
+}
+
+// denne funksjonen henter alle brukere i databasen, inkludert klubbadmin og admin om de er satt til synlig, den sorterer også brukerne etter rolle og epost
+async function getAllUsers() {
+    try {
+        console.log('Executing SQL query to get all users');
+        const result = await sql`
+            SELECT 
+                b.epost AS email, 
+                b.brukernavn, 
+                b.role,
+                b.klubb_id_klubb AS club_id,
+                k.klubbnavn AS club_name
+            FROM mydb.bruker b
+            LEFT JOIN mydb.klubb k ON b.klubb_id_klubb = k.id_klubb
+            ORDER BY 
+                CASE b.role 
+                    WHEN 'admin' THEN 1
+                    WHEN 'klubbadmin' THEN 2
+                    ELSE 3 
+                END,
+                b.epost;
+        `;
+        console.log('SQL query successful, returned', result ? result.length : 0, 'users');
+        return result || [];
+    } catch (error) {
+        // console.error('Database error in getAllUsers:', error.message); <- debuging redskap
+        // console.error('Error stack:', error.stack);
+        // returnerer tom liste om det er en feil
+        return [];
+    }
+}
+
+async function updateClubInfo(klubbId, newInfo) {
+    try {
+        console.log("Updating club info for:", klubbId);
+        
+        // setter direkte inn i databasen med sql template string
+        const result = await sql`
+            UPDATE mydb.klubb 
+            SET klubbnavn = ${newInfo.klubbnavn || null},
+                sted = ${newInfo.sted || null}, 
+                klubbeskrivelse = ${newInfo.beskrivelse || null},
+                kontakt_email = ${newInfo.kontakt_email || null},
+                kontakt_telefon = ${newInfo.kontakt_telefon || null}
+                ${newInfo.klubb_bilde ? sql`, klubb_bilde = ${newInfo.klubb_bilde}` : sql``}
+            WHERE id_klubb = ${klubbId}
+            RETURNING id_klubb, klubbnavn, sted, klubbeskrivelse as beskrivelse, kontakt_email, kontakt_telefon, klubb_bilde
+        `;
+        
+        // console.log("Club update result:", result[0]); <- debuging redskap
+        return result[0];
+    } catch (error) {
+        console.error("Error in updateClubInfo:", error);
+        throw error;
+    }
+}
+
+// Sikrer at bildedata er kompatible mellom frontend og backend
+const ensureImageDataFields = (track) => {
+    try {
+        if (!track) return track;
+        
+        // Om banen har imageData men ikke bane_bilde, kopierer vi det
+        if (track.imageData && !track.bane_bilde) {
+            track.bane_bilde = track.imageData;
+            // console.log(`Track ${track.id || track.bane_id}: Copied imageData to bane_bilde`);
+        }
+        // motsatt vei
+        else if (track.bane_bilde && !track.imageData) {
+            track.imageData = track.bane_bilde;
+            // console.log(`Track ${track.id || track.bane_id}: Copied bane_bilde to imageData`);
+        }
+        
+        return track;
+    } catch (error) {
+        console.error("Feil ved sikring av bildedata felt:", error);
+        return track; // returnerer originalen om det er en feil
+    }
+};
+
+/*
+* Denne funksjonen oppretter en ny spilløkt i databasen.
+* Den tar inn sessionId, bane_id og hostEmail som parametere.
+* Utviklet av: Martin Hansen
+*/
+async function createGameSession(sessionId, bane_id, hostEmail) {
+    try {
+        const result = await sql`
+            INSERT INTO mydb.game_sessions (session_id, bane_id, host_email, created_at)
+            VALUES (${sessionId}, ${bane_id}, ${hostEmail}, NOW())
+            RETURNING *
+        `;
+        return result[0];
+    } catch (err) {
+        console.error('Database error creating game session:', err);
+        throw err;
+    }
+}
+
+/*
+* Denne funksjonen henter en spilløkt fra databasen basert på sessionId.
+* Den tar inn sessionId som parameter og returnerer spilløktens detaljer.
+* Utviklet av: Martin Hansen
+* Ai-assistanse: github copilot.
+*/
+async function getGameSession(sessionId) {
+    try {
+        const result = await sql`
+            SELECT 
+                gs.session_id, 
+                gs.bane_id, 
+                b.navn AS bane_navn,
+                gs.host_email, 
+                gs.created_at
+            FROM mydb.game_sessions gs
+            JOIN mydb.bane b ON gs.bane_id = b.bane_id
+            WHERE gs.session_id = ${sessionId}
+        `;
+        return result[0];
+    } catch (err) {
+        console.error('Database error getting game session:', err);
+        throw err;
+    }
+}
+
+/*
+* Denne funksjonen legger til en spiller i en spilløkt.
+* Den tar inn sessionId og playerEmail som parametere.
+* Utviklet av: Martin Hansen
+*/
+async function addPlayerToSession(sessionId, playerEmail) {
+    try {
+        
+        const existingPlayer = await sql`
+            SELECT * FROM mydb.game_players
+            WHERE session_id = ${sessionId} AND player_email = ${playerEmail}
+        `;
+        
+        
+        if (existingPlayer.length > 0) {
+            console.log(`Player ${playerEmail} is already in session ${sessionId}`);
+            return existingPlayer[0];
+        }
+        
+        
+        const result = await sql`
+            INSERT INTO mydb.game_players (session_id, player_email, joined_at)
+            VALUES (${sessionId}, ${playerEmail}, NOW())
+            RETURNING *
+        `;
+        return result[0];
+    } catch (err) {
+        console.error('Database error adding player to session:', err);
+        throw err;
+    }
+}
+
+/*
+* Denne funksjonen henter spillerne i en spilløkt basert på sessionId.
+* Den tar inn sessionId som parameter og returnerer en liste med spillere.
+* Utviklet av: Martin Hansen
+* Ai-assistanse: github copilot.
+*/
+async function getSessionPlayers(sessionId) {
+    try {
+        const result = await sql`
+            SELECT 
+                gp.player_email, 
+                gp.joined_at, 
+                (gp.player_email = gs.host_email) AS is_host
+            FROM mydb.game_players gp
+            JOIN mydb.game_sessions gs ON gp.session_id = gs.session_id
+            WHERE gp.session_id = ${sessionId}
+            ORDER BY gp.joined_at ASC
+        `;
+        return result;
+    } catch (err) {
+        console.error('Database error getting session players:', err);
+        throw err;
+    }
+}
+
+// legg til bilder til bane
+async function addTrackImages(baneId, imageDataArray) {
+    const result = await sql`
+        INSERT INTO mydb.track_images (bane_id, image_data)
+        SELECT * FROM unnest(${sql.array([baneId], 'int4')}, ${sql.array(imageDataArray, 'text')})
+        RETURNING id;
+    `;
+    return result;
+}
+
+// henter bilder fra bane
+async function getTrackImages(baneId) {
+    const result = await sql`
+        SELECT id, image_data
+        FROM mydb.track_images
+        WHERE bane_id = ${baneId}
+        ORDER BY id;
+    `;
+    return result;
+}
+
+// sletter bane bilder fra bane
+async function deleteTrackImage(imageId) {
+    await sql`
+        DELETE FROM mydb.track_images
+        WHERE id = ${imageId};
+    `;
+}
+
+// søker etter brukere i databasen, det trenger ikke være 1:1, pruker % x % så man kan søke etter deler av epost, brukernavn eller navn
+async function searchUsers(searchTerm) {
+    try {
+        console.log('Executing SQL query to search users with pattern:', searchTerm);
+        const result = await sql`
+            SELECT 
+                epost, 
+                brukernavn, 
+                fnavn, 
+                enavn, 
+                role
+            FROM mydb.bruker
+            WHERE 
+                epost ILIKE ${'%' + searchTerm + '%'} OR
+                brukernavn ILIKE ${'%' + searchTerm + '%'} OR
+                CONCAT(fnavn, ' ', enavn) ILIKE ${'%' + searchTerm + '%'}
+            ORDER BY 
+                CASE WHEN epost = ${searchTerm} THEN 1
+                     WHEN brukernavn = ${searchTerm} THEN 2
+                     ELSE 3 END,
+                brukernavn,
+                epost
+            LIMIT 10;
+        `;
+        console.log('SQL search query successful, returned', result ? result.length : 0, 'users');
+        return result || [];
+    } catch (error) {
+        console.error('Database error in searchUsers:', error.message);
+        console.error('Error stack:', error.stack);
+        return [];
+    }
+}
+
+// venne funksjon, sender venneforespørsel til en bruker
+async function sendFriendRequest(userEmail, friendEmail) {
+    const result = await sql`
+        INSERT INTO mydb.friends (user_email, friend_email, status)
+        VALUES (${userEmail}, ${friendEmail}, 'pending')
+        RETURNING id, user_email, friend_email, status, created_at;
+    `;
+    return result[0];
+}
+
+/*
+* Denne funksjonen henter venneforespørslene for en bruker.
+* Den tar inn brukerens e-postadresse som parameter og returnerer en liste med venneforespørslene.
+* utviklet av: Martin Hansen
+* Ai-assistanse: github copilot.
+*/
+async function getFriendRequests(userEmail) {
+    
+    if (!userEmail) {
+        console.error('getFriendRequests called with undefined userEmail');
+        throw new Error('User email is required');
+    }
+    
+    try {
+        console.log('Fetching friend requests for user:', userEmail);
+        const result = await sql`
+            SELECT f.id, f.user_email, f.status, f.created_at,
+                   b.brukernavn as friend_username
+            FROM mydb.friends f
+            JOIN mydb.bruker b ON f.user_email = b.epost
+            WHERE f.friend_email = ${userEmail} AND f.status = 'pending'
+            ORDER BY f.created_at DESC;
+        `;
+        console.log(`Found ${result.length} friend requests`);
+        return result;
+    } catch (error) {
+        console.error('Database error in getFriendRequests:', error);
+        throw error;
+    }
+}
+
+/*
+* Denne funksjonen aksepterer en venneforespørsel.
+* Den tar inn ID-en til forespørselen og brukerens e-postadresse som parametere.
+* Utviklet av: Martin Hansen
+* Ai-assistanse: github copilot.
+*/
+async function acceptFriendRequest(requestId, userEmail) {
+    const result = await sql`
+        UPDATE mydb.friends
+        SET status = 'accepted', updated_at = NOW()
+        WHERE id = ${requestId} AND friend_email = ${userEmail}
+        RETURNING id, user_email, friend_email, status, updated_at;
+    `;
+    
+    if (result.length === 0) {
+        return null;
+    }
+    
+    
+    await sql`
+        INSERT INTO mydb.friends (user_email, friend_email, status)
+        VALUES (${result[0].friend_email}, ${result[0].user_email}, 'accepted')
+        ON CONFLICT (user_email, friend_email) 
+        DO UPDATE SET status = 'accepted', updated_at = NOW();
+    `;
+    
+    return result[0];
+}
+/*
+* Denne funksjonen avslår en venneforespørsel.
+* Den tar inn ID-en til forespørselen og brukerens e-postadresse som parametere.
+* Utviklet av: Martin Hansen
+*/
+async function declineFriendRequest(requestId, userEmail) {
+    const result = await sql`
+        DELETE FROM mydb.friends
+        WHERE id = ${requestId} AND friend_email = ${userEmail}
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+/*
+* Denne funksjonen henter vennene til en bruker.
+* Den tar inn brukerens e-postadresse som parameter og returnerer en liste med vennene.
+* Utviklet av: Martin Hansen
+*/
+async function getFriends(userEmail) {
+    const result = await sql`
+        SELECT f.id, f.user_email, f.friend_email, f.status, f.created_at,
+               b.brukernavn as friend_username
+        FROM mydb.friends f
+        JOIN mydb.bruker b ON f.friend_email = b.epost
+        WHERE f.user_email = ${userEmail} AND f.status = 'accepted'
+        ORDER BY b.brukernavn;
+    `;
+    return result;
+}
+/*
+* Denne funksjonen fjerner en venn fra brukerens venneliste.
+* Den tar inn brukerens e-postadresse og vennens e-postadresse som parametere.
+* Utviklet av: Martin Hansen
+*/
+async function removeFriend(userEmail, friendEmail) {
+    const result = await sql`
+        DELETE FROM mydb.friends
+        WHERE (user_email = ${userEmail} AND friend_email = ${friendEmail})
+           OR (user_email = ${friendEmail} AND friend_email = ${userEmail})
+        RETURNING id;
+    `;
+    return result;
+}
+
+/*
+* Denne funksjonen sender en melding mellom to brukere.
+* Den tar inn avsenderens e-postadresse, mottakerens e-postadresse og innholdet i meldingen som parametere.
+* Utviklet av: Martin Hansen
+* Ai-assistanse: github copilot.
+*/
+async function sendMessage(senderEmail, receiverEmail, content) {
+    const result = await sql`
+        INSERT INTO mydb.messages (sender_email, receiver_email, content)
+        VALUES (${senderEmail}, ${receiverEmail}, ${content})
+        RETURNING message_id, sender_email, receiver_email, content, created_at;
+    `;
+    return result[0];
+}
+/*
+* Denne funksjonen henter samtaler for en bruker.
+* Den tar inn brukerens e-postadresse som parameter og returnerer en liste med samtalene.
+* Utviklet av: Martin Hansen
+* Ai-assistanse: github copilot.
+* Denne funksjonen bruker en CTE (Common Table Expression) for å hente samtalene.
+*/
+async function getConversations(userEmail) {
+    try {
+      // console.log('Getting conversations for user:', userEmail); <- debuging redskap
+      const conversations = await sql`
+        WITH conversations AS (
+          SELECT 
+            CASE 
+              WHEN sender_email = ${userEmail} THEN receiver_email
+              ELSE sender_email
+            END as contact_email,
+            MAX(created_at) as last_message_time,
+            COUNT(CASE WHEN receiver_email = ${userEmail} AND is_read = FALSE THEN 1 END) as unread_count,
+            (SELECT content FROM mydb.messages
+             WHERE (sender_email = ${userEmail} AND receiver_email = CASE 
+                                                                    WHEN sender_email = ${userEmail} THEN receiver_email 
+                                                                    ELSE sender_email 
+                                                                  END)
+                OR (receiver_email = ${userEmail} AND sender_email = CASE 
+                                                                    WHEN sender_email = ${userEmail} THEN receiver_email 
+                                                                    ELSE sender_email 
+                                                                    END)
+             ORDER BY created_at DESC
+             LIMIT 1) as last_message
+          FROM mydb.messages
+          WHERE sender_email = ${userEmail} OR receiver_email = ${userEmail}
+          GROUP BY contact_email
+        )
+        SELECT 
+          c.contact_email, 
+          c.last_message_time,
+          c.unread_count,
+          c.last_message,
+          b.brukernavn as contact_username
+        FROM conversations c
+        JOIN mydb.bruker b ON c.contact_email = b.epost
+        ORDER BY c.last_message_time DESC
+      `;
+      console.log(`Found ${conversations.length} conversations with ${conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)} unread messages`);
+      return conversations;
+    } catch (error) {
+      console.error('Feil ved henting av samtaler:', error);
+      throw error;
+    }
+  }
+
+/*
+* Denne funksjonen henter meldinger mellom to brukere.
+* Den tar inn avsenderens e-postadresse og mottakerens e-postadresse som parametere.
+* Den returnerer en liste med meldingene mellom de to brukerne.
+* Utviklet av: Martin Hansen
+* Ai-assistanse: github copilot.
+*/
+async function getMessages(userEmail, contactEmail) {
+    const result = await sql`
+        SELECT m.message_id, m.sender_email, m.receiver_email, m.content, 
+               m.is_read, m.created_at,
+               b.brukernavn as sender_username
+        FROM mydb.messages m
+        JOIN mydb.bruker b ON m.sender_email = b.epost
+        WHERE (m.sender_email = ${userEmail} AND m.receiver_email = ${contactEmail})
+           OR (m.sender_email = ${contactEmail} AND m.receiver_email = ${userEmail})
+        ORDER BY m.created_at ASC;
+    `;
+    // Mark messages as read
+    await sql`
+        UPDATE mydb.messages
+        SET is_read = true
+        WHERE sender_email = ${contactEmail} AND receiver_email = ${userEmail} AND is_read = false;
+    `;
+    
+    return result;
+}
+
+// skjema for å lage en ny klubb, og lagrer den i databasen for godkjenning av admin
+async function createClubRequest(email, klubbnavn, sted, beskrivelse) {
+    const result = await sql`
+        INSERT INTO mydb.club_requests (requested_by, klubbnavn, sted, beskrivelse)
+        VALUES (${email}, ${klubbnavn}, ${sted}, ${beskrivelse})
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+// henter alle klubbforespørslene i databasen, og sorterer dem etter dato, for admin å godkjenne eller avvise
+async function getPendingClubRequests() {
+    return await sql`
+        SELECT * FROM mydb.club_requests 
+        WHERE status = 'pending'
+        ORDER BY request_date DESC;
+    `;
+}
+
+// godkjenner en klubbforespørsel, og oppretter klubben i databasen, og gir brukeren klubbadmin rettigheter
+async function approveClubRequest(requestId, adminNotes) {
+    const request = await sql`
+        SELECT * FROM mydb.club_requests WHERE id = ${requestId};
+    `;
+    
+    if (request.length === 0) {
+        throw new Error('Club request not found');
+    }
+    
+    // For debugging
+    console.log("Club request data:", request[0]);
+    
+    // Create the club (FIX: use beskrivelse instead of klubbeskrivelse)
+    const club = await sql`
+        INSERT INTO mydb.klubb (klubbnavn, sted, klubbeskrivelse, kontakt_email, kontakt_telefon)
+        VALUES (
+            ${request[0].klubbnavn}, 
+            ${request[0].sted}, 
+            ${request[0].beskrivelse || ''}, 
+            ${request[0].kontakt_email || null},
+            ${request[0].kontakt_telefon || null}
+        )
+        RETURNING id_klubb;
+    `;
+    
+    // den som sender forespørselen blir klubbadmin
+    await updateUserRole(request[0].requested_by, 'klubbadmin', club[0].id_klubb);
+    
+    // oppdaterer statusen på forespørselen til godkjent
+    await sql`
+        UPDATE mydb.club_requests
+        SET status = 'approved', admin_notes = ${adminNotes || ''}
+        WHERE id = ${requestId};
+    `;
+    
+    return club[0];
+}
+
+//aviser en klubbforespørsel, og oppdaterer statusen i databasen
+async function rejectClubRequest(requestId, adminNotes) {
+    await sql`
+        UPDATE mydb.club_requests
+        SET status = 'rejected', admin_notes = ${adminNotes || ''}
+        WHERE id = ${requestId};
+    `;
+    return true;
+}
+
+async function createClubJoinRequest(email, klubId, message) {
+    const result = await sql`
+        INSERT INTO mydb.club_join_requests (user_email, klub_id, message)
+        VALUES (${email}, ${klubId}, ${message})
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+// for klubbadmin. henter alle ventende forespørslene om å bli med i klubben, og sorterer dem etter dato
+async function getPendingClubJoinRequests(klubId) {
+    return await sql`
+        SELECT cjr.*, b.brukernavn, k.klubbnavn 
+        FROM mydb.club_join_requests cjr
+        JOIN mydb.bruker b ON cjr.user_email = b.epost
+        JOIN mydb.klubb k ON cjr.klub_id = k.id_klubb
+        WHERE cjr.klub_id = ${klubId} 
+        AND cjr.status = 'pending'
+        ORDER BY cjr.request_date DESC;
+    `;
+}
+
+// godkjenner en forespørsel om å bli med i en klubb, og oppdaterer brukerens klubb_id_klubb felt i databasen
+async function approveClubJoinRequest(requestId, adminNotes = null) {
+    const request = await sql`
+        SELECT * FROM mydb.club_join_requests WHERE id = ${requestId};
+    `;
+    
+    if (request.length === 0) {
+        throw new Error('Join request not found');
+    }
+    
+    // oppdaterer brukerens klubb_id_klubb felt i databasen
+    await sql`
+        UPDATE mydb.bruker
+        SET klubb_id_klubb = ${request[0].klub_id}
+        WHERE epost = ${request[0].user_email};
+    `;
+    
+    // oppdaterer statusen på forespørselen til godkjent
+    await sql`
+        UPDATE mydb.club_join_requests
+        SET status = 'approved', admin_notes = ${adminNotes}
+        WHERE id = ${requestId};
+    `;
+    
+    return true;
+}
+
+// avviser en forespørsel om å bli med i en klubb, og oppdaterer statusen i databasen
+async function rejectClubJoinRequest(requestId, adminNotes) {
+    await sql`
+        UPDATE mydb.club_join_requests
+        SET status = 'rejected', admin_notes = ${adminNotes}
+        WHERE id = ${requestId};
+    `;
+    return true;
+}
+
+// oppdaterer klubbadmin til vanlig. dette er for Admin brukere gjennom admin panel
+async function demoteKlubbAdmin(userEmail) {
+    // når en klubbadmin blir demotert beholder de klubben
+    const result = await sql`
+        UPDATE mydb.bruker
+        SET role = 'user'
+        WHERE epost = ${userEmail} AND role = 'klubbadmin'
+        RETURNING epost, role, klubb_id_klubb;
+    `;
+    
+    if (result.length === 0) {
+        throw new Error('User not found or not a klubbadmin');
+    }
+    
+    return result[0];
+}
+
+// liste over alle klubbadminer
+async function getClubByAdminEmail(email) {
+    const result = await sql`
+        SELECT k.*
+        FROM mydb.klubb k
+        JOIN mydb.bruker b ON k.id_klubb = b.klubb_id_klubb
+        WHERE b.epost = ${email} AND b.role = 'klubbadmin'
+    `;
+    return result[0];
+}
+
+// Check om bruker er klubbadmin i en spesefikk klubb
+async function isClubAdmin(email, clubId) {
+    const result = await sql`
+        SELECT COUNT(*) as count
+        FROM mydb.bruker
+        WHERE epost = ${email} 
+        AND role = 'klubbadmin'
+        AND klubb_id_klubb = ${clubId}
+    `;
+    return result[0].count > 0;
+}
+
+// henter alle medlemmer i en klubb, og sorterer dem etter rolle og epost
+async function getClubMembers(clubId) {
+    return await sql`
+        SELECT epost, brukernavn, role
+        FROM mydb.bruker
+        WHERE klubb_id_klubb = ${clubId}
+        ORDER BY role DESC, brukernavn, epost
+    `;
+}
+
+// fjerner en klubbmedlem fra klubben, og oppdaterer klubb_id_klubb feltet i databasen
+async function removeClubMember(email) {
+    await sql`
+        UPDATE mydb.bruker
+        SET klubb_id_klubb = NULL
+        WHERE epost = ${email}
+    `;
+    return true;
+}
+
+// ser om bruker er klubbmedlem
+async function isClubMember(email, clubId) {
+    const result = await sql`
+        SELECT COUNT(*) as count
+        FROM mydb.bruker
+        WHERE epost = ${email} 
+        AND klubb_id_klubb = ${clubId}
+    `;
+    return result[0].count > 0;
+}
+
+async function getKlubbForAdmin(email) {
+    try {
+        console.log(`Looking up club for admin: ${email}`);
+        
+        const result = await sql`
+            SELECT k.id_klubb, k.klubbnavn
+            FROM mydb.bruker b
+            JOIN mydb.klubb k ON b.klubb_id_klubb = k.id_klubb
+            WHERE b.epost = ${email} 
+            AND b.role = 'klubbadmin'
+            LIMIT 1;
+        `;
+        
+        console.log("SQL result:", result);
+        return result[0];
+    } catch (error) {
+        console.error('Error getting club for admin:', error);
+        return null;
+    }
+}
+
+// laste opp dokumenter til klubben, og lagre dem i databasen
+async function uploadClubDocument(klubId, title, fileData, uploadedBy) {
+    const result = await sql`
+        INSERT INTO mydb.club_documents (klub_id, title, file_data, uploaded_by)
+        VALUES (${klubId}, ${title}, ${fileData}, ${uploadedBy})
+        RETURNING id, klub_id, title, upload_date;
+    `;
+    return result[0];
+}
+
+//henter alle dokumenter i klubben, og sorterer dem etter dato, begrenser til 5 dokumenter
+async function getClubDocuments(klubId, limit = 5) {
+    const result = await sql`
+        SELECT id, title, upload_date, uploaded_by
+        FROM mydb.club_documents
+        WHERE klub_id = ${klubId}
+        ORDER BY upload_date DESC
+        LIMIT ${limit};
+    `;
+    return result;
+}
+
+// henter et spesifikt dokument fra klubben, og viser det i frontend
+async function getClubDocument(documentId) {
+    const result = await sql`
+        SELECT id, klub_id, title, file_data, upload_date, uploaded_by
+        FROM mydb.club_documents
+        WHERE id = ${documentId};
+    `;
+    return result[0];
+}
+
+// sletter et dokument fra klubben, og oppdaterer databasen
+async function deleteClubDocument(documentId) {
+    const result = await sql`
+        DELETE FROM mydb.club_documents
+        WHERE id = ${documentId}
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+// Save announcement post
+async function addClubAnnouncement(klubId, content, authorEmail) {
+    const result = await sql`
+        INSERT INTO mydb.club_announcements (klubb_id, content, author_email, created_at)
+        VALUES (${klubId}, ${content}, ${authorEmail}, NOW())
+        RETURNING id, content, author_email, created_at;
+    `;
+    return result[0];
+}
+
+// Update the getClubAnnouncements function:
+async function getClubAnnouncements(klubId, limit = null) {
+    // limit er satt til null, men kan endres. frontend viser 5 annonser om gangen, men kan vise mer om bruker ønsker
+    const query = limit 
+        ? sql`
+            SELECT a.id, a.content, a.created_at, a.author_email, b.brukernavn as author_name
+            FROM mydb.club_announcements a
+            JOIN mydb.bruker b ON a.author_email = b.epost
+            WHERE a.klubb_id = ${klubId}
+            ORDER BY a.created_at DESC
+            LIMIT ${limit};
+          `
+        : sql`
+            SELECT a.id, a.content, a.created_at, a.author_email, b.brukernavn as author_name
+            FROM mydb.club_announcements a
+            JOIN mydb.bruker b ON a.author_email = b.epost
+            WHERE a.klubb_id = ${klubId}
+            ORDER BY a.created_at DESC;
+          `;
+    return await query;
+}
+
+// legger til eventer i databasen
+async function addClubEvent(klubId, title, description, eventDate, authorEmail) {
+    const result = await sql`
+        INSERT INTO mydb.club_events 
+        (klubb_id, title, description, event_date, author_email, created_at)
+        VALUES 
+        (${klubId}, ${title}, ${description}, ${eventDate}, ${authorEmail}, NOW())
+        RETURNING id, title, description, event_date, author_email, created_at;
+    `;
+    return result[0];
+}
+
+// henter klubbeventer fra databasen, og sorterer dem etter dato, kommende dato er øverst. kunne laget en trigger som sletter gamle events, så relevant eventer er øverst
+async function getClubEvents(klubId, limit = null) {
+    // likt som med annonser, frontend begrennser til 5 event
+    const query = limit 
+        ? sql`
+            SELECT e.id, e.title, e.description, e.event_date, e.created_at, 
+                   e.author_email, b.brukernavn as author_name
+            FROM mydb.club_events e
+            JOIN mydb.bruker b ON e.author_email = b.epost
+            WHERE e.klubb_id = ${klubId}
+            ORDER BY e.event_date ASC
+            LIMIT ${limit};
+          `
+        : sql`
+            SELECT e.id, e.title, e.description, e.event_date, e.created_at, 
+                   e.author_email, b.brukernavn as author_name
+            FROM mydb.club_events e
+            JOIN mydb.bruker b ON e.author_email = b.epost
+            WHERE e.klubb_id = ${klubId}
+            ORDER BY e.event_date ASC;
+          `;
+    
+    return await query;
+}
+
+// sletter anonser i klubben
+async function deleteClubAnnouncement(announcementId) {
+    const result = await sql`
+        DELETE FROM mydb.club_announcements
+        WHERE id = ${announcementId}
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+// sletter hendelser i klubben
+async function deleteClubEvent(eventId) {
+    const result = await sql`
+        DELETE FROM mydb.club_events
+        WHERE id = ${eventId}
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+// hent en spesifikk annonse fra databasen
+async function getClubAnnouncement(announcementId) {
+    const result = await sql`
+        SELECT id, klubb_id, content, author_email, created_at
+        FROM mydb.club_announcements
+        WHERE id = ${announcementId}
+        LIMIT 1;
+    `;
+    return result[0];
+}
+
+// lingnende som over, en spesifikk hendelse fra databasen
+async function getClubEvent(eventId) {
+    const result = await sql`
+        SELECT id, klubb_id, title, description, event_date, author_email, created_at
+        FROM mydb.club_events
+        WHERE id = ${eventId}
+        LIMIT 1;
+    `;
+    return result[0];
+}
+
+// Get all clubs
+async function getKlubber() {
+    try {
+        const result = await sql`
+            SELECT id_klubb, klubbnavn, sted, klubbeskrivelse, kontakt_email, kontakt_telefon, klubb_bilde
+            FROM mydb.klubb
+            ORDER BY klubbnavn;
+        `;
+        return result;
+    } catch (error) {
+        console.error('Error fetching clubs:', error);
+        return [];
+    }
+}
+
+
+/**
+ * Restores the database from backup tables
+ * @returns {Promise<Object>} Result of the operation
+ */
+async function restoreDatabaseFromBackup() {
+    try {
+        console.log('Restoring database from backup tables...');
+        
+        // Call the PostgreSQL function that restores data
+        await sql`SELECT restore_from_backup()`;
+        
+        return { success: true, message: 'Database restored successfully' };
+    } catch (error) {
+        console.error('Error restoring database:', error);
+        throw error;
+    }
+}
+
+async function getKlubbById(klubbId) {
+    try {
+        const result = await sql`
+            SELECT id_klubb, klubbnavn
+            FROM mydb.klubb
+            WHERE id_klubb = ${klubbId};
+        `;
+        
+        return result.length > 0 ? result[0] : null;
+    } catch (error) {
+        console.error('Error in getKlubbById:', error);
+        return null;
+    }
+}
+
+// Check if a track is owned by user's club
+async function isTrackOwnedByUserClub(userEmail, trackId) {
+    try {
+        console.log(`Checking if track ${trackId} is owned by club of user ${userEmail}`);
+        
+        // Get the user's club ID
+        const user = await sql`
+            SELECT klubb_id_klubb 
+            FROM mydb.bruker 
+            WHERE epost = ${userEmail} AND role = 'klubbadmin';
+        `;
+        
+        if (!user || user.length === 0 || !user[0].klubb_id_klubb) {
+            console.log(`User ${userEmail} is not a klubbadmin or has no associated club`);
+            return false;
+        }
+        
+        const userClubId = Number(user[0].klubb_id_klubb);
+        console.log(`User's club ID: ${userClubId} (type: ${typeof userClubId})`);
+        
+        // Check if track belongs to user's club
+        const track = await sql`
+            SELECT bane_id, klubb_id_klubb
+            FROM mydb.bane 
+            WHERE bane_id = ${trackId};
+        `;
+        
+        if (!track || track.length === 0) {
+            console.log(`Track ${trackId} not found`);
+            return false;
+        }
+        
+        const trackClubId = Number(track[0].klubb_id_klubb);
+        console.log(`Track's club ID: ${trackClubId} (type: ${typeof trackClubId})`);
+        
+        // Compare as numbers to avoid type mismatch
+        const hasPermission = trackClubId === userClubId;
+        console.log(`Permission check result: ${hasPermission}`);
+        
+        return hasPermission;
+    } catch (error) {
+        console.error('Error in isTrackOwnedByUserClub:', error);
+        return false;
+    }
+}
+
+// Add to your existing export default
+export default {
+     validateConnection,
+     createUser,
+     logInn, 
+     deleteBruker, 
+     redigerBruker, 
+     getBruker, 
+     getBrukerByUsername, 
+     getPoengkort, 
+     createPoengkortForCourse, 
+     deletePoengkort, 
+     updatePoengkort, 
+     getCompleteRound, 
+     getBaneInfo, 
+     getRoundsForUser, 
+     getKlubber, 
+     getCompleteRound, 
+     createTrack, 
+     getTrackById, 
+     getAllTracks, 
+     updateTrack, 
+     deleteTrack, 
+     getAllSpillere, 
+     createGameSession, 
+     getGameSession, 
+     addPlayerToSession, 
+     getSessionPlayers, 
+     getAllUsers, 
+     searchUsers, 
+     updateUserRole, 
+     getAllUsers, 
+     sendFriendRequest, 
+     getFriendRequests, 
+     acceptFriendRequest, 
+     declineFriendRequest, 
+     getFriends, 
+     removeFriend, 
+     sendMessage, 
+     getConversations, 
+     getMessages, 
+     createClubRequest, 
+     getPendingClubRequests, 
+     approveClubRequest, 
+     rejectClubRequest, 
+     createClubJoinRequest, 
+     getPendingClubJoinRequests, 
+     approveClubJoinRequest, 
+     rejectClubJoinRequest, 
+     demoteKlubbAdmin, 
+     getClubByAdminEmail, 
+     isClubAdmin, 
+     getClubMembers, 
+     removeClubMember, 
+     getClubByAdminEmail, 
+     isClubMember, 
+     getKlubbForAdmin, 
+     hashPassword, 
+     comparePassword, 
+     hashEmail, 
+     uploadClubDocument, 
+     getClubDocuments, 
+     getClubDocument, 
+     deleteClubDocument, 
+     addClubAnnouncement, 
+     getClubAnnouncements, 
+     addClubEvent, 
+     getClubEvents, 
+     deleteClubAnnouncement, 
+     deleteClubEvent, 
+     getClubAnnouncement, 
+     getClubEvent, 
+     updateClubInfo,
+     restoreDatabaseFromBackup,
+     isTrackOwnedByUserClub,
+     getKlubbById,
+};
