@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "My.Application"
+    namespace = "my.application"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "My.Application"
+        applicationId = "my.application"
         minSdk = 35
         targetSdk = 36
         versionCode = 1
@@ -56,6 +56,7 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
     ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    implementation(libs.postgresql.jdbc)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
