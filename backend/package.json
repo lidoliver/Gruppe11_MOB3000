@@ -1,0 +1,32 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "watch": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "backend": "file:",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "detect-port": "^2.1.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "path": "^0.12.7",
+    "pg": "^8.13.1",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
