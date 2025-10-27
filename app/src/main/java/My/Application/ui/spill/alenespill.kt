@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -23,11 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import My.Application.ui.components.AppTopBar
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,15 +40,11 @@ fun PlayDiscGolfScreen(
     var totalHoles by remember { mutableIntStateOf(18) }
     var holeScores by remember { mutableStateOf(List(18) { 0 }) }
     var showScores by remember { mutableStateOf(false) }
-    var isInviteModalOpen by remember { mutableStateOf(false) }
-    var inviteLink by remember { mutableStateOf("") }
-    var linkCopied by remember { mutableStateOf(false) }
-    var players by remember { mutableStateOf(listOf<Player>()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
-    val scope = rememberCoroutineScope()
 
     // Simulate data loading
     LaunchedEffect(courseId, sessionId) {
@@ -57,10 +52,7 @@ fun PlayDiscGolfScreen(
         delay(500) // Simulate API call
 
         if (isSessionPlay) {
-            // Load session data
             courseName = "Multiplayer Game - $sessionId"
-            inviteLink = "https://yourapp.com/join-game/$sessionId"
-            players = listOf(Player("host@example.com", true, List(totalHoles) { 0 }))
         } else {
             courseName = "Course $courseId"
         }
@@ -91,35 +83,25 @@ fun PlayDiscGolfScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(scrollState)
                 .padding(16.dp)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Invite Friends Button
-            InviteFriendsButton(
-                onClick = {
-                    isInviteModalOpen = true
-                    // Generate session if not already in session play
-                    if (!isSessionPlay) {
-                        val newSessionId = "session-${System.currentTimeMillis()}"
-                        inviteLink = "https://yourapp.com/join-game/$newSessionId"
-                        players = listOf(Player("you@example.com", true, List(totalHoles) { 0 }))
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Progress Section
+            // Progress Section with Map and Score Toggle Icons
             GameProgress(
                 currentHole = currentHole,
-                totalHoles = totalHoles
+                totalHoles = totalHoles,
+                onMapClick = {
+                    // TODO: Open dynamic map with Google Maps API showing all hole locations
+                },
+                onShowScoresClick = { showScores = !showScores },
+                showScores = showScores
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Current Hole Score Input
             CurrentHoleCard(
-                holeNumber = currentHole,
                 score = holeScores[currentHole - 1],
                 onScoreChange = { newScore ->
                     holeScores = holeScores.toMutableList().apply {
@@ -142,26 +124,6 @@ fun PlayDiscGolfScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Toggle Score Summary Button
-            Button(
-                onClick = { showScores = !showScores },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6366F1)
-                )
-            ) {
-                Text(if (showScores) "Skjul Resultater" else "Vis Alle Resultater")
-                Icon(
-                    imageVector = if (showScores) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             // Score Summary
@@ -176,24 +138,6 @@ fun PlayDiscGolfScreen(
                     onHoleClick = { holeIndex -> currentHole = holeIndex + 1 }
                 )
             }
-        }
-
-        // Invite Modal
-        if (isInviteModalOpen) {
-            InviteModal(
-                inviteLink = inviteLink,
-                players = players,
-                linkCopied = linkCopied,
-                onCopyLink = {
-                    scope.launch {
-                        linkCopied = true
-                        delay(2000)
-                        linkCopied = false
-                    }
-                },
-                onDismiss = { isInviteModalOpen = false },
-                onStartGame = { isInviteModalOpen = false }
-            )
         }
     }
 }
@@ -237,40 +181,53 @@ fun ErrorScreen(error: String, onBack: () -> Unit) {
 }
 
 @Composable
-fun InviteFriendsButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF6366F1)
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            "Spill med venner",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-@Composable
-fun GameProgress(currentHole: Int, totalHoles: Int) {
+fun GameProgress(
+    currentHole: Int,
+    totalHoles: Int,
+    onMapClick: () -> Unit,
+    onShowScoresClick: () -> Unit,
+    showScores: Boolean
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Hull $currentHole av $totalHoles",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF4A90E2)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Hull $currentHole av $totalHoles",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF4A90E2)
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = onMapClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Place,
+                        contentDescription = "Vis kart",
+                        tint = Color(0xFF34A853),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onShowScoresClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (showScores) Icons.Default.ExpandLess else Icons.Default.GridOn,
+                        contentDescription = "Vis alle hull",
+                        tint = Color(0xFF4A90E2),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
         LinearProgressIndicator(
             progress = { currentHole.toFloat() / totalHoles.toFloat() },
@@ -286,7 +243,6 @@ fun GameProgress(currentHole: Int, totalHoles: Int) {
 
 @Composable
 fun CurrentHoleCard(
-    holeNumber: Int,
     score: Int,
     onScoreChange: (Int) -> Unit
 ) {
@@ -298,36 +254,17 @@ fun CurrentHoleCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "Hull $holeNumber",
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color(0xFF4A90E2),
-                fontWeight = FontWeight.Medium
+            ScoreControls(
+                score = score,
+                onIncrement = { onScoreChange((score + 1).coerceAtLeast(0)) },
+                onDecrement = { onScoreChange((score - 1).coerceAtLeast(0)) }
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Ditt resultat:",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF444444)
-                )
-
-                ScoreControls(
-                    score = score,
-                    onIncrement = { onScoreChange((score + 1).coerceAtLeast(0)) },
-                    onDecrement = { onScoreChange((score - 1).coerceAtLeast(1)) }
-                )
-            }
         }
     }
 }
@@ -341,37 +278,37 @@ fun ScoreControls(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Color(0xFFDDDDDD), RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, Color(0xFFDDDDDD), RoundedCornerShape(16.dp))
     ) {
         IconButton(
             onClick = onDecrement,
-            enabled = score > 1,
+            enabled = score > 0,
             modifier = Modifier
-                .size(50.dp)
+                .size(80.dp)
                 .background(
-                    if (score > 1) Color(0xFF4A90E2) else Color(0xFF95A5A6),
-                    RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+                    if (score > 0) Color(0xFF4A90E2) else Color(0xFF95A5A6),
+                    RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
                 )
         ) {
             Icon(
                 imageVector = Icons.Default.Remove,
                 contentDescription = "Decrease",
                 tint = Color.White,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(36.dp)
             )
         }
 
         Box(
             modifier = Modifier
-                .width(70.dp)
-                .height(50.dp)
+                .width(100.dp)
+                .height(80.dp)
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = score.toString(),
-                fontSize = 24.sp,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF333333)
             )
@@ -380,14 +317,14 @@ fun ScoreControls(
         IconButton(
             onClick = onIncrement,
             modifier = Modifier
-                .size(50.dp)
-                .background(Color(0xFF4A90E2), RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp))
+                .size(80.dp)
+                .background(Color(0xFF4A90E2), RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp))
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Increase",
                 tint = Color.White,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(36.dp)
             )
         }
     }
@@ -410,14 +347,14 @@ fun NavigationButtons(
             enabled = currentHole > 1,
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp),
+                .height(72.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF4A90E2),
                 disabledContainerColor = Color(0xFF95A5A6)
             ),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Forrige Hull", fontSize = 16.sp)
+            Text("Forrige Hull", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
 
         if (currentHole == totalHoles) {
@@ -425,26 +362,26 @@ fun NavigationButtons(
                 onClick = onFinish,
                 modifier = Modifier
                     .weight(1f)
-                    .height(56.dp),
+                    .height(72.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4A90E2)
                 ),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Fullfør Runde", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Fullfør Runde", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         } else {
             Button(
                 onClick = onNext,
                 modifier = Modifier
                     .weight(1f)
-                    .height(56.dp),
+                    .height(72.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4A90E2)
                 ),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Neste Hull", fontSize = 16.sp)
+                Text("Neste Hull", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -490,7 +427,7 @@ fun ScoreSummary(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Divider(color = Color(0xFFDDDDDD), thickness = 1.dp)
+            HorizontalDivider(color = Color(0xFFDDDDDD), thickness = 1.dp)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -545,159 +482,3 @@ fun HoleSummaryItem(
     }
 }
 
-@Composable
-fun InviteModal(
-    inviteLink: String,
-    players: List<Player>,
-    linkCopied: Boolean,
-    onCopyLink: () -> Unit,
-    onDismiss: () -> Unit,
-    onStartGame: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = "Inviter venner til å spille",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Del denne lenken med venner for å spille sammen:",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF666666)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = inviteLink,
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-
-                    Button(
-                        onClick = onCopyLink,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4A90E2)
-                        )
-                    ) {
-                        Text(if (linkCopied) "Kopiert!" else "Kopier")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFF8FAFC)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Spillere (${players.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        players.forEach { player ->
-                            PlayerItem(player)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        Text(
-                            text = "Venter på at andre skal bli med...",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                            color = Color(0xFF718096),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Lukk")
-                    }
-
-                    Button(
-                        onClick = onStartGame,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4A90E2)
-                        )
-                    ) {
-                        Text("Start spill (${players.size})")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PlayerItem(player: Player) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(if (player.isHost) Color(0xFF4A90E2) else Color(0xFFE0E0E0)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Text(
-            text = "${player.email} ${if (player.isHost) "(Vert)" else ""}",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (player.isHost) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (player.isHost) Color(0xFF4A90E2) else Color(0xFF333333)
-        )
-    }
-}
-
-data class Player(
-    val email: String,
-    val isHost: Boolean,
-    val scores: List<Int>
-)
