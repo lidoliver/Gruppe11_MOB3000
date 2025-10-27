@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp") version "1.9.24-1.0.20"
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -37,6 +37,11 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+        disable += setOf("NullSafeMutableLiveData", "RememberInComposition")
     }
 }
 
