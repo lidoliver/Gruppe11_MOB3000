@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "My.Application"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "My.Application"
-        minSdk = 35
-        targetSdk = 36
+        minSdk = 33
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
