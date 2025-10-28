@@ -19,7 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import My.Application.ui.components.PlayerHistoryCard
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 
 
 
@@ -29,7 +30,7 @@ fun PlayerHistoryScreen(navController: NavController) {
         topBar = {
             AppTopBar (
                 title = "Spillerhistorik",
-                canNavigate = true,
+                canNavigateBack = true,
                 navController = navController
             )
         }
@@ -53,7 +54,7 @@ fun PlayerHistoryScreen(navController: NavController) {
             PlayerHistoryCard(
                 icon = Icons.Filled.History,
                 title = "Siste spilte runde",
-                description = "Du spilte runde 23 med 4 venner"
+                descpripton = "Du spilte runde 23 med 4 venner"
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -62,7 +63,7 @@ fun PlayerHistoryScreen(navController: NavController) {
             PlayerHistoryCard(
                 icon = Icons.Filled.Star,
                 title = "Statistikk",
-                description = "Du har 10 poeng"
+                descpripton = "Du har 10 poeng"
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -71,10 +72,17 @@ fun PlayerHistoryScreen(navController: NavController) {
             PlayerHistoryCard(
                 icon = Icons.Filled.Star,
                 title = "Statistikk",
-                description = "Beste spiller i Oktober"
+                descpripton = "Beste spiller i Oktober"
             )
+
         }
 
     }
 }
+@Preview
+@Composable
+fun PlayerHistoryScreenPreview() {
+    PlayerHistoryScreen(navController = rememberNavController())
+}
+
 
