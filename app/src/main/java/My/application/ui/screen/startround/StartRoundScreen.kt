@@ -53,7 +53,10 @@ fun StartRoundScreen(navController: NavController) {
                 icon = Icons.Filled.Person,
                 title = "Spill alene",
                 description = "Start en runde kun for deg selv.",
-                onClick = { /* TODO: Navigate to solo game setup */ }
+                onClick = {
+                    // Navigate to course selection screen
+                    navController.navigate("course_selection_alone")
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
