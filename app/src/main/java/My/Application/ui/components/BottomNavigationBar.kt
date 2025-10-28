@@ -17,11 +17,11 @@ sealed class BottomNavItem(
     val icon: ImageVector,
     val label: String
 ) {
-    object Home : BottomNavItem("main_menu", Icons.Default.Home, "Home")
+    object Home : BottomNavItem("main_menu", Icons.Default.Home, "Hjem")
     object Tips : BottomNavItem("tips", Icons.Default.Info, "Tips")
-    object Play : BottomNavItem("start_round", Icons.Default.PlayArrow, "Play")
-    object Messages : BottomNavItem("messages", Icons.Default.Email, "Messages")
-    object Profile : BottomNavItem("my_profile", Icons.Default.Person, "Profile")
+    object Play : BottomNavItem("start_round", Icons.Default.PlayArrow, "Spill")
+    object Messages : BottomNavItem("messages", Icons.Default.Email, "Meldinger")
+    object Profile : BottomNavItem("my_profile", Icons.Default.Person, "Profil")
 }
 
 @Composable

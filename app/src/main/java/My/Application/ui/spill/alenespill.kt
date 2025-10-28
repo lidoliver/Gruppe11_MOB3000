@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,13 +29,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import My.Application.ui.components.AppTopBar
 import kotlinx.coroutines.delay
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayDiscGolfScreen(
     navController: NavController,
     courseId: String?,
-    sessionId: String? = null
+    sessionId: String? = null,
+    onBottomBarVisibilityChange: ((Boolean) -> Unit)? = null
 ) {
     var courseName by remember { mutableStateOf("Disc Golf Bane") }
     var currentHole by remember { mutableIntStateOf(1) }
@@ -99,14 +103,16 @@ fun PlayDiscGolfScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(scrollState)
-                .padding(16.dp)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Main content with scroll
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
             // Progress Section with Map and Score Toggle Icons
             GameProgress(
                 currentHole = currentHole,
@@ -159,6 +165,30 @@ fun PlayDiscGolfScreen(
                 )
             }
         }
+
+        // Swipe area at the bottom for showing/hiding bottom nav bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .align(Alignment.BottomCenter)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { change, dragAmount ->
+                        change.consume()
+                        // Swipe up to show, swipe down to hide
+                        if (abs(dragAmount) > 5) {
+                            if (dragAmount < 0) {
+                                // Swiping up - show bottom bar
+                                onBottomBarVisibilityChange?.invoke(true)
+                            } else {
+                                // Swiping down - hide bottom bar
+                                onBottomBarVisibilityChange?.invoke(false)
+                            }
+                        }
+                    }
+                }
+        )
+    }
     }
 }
 

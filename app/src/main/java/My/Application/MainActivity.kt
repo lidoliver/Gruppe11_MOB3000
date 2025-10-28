@@ -5,13 +5,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import My.Application.ui.components.BottomNavigationBar
@@ -39,16 +43,43 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // State to control bottom bar visibility
+    var isBottomBarVisible by remember { mutableStateOf(true) }
+
+    // Check if we're on a play screen
+    val isPlayScreen = currentRoute?.startsWith("play_") == true
+
+    // Automatically hide bottom bar when entering play screen
+    LaunchedEffect(currentRoute) {
+        isBottomBarVisible = !isPlayScreen
+    }
 
     Scaffold(
         bottomBar = {
-            BottomNavigationBar(navController = navController)
+            AnimatedVisibility(
+                visible = isBottomBarVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = tween(300)
+                ) + fadeIn(animationSpec = tween(300)),
+                exit = slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = tween(300)
+                ) + fadeOut(animationSpec = tween(300))
+            ) {
+                BottomNavigationBar(navController = navController)
+            }
         }
     ) { paddingValues ->
         NavHost(
             navController = navController,
             startDestination = "main_menu",
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(
+                bottom = if (isBottomBarVisible) paddingValues.calculateBottomPadding() else 0.dp
+            )
         ) {
             composable("main_menu") {
                 MainMenuScreen(navController = navController)
@@ -79,7 +110,10 @@ fun AppNavigation() {
                 val courseId = backStackEntry.arguments?.getString("courseId")
                 PlayDiscGolfScreen(
                     navController = navController,
-                    courseId = courseId
+                    courseId = courseId,
+                    onBottomBarVisibilityChange = { visible ->
+                        isBottomBarVisible = visible
+                    }
                 )
             }
 
@@ -96,7 +130,10 @@ fun AppNavigation() {
                 PlayDiscGolfScreen(
                     navController = navController,
                     courseId = courseId,
-                    sessionId = sessionId
+                    sessionId = sessionId,
+                    onBottomBarVisibilityChange = { visible ->
+                        isBottomBarVisible = visible
+                    }
                 )
             }
         }
