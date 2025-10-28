@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp") version "1.9.24-1.0.20"
+    // ksp plugin temporarily disabled due to KSP/Kotlin version mismatch; update to a KSP version compatible with Kotlin 2.0.x
+    // id("com.google.devtools.ksp") version "1.9.24-1.0.20"
 }
 
 android {
@@ -55,7 +56,10 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    // KSP codegen disabled while resolving KSP/Kotlin compatibility. If you prefer kapt use:
+    // kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    // Otherwise, restore ksp(...) after updating the plugin version:
+    // ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
     implementation(libs.postgresql.jdbc)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
