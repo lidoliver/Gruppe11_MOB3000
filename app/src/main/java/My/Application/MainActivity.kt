@@ -20,6 +20,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import My.Application.ui.components.BottomNavigationBar
 import My.Application.ui.screen.mainmenu.MainMenuScreen
+import My.Application.ui.screen.messages.ConversationScreen
 import My.Application.ui.screen.messages.MessagesScreen
 import My.Application.ui.screen.myprofile.MyProfileScreen
 import My.Application.ui.screen.startround.StartRoundScreen
@@ -95,6 +96,21 @@ fun AppNavigation() {
             }
             composable("messages") {
                 MessagesScreen(navController = navController)
+            }
+            composable(
+                route = "conversation/{contactId}/{contactName}",
+                arguments = listOf(
+                    navArgument("contactId") { type = NavType.IntType },
+                    navArgument("contactName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val contactId = backStackEntry.arguments?.getInt("contactId") ?: 0
+                val contactName = backStackEntry.arguments?.getString("contactName") ?: ""
+                ConversationScreen(
+                    navController = navController,
+                    contactName = contactName,
+                    contactId = contactId
+                )
             }
             composable("tips") {
                 TipsScreen(navController = navController)
