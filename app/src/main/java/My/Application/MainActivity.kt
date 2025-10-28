@@ -14,6 +14,7 @@ import androidx.navigation.navArgument
 import My.Application.ui.screen.mainmenu.MainMenuScreen
 import My.Application.ui.screen.myprofile.MyProfileScreen
 import My.Application.ui.screen.startround.StartRoundScreen
+import My.Application.ui.spill.BanevelgingAleneScreen
 import My.Application.ui.spill.PlayDiscGolfScreen
 import My.Application.ui.theme.MyApplicationTheme
 
@@ -38,6 +39,9 @@ fun AppNavigation() {
         }
         composable("start_round") {
             StartRoundScreen(navController = navController)
+        }
+        composable("course_selection_alone") {
+            BanevelgingAleneScreen(navController = navController)
         }
         composable("my_profile") {
             MyProfileScreen(navController = navController)

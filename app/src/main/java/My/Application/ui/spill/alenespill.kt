@@ -51,10 +51,30 @@ fun PlayDiscGolfScreen(
         loading = true
         delay(500) // Simulate API call
 
+        // Determine hole count from courseId
+        val holes = when {
+            courseId?.contains("6-holes") == true -> 6
+            courseId?.contains("9-holes") == true -> 9
+            courseId?.contains("12-holes") == true -> 12
+            courseId?.contains("15-holes") == true -> 15
+            courseId?.contains("18-holes") == true -> 18
+            else -> 18 // Default to 18
+        }
+
+        totalHoles = holes
+        holeScores = List(holes) { 0 }
+
         if (isSessionPlay) {
             courseName = "Multiplayer Game - $sessionId"
         } else {
-            courseName = "Course $courseId"
+            courseName = when (holes) {
+                6 -> "Demo 6-Hull Bane"
+                9 -> "Demo 9-Hull Bane"
+                12 -> "Demo 12-Hull Bane"
+                15 -> "Demo 15-Hull Bane"
+                18 -> "Demo 18-Hull Bane"
+                else -> "Course $courseId"
+            }
         }
 
         loading = false
@@ -393,6 +413,16 @@ fun ScoreSummary(
     currentHole: Int,
     onHoleClick: (Int) -> Unit
 ) {
+    // Calculate optimal columns based on number of holes
+    val totalHoles = holeScores.size
+    val columnCount = when {
+        totalHoles <= 6 -> 3  // 6 holes or fewer: 3 columns (bigger cards)
+        totalHoles <= 9 -> 3  // 9 holes: 3 columns
+        totalHoles <= 12 -> 4 // 12 holes: 4 columns
+        totalHoles <= 15 -> 5 // 15 holes: 5 columns
+        else -> 6             // 18 holes: 6 columns (standard)
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -410,7 +440,7 @@ fun ScoreSummary(
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyVerticalGrid(
-                columns = GridCells.Fixed(6),
+                columns = GridCells.Fixed(columnCount),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.heightIn(max = 300.dp)

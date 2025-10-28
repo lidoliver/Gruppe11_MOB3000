@@ -54,8 +54,8 @@ fun StartRoundScreen(navController: NavController) {
                 title = "Spill alene",
                 description = "Start en runde kun for deg selv.",
                 onClick = {
-                    // Navigate to play screen with a demo course ID
-                    navController.navigate("play_course/demo-course-123")
+                    // Navigate to course selection screen
+                    navController.navigate("course_selection_alone")
                 }
             )
 
