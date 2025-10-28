@@ -22,12 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import My.Application.ui.components.AppTopBar
+import My.Application.data.GameSession
+import My.Application.data.GameSessionManager
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -39,6 +42,9 @@ fun PlayDiscGolfScreen(
     sessionId: String? = null,
     onBottomBarVisibilityChange: ((Boolean) -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { GameSessionManager(context) }
+
     var courseName by remember { mutableStateOf("Disc Golf Bane") }
     var currentHole by remember { mutableIntStateOf(1) }
     var totalHoles by remember { mutableIntStateOf(18) }
@@ -50,38 +56,88 @@ fun PlayDiscGolfScreen(
     val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
 
-    // Simulate data loading
+    // Load data - check for saved session first, then load new course
     LaunchedEffect(courseId, sessionId) {
         loading = true
         delay(500) // Simulate API call
 
-        // Determine hole count from courseId
-        val holes = when {
-            courseId?.contains("6-holes") == true -> 6
-            courseId?.contains("9-holes") == true -> 9
-            courseId?.contains("12-holes") == true -> 12
-            courseId?.contains("15-holes") == true -> 15
-            courseId?.contains("18-holes") == true -> 18
-            else -> 18 // Default to 18
-        }
-
-        totalHoles = holes
-        holeScores = List(holes) { 0 }
-
-        if (isSessionPlay) {
-            courseName = "Multiplayer Game - $sessionId"
+        // Try to restore saved session if it matches current course
+        val savedSession = sessionManager.getGameSession()
+        if (savedSession != null &&
+            savedSession.courseId == courseId &&
+            savedSession.sessionId == sessionId) {
+            // Restore saved session
+            courseName = savedSession.courseName
+            currentHole = savedSession.currentHole
+            totalHoles = savedSession.totalHoles
+            holeScores = savedSession.holeScores
         } else {
-            courseName = when (holes) {
-                6 -> "Demo 6-Hull Bane"
-                9 -> "Demo 9-Hull Bane"
-                12 -> "Demo 12-Hull Bane"
-                15 -> "Demo 15-Hull Bane"
-                18 -> "Demo 18-Hull Bane"
-                else -> "Course $courseId"
+            // Start new session
+            // Determine hole count from courseId
+            val holes = when {
+                courseId?.contains("6-holes") == true -> 6
+                courseId?.contains("9-holes") == true -> 9
+                courseId?.contains("12-holes") == true -> 12
+                courseId?.contains("15-holes") == true -> 15
+                courseId?.contains("18-holes") == true -> 18
+                else -> 18 // Default to 18
+            }
+
+            totalHoles = holes
+            holeScores = List(holes) { 0 }
+
+            if (isSessionPlay) {
+                courseName = "Multiplayer Game - $sessionId"
+            } else {
+                courseName = when (holes) {
+                    6 -> "Demo 6-Hull Bane"
+                    9 -> "Demo 9-Hull Bane"
+                    12 -> "Demo 12-Hull Bane"
+                    15 -> "Demo 15-Hull Bane"
+                    18 -> "Demo 18-Hull Bane"
+                    else -> "Course $courseId"
+                }
+            }
+
+            // Save initial session
+            if (courseId != null) {
+                sessionManager.saveGameSession(
+                    GameSession(
+                        courseId = courseId,
+                        sessionId = sessionId,
+                        courseName = courseName,
+                        currentHole = currentHole,
+                        totalHoles = totalHoles,
+                        holeScores = holeScores
+                    )
+                )
             }
         }
 
         loading = false
+    }
+
+    // Auto-save when state changes
+    LaunchedEffect(currentHole, holeScores) {
+        if (!loading && courseId != null) {
+            sessionManager.saveGameSession(
+                GameSession(
+                    courseId = courseId,
+                    sessionId = sessionId,
+                    courseName = courseName,
+                    currentHole = currentHole,
+                    totalHoles = totalHoles,
+                    holeScores = holeScores
+                )
+            )
+        }
+    }
+
+    // Clear session on unmount if game is finished
+    DisposableEffect(Unit) {
+        onDispose {
+            // Don't clear - keep the session saved for restoration
+        }
     }
 
     if (loading) {
@@ -145,6 +201,8 @@ fun PlayDiscGolfScreen(
                 onPrevious = { if (currentHole > 1) currentHole-- },
                 onNext = { if (currentHole < totalHoles) currentHole++ },
                 onFinish = {
+                    // Clear saved session when game is finished
+                    sessionManager.clearGameSession()
                     // Save scorecard and navigate back
                     navController.popBackStack()
                 }
