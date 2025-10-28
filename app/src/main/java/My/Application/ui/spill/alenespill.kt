@@ -1,6 +1,8 @@
 package My.Application.ui.spill
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -21,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +43,7 @@ fun PlayDiscGolfScreen(
     navController: NavController,
     courseId: String?,
     sessionId: String? = null,
+    isBottomBarVisible: Boolean = false,
     onBottomBarVisibilityChange: ((Boolean) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -224,28 +228,82 @@ fun PlayDiscGolfScreen(
             }
         }
 
-        // Swipe area at the bottom for showing/hiding bottom nav bar
+        // Swipe detection zone covering bottom half of screen
+        var dragStartY by remember { mutableFloatStateOf(0f) }
+        var isDragging by remember { mutableStateOf(false) }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .fillMaxHeight(0.5f) // Bottom half of screen
                 .align(Alignment.BottomCenter)
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures { change, dragAmount ->
-                        change.consume()
-                        // Swipe up to show, swipe down to hide
-                        if (abs(dragAmount) > 5) {
-                            if (dragAmount < 0) {
-                                // Swiping up - show bottom bar
-                                onBottomBarVisibilityChange?.invoke(true)
-                            } else {
-                                // Swiping down - hide bottom bar
-                                onBottomBarVisibilityChange?.invoke(false)
+                .pointerInput(isBottomBarVisible) {
+                    detectVerticalDragGestures(
+                        onDragStart = { offset ->
+                            dragStartY = offset.y
+                            isDragging = true
+                        },
+                        onDragEnd = {
+                            if (isDragging) {
+                                isDragging = false
+                            }
+                        },
+                        onDragCancel = {
+                            isDragging = false
+                        },
+                        onVerticalDrag = { change, dragAmount ->
+                            val currentY = change.position.y
+                            val totalDrag = currentY - dragStartY
+
+                            // Only trigger on significant drag
+                            if (abs(totalDrag) > 120) {
+                                if (totalDrag < 0 && !isBottomBarVisible) {
+                                    // Swiped up significantly - show bottom bar
+                                    onBottomBarVisibilityChange?.invoke(true)
+                                    isDragging = false
+                                    dragStartY = currentY
+                                } else if (totalDrag > 0 && isBottomBarVisible) {
+                                    // Swiped down significantly - hide bottom bar
+                                    onBottomBarVisibilityChange?.invoke(false)
+                                    isDragging = false
+                                    dragStartY = currentY
+                                }
                             }
                         }
-                    }
+                    )
                 }
         )
+
+        // Animated arrow indicator at bottom
+        val arrowRotation by animateFloatAsState(
+            targetValue = if (isBottomBarVisible) 180f else 0f,
+            animationSpec = tween(durationMillis = 300),
+            label = "arrow rotation"
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(
+                    bottom = if (isBottomBarVisible)
+                        1.dp  // Just above navbar (navbar is ~80dp high)
+                    else
+                        40.dp  // Above Android navigation buttons when hidden
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = if (isBottomBarVisible) "Sveip ned" else "Sveip opp",
+                tint = Color.Gray.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .size(42.dp)  // Bigger for better visibility
+                    .graphicsLayer {
+                        rotationZ = arrowRotation
+                    }
+            )
+        }
     }
     }
 }

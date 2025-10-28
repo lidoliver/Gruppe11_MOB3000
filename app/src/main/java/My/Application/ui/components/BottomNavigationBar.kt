@@ -6,11 +6,14 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import My.Application.data.GameSessionManager
 
 sealed class BottomNavItem(
     val route: String,
@@ -26,6 +29,9 @@ sealed class BottomNavItem(
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
+    val context = LocalContext.current
+    val sessionManager = remember { GameSessionManager(context) }
+
     val items = listOf(
         BottomNavItem.Home,
         BottomNavItem.Tips,
@@ -59,7 +65,34 @@ fun BottomNavigationBar(navController: NavController) {
                 label = { Text(item.label) },
                 selected = isSelected,
                 onClick = {
-                    if (currentRoute != item.route) {
+                    // Special handling for Play button - check for active game
+                    if (item == BottomNavItem.Play) {
+                        val activeSession = sessionManager.getGameSession()
+                        if (activeSession != null) {
+                            // Navigate to the active game
+                            val route = if (activeSession.sessionId != null) {
+                                "play_session/${activeSession.courseId}/${activeSession.sessionId}"
+                            } else {
+                                "play_course/${activeSession.courseId}"
+                            }
+                            navController.navigate(route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        } else {
+                            // No active game, go to start round screen
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    } else if (currentRoute != item.route) {
                         navController.navigate(item.route) {
                             // Pop up to the start destination to avoid building up a large stack
                             popUpTo(navController.graph.startDestinationId) {

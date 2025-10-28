@@ -111,6 +111,7 @@ fun AppNavigation() {
                 PlayDiscGolfScreen(
                     navController = navController,
                     courseId = courseId,
+                    isBottomBarVisible = isBottomBarVisible,
                     onBottomBarVisibilityChange = { visible ->
                         isBottomBarVisible = visible
                     }
@@ -131,6 +132,7 @@ fun AppNavigation() {
                     navController = navController,
                     courseId = courseId,
                     sessionId = sessionId,
+                    isBottomBarVisible = isBottomBarVisible,
                     onBottomBarVisibilityChange = { visible ->
                         isBottomBarVisible = visible
                     }
