@@ -76,7 +76,7 @@ fun BottomNavigationBar(navController: NavController) {
                                 "play_course/${activeSession.courseId}"
                             }
                             navController.navigate(route) {
-                                popUpTo(navController.graph.startDestinationId) {
+                                popUpTo("main_menu") {
                                     saveState = true
                                 }
                                 launchSingleTop = true
@@ -85,17 +85,28 @@ fun BottomNavigationBar(navController: NavController) {
                         } else {
                             // No active game, go to start round screen
                             navController.navigate(item.route) {
-                                popUpTo(navController.graph.startDestinationId) {
+                                popUpTo("main_menu") {
                                     saveState = true
                                 }
                                 launchSingleTop = true
                                 restoreState = true
                             }
                         }
+                    } else if (item == BottomNavItem.Home) {
+                        // Special handling for Home button - always navigate to main menu
+                        // and clear everything above it in the back stack
+                        if (currentRoute != "main_menu") {
+                            navController.navigate("main_menu") {
+                                popUpTo("main_menu") {
+                                    inclusive = true
+                                }
+                                launchSingleTop = true
+                            }
+                        }
                     } else if (currentRoute != item.route) {
                         navController.navigate(item.route) {
                             // Pop up to the start destination to avoid building up a large stack
-                            popUpTo(navController.graph.startDestinationId) {
+                            popUpTo("main_menu") {
                                 saveState = true
                             }
                             // Avoid multiple copies of the same destination
