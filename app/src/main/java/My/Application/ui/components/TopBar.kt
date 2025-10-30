@@ -5,7 +5,6 @@ package My.Application.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,16 +43,24 @@ fun AppTopBar(
             }
         },
         actions = {
-            // Your existing actions
-            IconButton(onClick = { /* TODO: Navigate to Profile */ }) {
+            IconButton(onClick = { showMenu = true }) {
                 Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Profile")
             }
-            IconButton(onClick = { showMenu = true }) {
-                Icon(imageVector = Icons.Default.MoreVert, contentDescription = "More Options")
-            }
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                DropdownMenuItem(text = { Text("Profile") }, onClick = { /*...*/; showMenu = false })
-                DropdownMenuItem(text = { Text("Statistics") }, onClick = { /*...*/; showMenu = false })
+                DropdownMenuItem(
+                    text = { Text("My Profile") },
+                    onClick = {
+                        navController.navigate("my_profile")
+                        showMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Statistics") },
+                    onClick = {
+                        // TODO: Navigate to statistics screen
+                        showMenu = false
+                    }
+                )
             }
         }
     )

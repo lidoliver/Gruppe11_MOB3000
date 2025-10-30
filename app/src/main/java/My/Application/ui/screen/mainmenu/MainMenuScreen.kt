@@ -58,6 +58,12 @@ fun MainMenuScreen(navController: NavController) {
             description = "Se din profil"
         ),
         MenuItem(
+            title = "Spillerstatistikk",
+            icon = Icons.Default.History,
+            route = "player_statistics",
+            description = "Se din statistikk"
+        ),
+        MenuItem(
             title = "Meldinger",
             icon = Icons.Default.Email,
             route = "messages",
@@ -108,9 +114,9 @@ fun MainMenuScreen(navController: NavController) {
                     onClick = {
                         val session = savedSession!!
                         if (session.sessionId != null) {
-                            navController.navigate("play_session/${session.courseId}/${session.sessionId}")
+                            navController.navigate("play_session/${'$'}{session.courseId}/${'$'}{session.sessionId}")
                         } else {
-                            navController.navigate("play_course/${session.courseId}")
+                            navController.navigate("play_course/${'$'}{session.courseId}")
                         }
                     },
                     modifier = Modifier
@@ -141,7 +147,7 @@ fun MainMenuScreen(navController: NavController) {
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                text = "Hull ${savedSession!!.currentHole} av ${savedSession!!.totalHoles}",
+                                text = "Hull ${'$'}{savedSession!!.currentHole} av ${'$'}{savedSession!!.totalHoles}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )

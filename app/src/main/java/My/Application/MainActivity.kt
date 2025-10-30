@@ -23,6 +23,8 @@ import My.Application.ui.screen.mainmenu.MainMenuScreen
 import My.Application.ui.screen.messages.ConversationScreen
 import My.Application.ui.screen.messages.MessagesScreen
 import My.Application.ui.screen.myprofile.MyProfileScreen
+import My.Application.ui.screen.playerhistory.PlayerHistoryScreen
+import My.Application.ui.screen.playerhistory.PlayerStatisticsScreen
 import My.Application.ui.screen.startround.StartRoundScreen
 import My.Application.ui.screen.tips.TipsScreen
 import My.Application.ui.spill.BanevelgingAleneScreen
@@ -93,6 +95,12 @@ fun AppNavigation() {
             }
             composable("my_profile") {
                 MyProfileScreen(navController = navController)
+            }
+            composable("player_history") {
+                PlayerHistoryScreen(navController = navController)
+            }
+            composable("player_statistics") { // Added this line
+                PlayerStatisticsScreen(navController = navController)
             }
             composable("messages") {
                 MessagesScreen(navController = navController)
