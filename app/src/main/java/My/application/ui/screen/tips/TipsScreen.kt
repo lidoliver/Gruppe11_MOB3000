@@ -1,4 +1,4 @@
-package My.application.ui.screen.tips
+package my.application.ui.screen.tips
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

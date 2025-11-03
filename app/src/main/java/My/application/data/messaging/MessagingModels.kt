@@ -1,4 +1,4 @@
-package My.application.data.messaging
+package my.application.data.messaging
 
 /**
  * Data models for messaging feature

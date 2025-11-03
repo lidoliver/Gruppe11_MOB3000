@@ -1,4 +1,4 @@
-package My.application.data.local.model
+package my.application.data.local.model
 
 class Player {
 }

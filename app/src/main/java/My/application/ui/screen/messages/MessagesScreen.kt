@@ -1,4 +1,4 @@
-package My.application.ui.screen.messages
+package my.application.ui.screen.messages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,9 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import My.application.ui.components.AppTopBar
-import My.application.data.messaging.Conversation
-import My.application.data.messaging.MessagingDemoRepository
+import my.application.ui.components.AppTopBar
+import my.application.data.messaging.Conversation
+import my.application.data.messaging.MessagingDemoRepository
 
 @Composable
 fun MessagesScreen(navController: NavController) {

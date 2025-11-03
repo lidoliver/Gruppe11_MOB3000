@@ -1,4 +1,4 @@
-package My.application.data.local
+package my.application.data.local
 
 class AppDatabase {
 }

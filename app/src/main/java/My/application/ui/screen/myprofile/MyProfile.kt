@@ -1,7 +1,7 @@
-package My.application.ui.screen.myprofile
+package my.application.ui.screen.myprofile
 
-import My.application.ui.components.AppTopBar
-import My.application.ui.theme.MyApplicationTheme
+import my.application.ui.components.AppTopBar
+import my.application.ui.theme.MyApplicationTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

@@ -1,7 +1,7 @@
 package my.application.data.repository
 
-import My.application.data.remote.DiscGolfApi
-import My.application.data.remote.dto.CourseDto
+import my.application.data.remote.DiscGolfApi
+import my.application.data.remote.dto.CourseDto
 
 class DiscGolfRepository {
     private val api = DiscGolfApi.service

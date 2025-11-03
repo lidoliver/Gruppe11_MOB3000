@@ -1,4 +1,4 @@
-package My.application.ui.screen.playerhistory
+package my.application.ui.screen.playerhistory
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
-import My.application.ui.theme.MyApplicationTheme
+import my.application.ui.theme.MyApplicationTheme
 
 @Composable
 fun PlayerHistoryCard(

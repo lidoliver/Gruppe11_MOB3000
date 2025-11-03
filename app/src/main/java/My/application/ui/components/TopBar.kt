@@ -1,6 +1,6 @@
 // In app/src/main/java/My/Application/ui/components/TopBar.kt
 
-package My.application.ui.components
+package my.application.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import My.application.ui.theme.MyApplicationTheme
+import my.application.ui.theme.MyApplicationTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 

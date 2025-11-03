@@ -14,10 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import My.application.ui.components.AppTopBar
+import my.application.ui.components.AppTopBar
 import androidx.lifecycle.viewmodel.compose.viewModel
 import my.application.ui.viewmodel.CoursesViewModel
-import My.application.data.remote.dto.CourseDto
+import my.application.data.remote.dto.CourseDto
 
 
 // Keep your Course data class
@@ -42,14 +42,18 @@ fun BanevelgingAleneScreen(
     val error by viewModel.error.collectAsState(initial = null)
 
     // Convert CourseDto to Course for UI display
-    val courses = courseDtos.map { dto ->
+    // Replace lines 43-51 with this:
+    // Replace lines 43-51 with this:
+    val courses = courseDtos?.map { dto ->
         Course(
             id = dto.courseId,
             name = dto.courseName,
             holeCount = dto.holeCount,
             description = "${dto.city} - ${if (dto.isProLevel) "Pro" else "Standard"}"
         )
-    }
+    } ?: emptyList()
+
+
 
     // Load courses from ViewModel
     LaunchedEffect(Unit) {

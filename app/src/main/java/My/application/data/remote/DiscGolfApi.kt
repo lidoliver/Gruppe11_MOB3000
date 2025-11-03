@@ -1,6 +1,6 @@
-package My.application.data.remote
+package my.application.data.remote
 
-import My.application.data.remote.api.DiscGolfApiService
+import my.application.data.remote.api.DiscGolfApiService
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import retrofit2.Retrofit

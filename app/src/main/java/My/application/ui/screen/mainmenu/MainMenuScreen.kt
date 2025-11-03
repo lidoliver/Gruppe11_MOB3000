@@ -1,5 +1,5 @@
 // In app/src/main/java/My/Application/ui/screen/mainmenu/MainMenuScreen.kt
-package My.application.ui.screen.mainmenu
+package my.application.ui.screen.mainmenu
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -19,9 +19,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import My.application.data.GameSessionManager
-import My.application.ui.components.AppTopBar
-import My.application.ui.theme.MyApplicationTheme
+import my.application.data.GameSessionManager
+import my.application.ui.components.AppTopBar
+import my.application.ui.theme.MyApplicationTheme
 
 data class MenuItem(
     val title: String,
@@ -35,7 +35,7 @@ fun MainMenuScreen(navController: NavController) {
     val context = LocalContext.current
     val sessionManager = remember { GameSessionManager(context) }
     var hasActiveSession by remember { mutableStateOf(false) }
-    var savedSession by remember { mutableStateOf<My.application.data.GameSession?>(null) }
+    var savedSession by remember { mutableStateOf<my.application.data.GameSession?>(null) }
 
     // Check for active session on composition
     LaunchedEffect(Unit) {

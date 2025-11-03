@@ -1,4 +1,4 @@
-package My.application.ui.components
+package my.application.ui.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -13,7 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import My.application.data.GameSessionManager
+import my.application.data.GameSessionManager
 
 sealed class BottomNavItem(
     val route: String,

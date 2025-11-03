@@ -1,4 +1,4 @@
-package My.application.ui.spill
+package my.application.ui.spill
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
@@ -31,9 +31,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import My.application.ui.components.AppTopBar
-import My.application.data.GameSession
-import My.application.data.GameSessionManager
+import my.application.ui.components.AppTopBar
+import my.application.data.GameSession
+import my.application.data.GameSessionManager
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 

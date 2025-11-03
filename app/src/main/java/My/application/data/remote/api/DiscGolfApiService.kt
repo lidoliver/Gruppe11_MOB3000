@@ -1,6 +1,6 @@
-package My.application.data.remote.api
+package my.application.data.remote.api
 
-import My.application.data.remote.dto.CourseDto
+import my.application.data.remote.dto.CourseDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 

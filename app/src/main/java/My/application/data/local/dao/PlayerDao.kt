@@ -1,4 +1,4 @@
-package My.application.data.local.dao
+package my.application.data.local.dao
 
 class PlayerDao {
 }

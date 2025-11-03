@@ -1,5 +1,5 @@
 // In app/src/main/java/My/Application/MainActivity.kt
-package My.application
+package my.application
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,16 +18,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import My.application.ui.components.BottomNavigationBar
-import My.application.ui.screen.mainmenu.MainMenuScreen
-import My.application.ui.screen.messages.ConversationScreen
-import My.application.ui.screen.messages.MessagesScreen
-import My.application.ui.screen.myprofile.MyProfileScreen
-import My.application.ui.screen.startround.StartRoundScreen
-import My.application.ui.screen.tips.TipsScreen
+import my.application.ui.components.BottomNavigationBar
+import my.application.ui.screen.mainmenu.MainMenuScreen
+import my.application.ui.screen.messages.ConversationScreen
+import my.application.ui.screen.messages.MessagesScreen
+import my.application.ui.screen.myprofile.MyProfileScreen
+import my.application.ui.screen.startround.StartRoundScreen
+import my.application.ui.screen.tips.TipsScreen
 import my.application.ui.spill.BanevelgingAleneScreen
-import My.application.ui.spill.PlayDiscGolfScreen
-import My.application.ui.theme.MyApplicationTheme
+import my.application.ui.spill.PlayDiscGolfScreen
+import my.application.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

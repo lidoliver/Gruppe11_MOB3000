@@ -1,6 +1,6 @@
 // In app/src/main/java/My/Application/ui/screen/startround/StartRoundScreen.kt
 
-package My.application.ui.screen.startround
+package my.application.ui.screen.startround
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,8 +18,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import My.application.ui.components.AppTopBar
-import My.application.ui.theme.MyApplicationTheme
+import my.application.ui.components.AppTopBar
+import my.application.ui.theme.MyApplicationTheme
 
 @Composable
 fun StartRoundScreen(navController: NavController) {

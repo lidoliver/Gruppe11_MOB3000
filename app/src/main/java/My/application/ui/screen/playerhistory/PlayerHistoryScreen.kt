@@ -1,9 +1,9 @@
-package My.application.ui.screen.playerhistory
+package my.application.ui.screen.playerhistory
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
-import My.application.ui.components.AppTopBar
+import my.application.ui.components.AppTopBar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
