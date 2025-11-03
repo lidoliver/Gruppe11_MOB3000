@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "My.Application"
+    namespace = "my.application"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "My.Application"
+        applicationId = "my.application"
         minSdk = 33
         targetSdk = 35
         versionCode = 1
@@ -60,7 +60,11 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    // KSP codegen disabled while resolving KSP/Kotlin compatibility. If you prefer kapt use:
+    // kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    // Otherwise, restore ksp(...) after updating the plugin version:
+    // ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    implementation(libs.postgresql.jdbc)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
