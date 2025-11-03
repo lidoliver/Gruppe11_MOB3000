@@ -1,4 +1,4 @@
-// In app/src/main/java/My/Application/ui/screen/startround/StartRoundScreen.kt
+// In app/src/main/java/my/application/ui/screen/startround/StartRoundScreen.kt
 
 package my.application.ui.screen.startround
 

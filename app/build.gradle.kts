@@ -2,18 +2,17 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    // ksp plugin temporarily disabled due to KSP/Kotlin version mismatch; update to a KSP version compatible with Kotlin 2.0.x
-    // id("com.google.devtools.ksp") version "1.9.24-1.0.20"
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "my.application"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "my.application"
-        minSdk = 35
-        targetSdk = 36
+        minSdk = 33
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 

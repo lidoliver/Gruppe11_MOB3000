@@ -54,8 +54,14 @@ fun PlayerHistoryCard(
 
 @Preview (showBackground = true)
 @Composable
-fun PlayerHistoryPreview() {
+fun PlayerHistoryCardPreview() {
     MyApplicationTheme {
-        PlayerHistoryScreen(navController = rememberNavController())
+        Surface(modifier = Modifier.padding(16.dp)) {
+            PlayerHistoryCard(
+                icon = Icons.Filled.Person,
+                title = "Siste Spilte runde",
+                descpripton = "Du spilte runde 23 med 4 venner"
+            )
+        }
     }
 }
