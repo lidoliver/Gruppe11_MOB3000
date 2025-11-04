@@ -17,26 +17,44 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import my.application.data.auth.AuthManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun MyProfileScreen(
     navController: NavController,
-    userEmail: String = "test@example.com", // Pass this from your auth system
     viewModel: MyProfileViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val authManager = AuthManager.getInstance(context)
+    val userEmail by authManager.getUserEmailFlow().collectAsState(initial = null)
     val uiState = viewModel.uiState
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
-    // Load user profile when screen is displayed
+    // Check authentication and redirect to login if not authenticated
     LaunchedEffect(userEmail) {
-        viewModel.loadUserProfile(userEmail)
+        val email = userEmail
+        if (email == null) {
+            // User is not logged in, redirect to login
+            navController.navigate("login") {
+                popUpTo("myprofile") { inclusive = true }
+            }
+        } else {
+            // User is logged in, load their profile
+            viewModel.loadUserProfile(email)
+        }
     }
 
     Scaffold(
@@ -64,7 +82,9 @@ fun MyProfileScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadUserProfile(userEmail) }) {
+                        Button(onClick = {
+                            userEmail?.let { viewModel.loadUserProfile(it) }
+                        }) {
                             Text("Retry")
                         }
                     }
@@ -126,6 +146,26 @@ fun MyProfileScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Change Password")
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Logout button
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    authManager.clearAuth()
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Logout")
                         }
                     }
                 }

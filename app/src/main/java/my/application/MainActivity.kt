@@ -25,6 +25,7 @@ import my.application.ui.screen.friends.FriendsScreen
 import my.application.ui.screen.myprofile.MyProfileScreen
 import my.application.ui.screen.startround.StartRoundScreen
 import my.application.ui.screen.tips.TipsScreen
+import my.application.ui.screen.login.LoginScreen
 import my.application.ui.spill.BanevelgingAleneScreen
 import my.application.ui.spill.PlayDiscGolfScreen
 import my.application.ui.theme.MyApplicationTheme
@@ -50,12 +51,13 @@ fun AppNavigation() {
     // State to control bottom bar visibility
     var isBottomBarVisible by remember { mutableStateOf(true) }
 
-    // Check if we're on a play screen
+    // Check if we're on a play screen or login screen
     val isPlayScreen = currentRoute?.startsWith("play_") == true
+    val isLoginScreen = currentRoute == "login"
 
-    // Automatically hide bottom bar when entering play screen
+    // Automatically hide bottom bar when entering play screen or login screen
     LaunchedEffect(currentRoute) {
-        isBottomBarVisible = !isPlayScreen
+        isBottomBarVisible = !isPlayScreen && !isLoginScreen
     }
 
     Scaffold(
@@ -84,6 +86,9 @@ fun AppNavigation() {
         ) {
             composable("main_menu") {
                 MainMenuScreen(navController = navController)
+            }
+            composable("login") {
+                LoginScreen(navController = navController)
             }
             composable("start_round") {
                 StartRoundScreen(navController = navController)
