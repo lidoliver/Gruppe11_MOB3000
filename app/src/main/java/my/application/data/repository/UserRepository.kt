@@ -1,0 +1,121 @@
+package my.application.data.repository
+
+import android.util.Log
+import my.application.data.remote.BackendApi
+import my.application.data.remote.dto.LoginRequest
+import my.application.data.remote.dto.LoginResponse
+import my.application.data.remote.dto.RegisterRequest
+import my.application.data.remote.dto.ScorecardDto
+import my.application.data.remote.dto.UserDto
+
+class UserRepository {
+    private val api = BackendApi.service
+    private var authToken: String? = null
+
+    fun setAuthToken(token: String) {
+        authToken = "Bearer $token"
+    }
+
+    fun getAuthToken(): String? = authToken
+
+    suspend fun register(email: String, password: String): Result<UserDto> {
+        return try {
+            val response = api.register(RegisterRequest(email, password))
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Registration failed: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Registration error", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun login(email: String, password: String): Result<LoginResponse> {
+        return try {
+            val response = api.login(LoginRequest(email, password))
+            if (response.isSuccessful && response.body() != null) {
+                val loginResponse = response.body()!!
+                setAuthToken(loginResponse.token)
+                Result.success(loginResponse)
+            } else {
+                Result.failure(Exception("Login failed: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Login error", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUser(email: String): Result<UserDto> {
+        return try {
+            val token = authToken ?: return Result.failure(Exception("Not authenticated"))
+            val response = api.getUser(email, token)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to get user: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get user error", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUser(email: String, user: UserDto): Result<UserDto> {
+        return try {
+            val token = authToken ?: return Result.failure(Exception("Not authenticated"))
+            val response = api.updateUser(email, user, token)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to update user: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Update user error", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getScorecards(email: String): Result<List<ScorecardDto>> {
+        return try {
+            val token = authToken ?: return Result.failure(Exception("Not authenticated"))
+            val response = api.getScorecards(email, token)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                Result.failure(Exception("Failed to get scorecards: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get scorecards error", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getAllPlayers(): Result<List<UserDto>> {
+        return try {
+            val response = api.getAllPlayers()
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                Result.failure(Exception("Failed to get players: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get all players error", e)
+            Result.failure(e)
+        }
+    }
+
+    companion object {
+        @Volatile
+        private var instance: UserRepository? = null
+
+        fun getInstance(): UserRepository {
+            return instance ?: synchronized(this) {
+                instance ?: UserRepository().also { instance = it }
+            }
+        }
+    }
+}
+

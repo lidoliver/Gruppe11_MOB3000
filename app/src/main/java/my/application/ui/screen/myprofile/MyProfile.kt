@@ -9,46 +9,126 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun MyProfileScreen(navController: NavController) {
+fun MyProfileScreen(
+    navController: NavController,
+    userEmail: String = "test@example.com", // Pass this from your auth system
+    viewModel: MyProfileViewModel = viewModel()
+) {
+    val uiState = viewModel.uiState
+
+    // Load user profile when screen is displayed
+    LaunchedEffect(userEmail) {
+        viewModel.loadUserProfile(userEmail)
+    }
+
     Scaffold(
         topBar = { AppTopBar(title = "Min Profil", canNavigateBack = true, navController = navController) }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+                .padding(16.dp)
         ) {
-            // Placeholder for player information
-            Text("Player Name: John Doe", fontSize = 20.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Email: john.doe@example.com", fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Rounds Played: 15", fontSize = 16.sp)
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                uiState.error != null -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Error: ${uiState.error}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { viewModel.loadUserProfile(userEmail) }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+                uiState.user != null -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        // Display user information
+                        Text(
+                            text = "Player Name: ${uiState.user.username ?: "N/A"}",
+                            fontSize = 20.sp,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+                        if (uiState.user.firstName != null || uiState.user.lastName != null) {
+                            Text(
+                                text = "${uiState.user.firstName ?: ""} ${uiState.user.lastName ?: ""}".trim(),
+                                fontSize = 18.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
 
-            // Button to change password
-            Button(
-                onClick = { /* TODO: Navigate to change password screen */ },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Change Password")
+                        Text(
+                            text = "Email: ${uiState.user.email}",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (uiState.user.role != null) {
+                            Text(
+                                text = "Role: ${uiState.user.role}",
+                                fontSize = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        if (uiState.user.clubName != null) {
+                            Text(
+                                text = "Club: ${uiState.user.clubName}",
+                                fontSize = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        Text(
+                            text = "Rounds Played: ${uiState.scorecards.size}",
+                            fontSize = 16.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        // Button to change password
+                        Button(
+                            onClick = { /* TODO: Navigate to change password screen */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Change Password")
+                        }
+                    }
+                }
             }
         }
     }
