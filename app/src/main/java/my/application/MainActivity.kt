@@ -21,7 +21,7 @@ import androidx.navigation.navArgument
 import my.application.ui.components.BottomNavigationBar
 import my.application.ui.screen.mainmenu.MainMenuScreen
 import my.application.ui.screen.messages.ConversationScreen
-import my.application.ui.screen.messages.MessagesScreen
+import my.application.ui.screen.friends.FriendsScreen
 import my.application.ui.screen.myprofile.MyProfileScreen
 import my.application.ui.screen.startround.StartRoundScreen
 import my.application.ui.screen.tips.TipsScreen
@@ -94,8 +94,8 @@ fun AppNavigation() {
             composable("my_profile") {
                 MyProfileScreen(navController = navController)
             }
-            composable("messages") {
-                MessagesScreen(navController = navController)
+            composable("friends") {
+                FriendsScreen(navController = navController)
             }
             composable(
                 route = "conversation/{contactId}/{contactName}",

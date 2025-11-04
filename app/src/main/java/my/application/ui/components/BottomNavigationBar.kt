@@ -23,8 +23,8 @@ sealed class BottomNavItem(
     object Home : BottomNavItem("main_menu", Icons.Default.Home, "Hjem")
     object Tips : BottomNavItem("tips", Icons.Default.Info, "Tips")
     object Play : BottomNavItem("start_round", Icons.Default.PlayArrow, "Spill")
-    object Messages : BottomNavItem("messages", Icons.Default.Email, "Meldinger")
-    object Profile : BottomNavItem("my_profile", Icons.Default.Person, "Profil")
+    object Friends : BottomNavItem("friends", Icons.Default.Person, "Venner")
+    object Profile : BottomNavItem("my_profile", Icons.Default.AccountCircle, "Profil")
 }
 
 @Composable
@@ -36,7 +36,7 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem.Home,
         BottomNavItem.Tips,
         BottomNavItem.Play,
-        BottomNavItem.Messages,
+        BottomNavItem.Friends,
         BottomNavItem.Profile
     )
 

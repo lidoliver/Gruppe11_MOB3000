@@ -9,14 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.text.font.FontWeight
 import my.application.ui.theme.MyApplicationTheme
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.Icons
+
 
 @Composable
 fun PlayerHistoryCard(
     icon: ImageVector,
     title: String,
-    descpripton: String
+    description: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -24,10 +27,11 @@ fun PlayerHistoryCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
@@ -35,20 +39,91 @@ fun PlayerHistoryCard(
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = descpripton,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+}
+
+@Composable
+fun PlayerStatsCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            Text(
+                text = "Statistikk",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            StatRow(label = "Totalt antall runder:", value = "42")
+            Spacer(modifier = Modifier.height(12.dp))
+            StatRow(label = "Totale poeng:", value = "1,247")
+            Spacer(modifier = Modifier.height(12.dp))
+            StatRow(label = "Gjennomsnittlig score:", value = "29,7")
+            Spacer(modifier = Modifier.height(12.dp))
+            StatRow(label = "Beste runde:", value = "45 poeng")
+            Spacer(modifier = Modifier.height(12.dp))
+            StatRow(label = "Seiere:", value = "15")
+        }
+    }
+}
+
+@Composable
+fun StatRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
 @Preview (showBackground = true)
 @Composable
-fun PlayerHistoryPreview() {
+fun PlayerHistoryCardPreview() {
     MyApplicationTheme {
-        PlayerHistoryScreen(navController = rememberNavController())
+        Surface(modifier = Modifier.padding(16.dp)) {
+            PlayerHistoryCard(
+                icon = Icons.Filled.Person,
+                title = "Siste spillet runde",
+                description = "Du spilte runde 23 med 2 venner"
+            )
+        }
     }
 }
+

@@ -6,9 +6,7 @@ import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -54,29 +52,20 @@ fun PlayerHistoryScreen(navController: NavController) {
             PlayerHistoryCard(
                 icon = Icons.Filled.History,
                 title = "Siste spilte runde",
-                descpripton = "Du spilte runde 23 med 4 venner"
+                description = "Du spilte runde 23 med 4 venner"
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+
+            PlayerStatsCard()
+
 
             //Eksempel data, statisk
             PlayerHistoryCard(
                 icon = Icons.Filled.Star,
                 title = "Statistikk",
-                descpripton = "Du har 10 poeng"
+                description = "Beste spiller i Oktober"
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            //Eksempel data, statisk
-            PlayerHistoryCard(
-                icon = Icons.Filled.Star,
-                title = "Statistikk",
-                descpripton = "Beste spiller i Oktober"
-            )
-
         }
-
     }
 }
 @Preview
