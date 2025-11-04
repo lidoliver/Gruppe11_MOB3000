@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
+import my.application.ui.theme.MyApplicationTheme
 
 
 
@@ -71,7 +72,8 @@ fun PlayerHistoryScreen(navController: NavController) {
 @Preview
 @Composable
 fun PlayerHistoryScreenPreview() {
-    PlayerHistoryScreen(navController = rememberNavController())
+    MyApplicationTheme {
+        PlayerHistoryScreen(navController = rememberNavController())
+    }
 }
-
 
