@@ -29,6 +29,8 @@ import my.application.ui.screen.login.LoginScreen
 import my.application.ui.spill.BanevelgingAleneScreen
 import my.application.ui.spill.PlayDiscGolfScreen
 import my.application.ui.theme.MyApplicationTheme
+import my.application.ui.screen.playerhistory.PlayerHistoryScreen
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,6 +103,9 @@ fun AppNavigation() {
             }
             composable("friends") {
                 FriendsScreen(navController = navController)
+            }
+            composable("player_history") { backStackEntry ->
+                PlayerHistoryScreen(navController = navController)
             }
             composable(
                 route = "conversation/{contactId}/{contactName}",
