@@ -1,21 +1,21 @@
 package my.application.ui.screen.login
 
-import android.content.Context
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import my.application.data.auth.AuthManager
 import my.application.data.repository.UserRepository
 
 class LoginViewModel(
-    private val context: Context,
-    private val userRepository: UserRepository = UserRepository.getInstance()
-) : ViewModel() {
+    application: Application
+) : AndroidViewModel(application) {
 
-    private val authManager = AuthManager.getInstance(context)
+    private val authManager = AuthManager.getInstance(application)
+    private val userRepository = UserRepository.getInstance()
 
     var uiState by mutableStateOf(LoginUiState())
         private set

@@ -5,6 +5,7 @@ import my.application.data.remote.BackendApi
 import my.application.data.remote.dto.LoginRequest
 import my.application.data.remote.dto.LoginResponse
 import my.application.data.remote.dto.RegisterRequest
+import my.application.data.remote.dto.RegisterResponse
 import my.application.data.remote.dto.ScorecardDto
 import my.application.data.remote.dto.UserDto
 
@@ -18,13 +19,17 @@ class UserRepository {
 
     fun getAuthToken(): String? = authToken
 
-    suspend fun register(email: String, password: String): Result<UserDto> {
+    suspend fun register(email: String, password: String): Result<RegisterResponse> {
         return try {
             val response = api.register(RegisterRequest(email, password))
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Registration failed: ${response.message()}"))
+                val errorMsg = when (response.code()) {
+                    400 -> "User already exists"
+                    else -> "Registration failed: ${response.message()}"
+                }
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Registration error", e)

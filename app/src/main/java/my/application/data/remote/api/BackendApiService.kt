@@ -8,7 +8,7 @@ interface BackendApiService {
 
     // Authentication endpoints
     @POST("auth/register")
-    suspend fun register(@Body request: RegisterRequest): Response<UserDto>
+    suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
 
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>

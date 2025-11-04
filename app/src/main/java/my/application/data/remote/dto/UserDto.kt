@@ -13,18 +13,22 @@ data class UserDto(
 )
 
 data class LoginRequest(
-    @Json(name = "epost") val email: String,
-    @Json(name = "passord") val password: String
+    @Json(name = "email") val email: String,
+    @Json(name = "password") val password: String
 )
 
 data class LoginResponse(
     @Json(name = "token") val token: String,
-    @Json(name = "epost") val email: String
+    @Json(name = "email") val email: String
 )
 
 data class RegisterRequest(
-    @Json(name = "epost") val email: String,
-    @Json(name = "passord") val password: String
+    @Json(name = "email") val email: String,
+    @Json(name = "password") val password: String
+)
+
+data class RegisterResponse(
+    @Json(name = "message") val message: String
 )
 
 data class ScorecardDto(
