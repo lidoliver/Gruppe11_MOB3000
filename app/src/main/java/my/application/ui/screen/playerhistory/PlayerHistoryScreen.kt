@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,6 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import my.application.ui.theme.MyApplicationTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+
 
 
 
@@ -39,7 +41,7 @@ fun PlayerHistoryScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -50,22 +52,36 @@ fun PlayerHistoryScreen(navController: NavController) {
             )
 
             //Eksempel data, statisk
-            PlayerHistoryCard(
-                icon = Icons.Filled.History,
-                title = "Siste spilte runde",
-                description = "Du spilte runde 23 med 4 venner"
-            )
-
-
-            PlayerStatsCard()
-
-
-            //Eksempel data, statisk
-            PlayerHistoryCard(
-                icon = Icons.Filled.Star,
-                title = "Statistikk",
-                description = "Beste spiller i Oktober"
-            )
+            ElevatedCard(
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Stastistikk",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Beste Spiller i Oktober",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
         }
     }
 }
