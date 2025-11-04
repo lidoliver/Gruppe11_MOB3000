@@ -74,6 +74,12 @@ fun MainMenuScreen(navController: NavController) {
             icon = Icons.Default.Place,
             route = "course_selection_alone",
             description = "Velg en bane"
+        ),
+        MenuItem(
+            title = "Spillerhistorikk",
+            icon = Icons.Default.Place,
+            route = "player_history",
+            description = "Se din spillerhistorikk"
         )
     )
 
