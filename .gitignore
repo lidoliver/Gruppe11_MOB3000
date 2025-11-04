@@ -15141,3 +15141,4 @@ local.properties
 /package-lock.json
 /QUICKSTART_LOGIN.md
 /RUN_APP_VISUAL_GUIDE.md
+/node_modules/
