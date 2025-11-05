@@ -1,12 +1,17 @@
 package my.application.ui.screen.friends
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.SportsEsports
@@ -20,19 +25,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.data.friends.Friend
 import my.application.data.friends.FriendStatus
-import my.application.data.friends.FriendsDemoRepository
 
 @Composable
-fun FriendsScreen(navController: NavController) {
-    // TODO: Replace with actual database call when backend is ready
-    // Future: val friends by viewModel.friends.collectAsState()
-    val friends = remember {
-        FriendsDemoRepository.getDemoFriends()
-    }
+fun FriendsScreen(
+    navController: NavController,
+    viewModel: FriendsViewModel = viewModel()
+) {
+    val friendRequestsCount by viewModel.friendRequestsCount.collectAsState()
+    val friends by viewModel.friends.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -48,6 +55,14 @@ fun FriendsScreen(navController: NavController) {
         }
     }
 
+    // Show error snackbar if there's an error
+    error?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            // You can show a snackbar here if needed
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -55,6 +70,18 @@ fun FriendsScreen(navController: NavController) {
                 canNavigateBack = false,
                 navController = navController
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate("friend_search") },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PersonAdd,
+                    contentDescription = "Søk etter venner",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -83,9 +110,67 @@ fun FriendsScreen(navController: NavController) {
                 )
             )
 
-            // Friends list
-            if (filteredFriends.isEmpty()) {
-                // Empty state
+            // Friend Requests Card
+            if (friendRequestsCount > 0) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable { navController.navigate("friend_requests") },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Venneforespørsler",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "$friendRequestsCount ${if (friendRequestsCount == 1) "ny forespørsel" else "nye forespørsler"}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Se forespørsler",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+
+
+            // Loading state
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            // Empty state
+            else if (filteredFriends.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()

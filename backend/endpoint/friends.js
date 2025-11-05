@@ -28,14 +28,19 @@ router.post('/request',
                 return res.status(404).json({ message: 'User not found' });
             }
             
-            // Check if a request already exists
-            const existingRequests = await db.getFriendRequests(friendEmail);
-            const alreadyRequested = existingRequests.some(
-                request => request.user_email === userEmail
-            );
-            
-            if (alreadyRequested) {
-                return res.status(400).json({ message: 'Friend request already sent' });
+            // Check if already friends or if there's an existing friendship/request in either direction
+            const existingFriendship = await db.checkExistingFriendship(userEmail, friendEmail);
+
+            if (existingFriendship) {
+                if (existingFriendship.status === 'accepted') {
+                    return res.status(400).json({ message: 'Already friends with this user' });
+                } else if (existingFriendship.status === 'pending') {
+                    if (existingFriendship.user_email === userEmail) {
+                        return res.status(400).json({ message: 'Friend request already sent' });
+                    } else {
+                        return res.status(400).json({ message: 'This user has already sent you a friend request. Check your pending requests.' });
+                    }
+                }
             }
             
             const request = await db.sendFriendRequest(userEmail, friendEmail);

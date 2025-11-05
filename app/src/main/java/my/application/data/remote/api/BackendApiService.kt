@@ -43,5 +43,47 @@ interface BackendApiService {
     // Players endpoint
     @GET("api/epost")
     suspend fun getAllPlayers(): Response<List<UserDto>>
+
+    // Search users endpoint
+    @GET("users/search-users")
+    suspend fun searchUsers(
+        @Query("q") query: String,
+        @Header("Authorization") token: String
+    ): Response<List<UserDto>>
+
+    // Friends endpoints
+    @GET("api/friends")
+    suspend fun getFriends(
+        @Header("Authorization") token: String
+    ): Response<List<FriendDto>>
+
+    @GET("api/friends/requests")
+    suspend fun getFriendRequests(
+        @Header("Authorization") token: String
+    ): Response<List<FriendRequestDto>>
+
+    @POST("api/friends/request")
+    suspend fun sendFriendRequest(
+        @Body request: SendFriendRequestDto,
+        @Header("Authorization") token: String
+    ): Response<FriendRequestResponseDto>
+
+    @POST("api/friends/accept/{requestId}")
+    suspend fun acceptFriendRequest(
+        @Path("requestId") requestId: Int,
+        @Header("Authorization") token: String
+    ): Response<FriendRequestResponseDto>
+
+    @POST("api/friends/decline/{requestId}")
+    suspend fun declineFriendRequest(
+        @Path("requestId") requestId: Int,
+        @Header("Authorization") token: String
+    ): Response<FriendRequestResponseDto>
+
+    @DELETE("api/friends/{friendEmail}")
+    suspend fun removeFriend(
+        @Path("friendEmail") friendEmail: String,
+        @Header("Authorization") token: String
+    ): Response<FriendRequestResponseDto>
 }
 

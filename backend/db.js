@@ -1028,6 +1028,23 @@ async function searchUsers(searchTerm) {
     }
 }
 
+/*
+* Denne funksjonen sjekker om det finnes en eksisterende venneforespørsel eller vennskap
+* mellom to brukere (i begge retninger).
+* Returnerer forespørselen hvis den finnes, ellers null.
+* Utviklet av: [AI Assistant]
+*/
+async function checkExistingFriendship(userEmail, friendEmail) {
+    const result = await sql`
+        SELECT id, user_email, friend_email, status
+        FROM mydb.friends
+        WHERE (user_email = ${userEmail} AND friend_email = ${friendEmail})
+           OR (user_email = ${friendEmail} AND friend_email = ${userEmail})
+        LIMIT 1;
+    `;
+    return result.length > 0 ? result[0] : null;
+}
+
 // venne funksjon, sender venneforespørsel til en bruker
 async function sendFriendRequest(userEmail, friendEmail) {
     const result = await sql`
@@ -1067,6 +1084,21 @@ async function getFriendRequests(userEmail) {
         console.error('Database error in getFriendRequests:', error);
         throw error;
     }
+}
+
+/*
+* Denne funksjonen henter venneforespørsler som brukeren har sendt.
+* Returnerer liste med pending requests sent av brukeren.
+* Utviklet av: [AI Assistant]
+*/
+async function getPendingRequestsSentByUser(userEmail) {
+    const result = await sql`
+        SELECT id, user_email, friend_email, status, created_at
+        FROM mydb.friends
+        WHERE user_email = ${userEmail} AND status = 'pending'
+        ORDER BY created_at DESC;
+    `;
+    return result;
 }
 
 /*
@@ -1735,10 +1767,12 @@ export default {
      searchUsers, 
      updateUserRole, 
      getAllUsers, 
-     sendFriendRequest, 
-     getFriendRequests, 
-     acceptFriendRequest, 
-     declineFriendRequest, 
+     checkExistingFriendship,
+     sendFriendRequest,
+     getFriendRequests,
+     getPendingRequestsSentByUser,
+     acceptFriendRequest,
+     declineFriendRequest,
      getFriends, 
      removeFriend, 
      sendMessage, 

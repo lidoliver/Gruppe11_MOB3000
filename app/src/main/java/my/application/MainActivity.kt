@@ -22,6 +22,8 @@ import my.application.ui.components.BottomNavigationBar
 import my.application.ui.screen.mainmenu.MainMenuScreen
 import my.application.ui.screen.messages.ConversationScreen
 import my.application.ui.screen.friends.FriendsScreen
+import my.application.ui.screen.friends.FriendSearchScreen
+import my.application.ui.screen.friends.FriendRequestsScreen
 import my.application.ui.screen.myprofile.MyProfileScreen
 import my.application.ui.screen.startround.StartRoundScreen
 import my.application.ui.screen.tips.TipsScreen
@@ -103,6 +105,12 @@ fun AppNavigation() {
             }
             composable("friends") {
                 FriendsScreen(navController = navController)
+            }
+            composable("friend_search") {
+                FriendSearchScreen(navController = navController)
+            }
+            composable("friend_requests") {
+                FriendRequestsScreen(navController = navController)
             }
             composable("player_history") { backStackEntry ->
                 PlayerHistoryScreen(navController = navController)

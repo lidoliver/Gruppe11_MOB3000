@@ -62,14 +62,32 @@ router.get('/search-users',
             }
             
             // Get the current user's email
-            const userEmail = req.user.email;
-            
+            const userEmail = req.user.epost;
+
             // Get search results
             const results = await db.searchUsers(searchTerm);
             
-            // Remove the current user from results (can't add yourself)
-            const filteredResults = results.filter(user => user.epost !== userEmail);
-            
+            // Get current user's friends and pending requests
+            const friends = await db.getFriends(userEmail);
+            const friendEmails = new Set(friends.map(f => f.friend_email));
+
+            // Get all pending requests (both sent and received)
+            const sentRequests = await db.getPendingRequestsSentByUser(userEmail);
+            const receivedRequests = await db.getFriendRequests(userEmail);
+            const pendingEmails = new Set([
+                ...sentRequests.map(r => r.friend_email),
+                ...receivedRequests.map(r => r.user_email)
+            ]);
+
+            // Filter: exclude current user, existing friends, and pending requests
+            // Only show users with role='user'
+            const filteredResults = results.filter(user =>
+                user.epost !== userEmail &&
+                (user.role === 'user' || !user.role) &&
+                !friendEmails.has(user.epost) &&
+                !pendingEmails.has(user.epost)
+            );
+
             res.status(200).json(filteredResults);
         } catch (error) {
             console.error('Error searching users:', error);
