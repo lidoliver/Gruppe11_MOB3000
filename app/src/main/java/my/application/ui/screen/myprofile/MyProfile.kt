@@ -41,18 +41,32 @@ fun MyProfileScreen(
     val authManager = AuthManager.getInstance(context)
     val userEmail by authManager.getUserEmailFlow().collectAsState(initial = null)
     val uiState = viewModel.uiState
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
 
     // Check authentication and redirect to login if not authenticated
     LaunchedEffect(userEmail) {
-        val email = userEmail
-        if (email == null) {
+        if (userEmail == null) {
             // User is not logged in, redirect to login
             navController.navigate("login") {
-                popUpTo("myprofile") { inclusive = true }
+                popUpTo("main_menu") { inclusive = false }
             }
-        } else {
-            // User is logged in, load their profile
+        }
+    }
+
+    // If not authenticated, show loading and return early
+    if (userEmail == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    // Load user profile when email is available
+    LaunchedEffect(userEmail) {
+        userEmail?.let { email ->
             viewModel.loadUserProfile(email)
         }
     }
