@@ -13,9 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
-import androidx.lifecycle.viewmodel.compose.viewModel
 import my.application.ui.viewmodel.CoursesViewModel
 import my.application.data.remote.dto.CourseDto
 
@@ -30,9 +34,17 @@ data class Course(
 
 @Composable
 fun BanevelgingAleneScreen(
-    navController: NavController,
-    viewModel: CoursesViewModel = viewModel() // Add ViewModel parameter
+    navController: NavController
 ) {
+    val context = LocalContext.current
+    val viewModel: CoursesViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer {
+                CoursesViewModel(context.applicationContext as android.app.Application)
+            }
+        }
+    )
+
     val scrollState = rememberScrollState()
 
 
@@ -42,16 +54,14 @@ fun BanevelgingAleneScreen(
     val error by viewModel.error.collectAsState(initial = null)
 
     // Convert CourseDto to Course for UI display
-    // Replace lines 43-51 with this:
-    // Replace lines 43-51 with this:
-    val courses = courseDtos?.map { dto ->
+    val courses = courseDtos.map { dto ->
         Course(
             id = dto.courseId,
             name = dto.courseName,
             holeCount = dto.holeCount,
             description = "${dto.city} - ${if (dto.isProLevel) "Pro" else "Standard"}"
         )
-    } ?: emptyList()
+    }
 
 
 
