@@ -43,6 +43,11 @@ fun FriendsScreen(
 
     var searchQuery by remember { mutableStateOf("") }
 
+    // Reload friends when screen is displayed
+    LaunchedEffect(Unit) {
+        viewModel.loadFriends()
+    }
+
     // Filter friends based on search query
     val filteredFriends = remember(searchQuery, friends) {
         if (searchQuery.isBlank()) {

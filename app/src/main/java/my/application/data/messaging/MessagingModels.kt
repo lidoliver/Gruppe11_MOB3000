@@ -1,149 +1,249 @@
 package my.application.data.messaging
 
+import android.util.Log
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import my.application.data.remote.dto.ConversationDto
+import my.application.data.remote.dto.MessageDto
+import my.application.data.repository.MessagesRepository
+import my.application.data.repository.UserRepository
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
+
 /**
  * Data models for messaging feature
- * These models mirror the database structure and will be used for both demo and real data
+ * Populated from the database via backend API
  */
 
 /**
  * Represents a conversation/contact in the message list
- * This will be populated from the database in the future
  */
 data class Conversation(
     val id: Int,
     val contactId: Int,
+    val contactEmail: String,
     val contactName: String,
     val lastMessagePreview: String,
     val timestamp: String,
     val isRead: Boolean = false,
-    val avatarColor: Long // Stored as Long for database compatibility (will use Color(avatarColor) in UI)
+    val avatarColor: Long
 )
 
 /**
  * Represents an individual message in a conversation
- * This will be populated from the database in the future
  */
 data class ChatMessage(
     val id: Int,
     val conversationId: Int,
     val senderId: Int,
-    val text: String, // Will be encrypted in database
+    val text: String,
     val timestamp: String,
     val isFromMe: Boolean,
     val isRead: Boolean = true
 )
 
 /**
- * Repository for demo data
- * TODO: Replace with actual database repository when backend is ready
+ * Repository for messaging with database integration
  */
-object MessagingDemoRepository {
+class MessagingRepository(
+    private val messagesRepository: MessagesRepository = MessagesRepository(),
+    private val userRepository: UserRepository = UserRepository.getInstance()
+) {
+
+    // Simple encryption key - In production, use Android Keystore
+    private val ENCRYPTION_KEY = "MySecureKey12345" // 16 chars for AES-128
 
     /**
-     * Demo conversations - Replace with database query
-     * Future: SELECT * FROM conversations WHERE user_id = current_user ORDER BY timestamp DESC
+     * Get all conversations for the current user
      */
-    fun getDemoConversations(): List<Conversation> {
-        return listOf(
-            Conversation(
-                id = 1,
-                contactId = 101,
-                contactName = "Erik Hansen",
-                lastMessagePreview = "Hei! Skal du spille i helgen?",
-                timestamp = "10:30",
-                isRead = false,
-                avatarColor = 0xFF6750A4
-            ),
-            Conversation(
-                id = 2,
-                contactId = 102,
-                contactName = "Maria Johansen",
-                lastMessagePreview = "Gratulerer med ny rekord!",
-                timestamp = "I går",
-                isRead = true,
-                avatarColor = 0xFF625B71
-            ),
-            Conversation(
-                id = 3,
-                contactId = 103,
-                contactName = "Lars Olsen",
-                lastMessagePreview = "Møtes vi på Ekeberg bane kl 14?",
-                timestamp = "I går",
-                isRead = true,
-                avatarColor = 0xFF7D5260
-            ),
-            Conversation(
-                id = 4,
-                contactId = 104,
-                contactName = "Disc Golf Klubben",
-                lastMessagePreview = "Nytt arrangement neste onsdag!",
-                timestamp = "2 dager siden",
-                isRead = true,
-                avatarColor = 0xFF006874
-            ),
-            Conversation(
-                id = 5,
-                contactId = 105,
-                contactName = "Sofie Berg",
-                lastMessagePreview = "Takk for sist! Det var gøy 🥏",
-                timestamp = "3 dager siden",
-                isRead = true,
-                avatarColor = 0xFF8E4585
-            )
-        )
+    fun getConversations(): Flow<List<Conversation>> = flow {
+        val token = userRepository.getAuthToken()
+        if (token == null) {
+            Log.e("MessagingRepository", "No auth token available")
+            emit(emptyList())
+            return@flow
+        }
+
+        val cleanToken = token.removePrefix("Bearer ")
+        messagesRepository.getConversations(cleanToken)
+            .onSuccess { conversationsDto ->
+                emit(conversationsDto.map { it.toConversation() })
+            }
+            .onFailure { exception ->
+                Log.e("MessagingRepository", "Error loading conversations", exception)
+                emit(emptyList())
+            }
     }
 
     /**
-     * Demo messages for a specific conversation - Replace with database query
-     * Future: SELECT * FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC
-     * Note: Messages will be encrypted in database and decrypted here
+     * Get all messages for a specific conversation by contact email
      */
-    fun getDemoMessages(conversationId: Int, currentUserId: Int = 1): List<ChatMessage> {
-        return when (conversationId) {
-            1 -> listOf(
-                ChatMessage(1, 1, 101, "Hei! Skal du spille i helgen?", "10:25", false),
-                ChatMessage(2, 1, currentUserId, "Ja, jeg tenkte å dra på lørdag!", "10:30", true),
-                ChatMessage(3, 1, 101, "Perfekt! Ekeberg bane?", "10:31", false),
-                ChatMessage(4, 1, currentUserId, "Høres bra ut! Klokken 14?", "10:32", true),
-                ChatMessage(5, 1, 101, "Deal! Ses der 🥏", "10:33", false)
-            )
-            2 -> listOf(
-                ChatMessage(6, 2, 102, "Gratulerer med ny rekord!", "09:15", false),
-                ChatMessage(7, 2, currentUserId, "Takk skal du ha! 😊", "09:20", true),
-                ChatMessage(8, 2, 102, "Du må lære meg dine triks!", "09:21", false),
-                ChatMessage(9, 2, currentUserId, "Selvfølgelig! Vi kan øve sammen neste uke", "09:25", true)
-            )
-            3 -> listOf(
-                ChatMessage(10, 3, 103, "Møtes vi på Ekeberg bane kl 14?", "08:45", false),
-                ChatMessage(11, 3, currentUserId, "Ja, det passer fint!", "09:00", true),
-                ChatMessage(12, 3, 103, "Supert! Tar med ekstra disker", "09:05", false)
-            )
-            4 -> listOf(
-                ChatMessage(13, 4, 104, "Nytt arrangement neste onsdag!", "12:00", false),
-                ChatMessage(14, 4, currentUserId, "Hva er tidspunktet?", "12:30", true),
-                ChatMessage(15, 4, 104, "Vi starter kl 18:00. Påmelding senest mandag.", "12:35", false),
-                ChatMessage(16, 4, currentUserId, "Flott, jeg melder meg på!", "12:40", true)
-            )
-            5 -> listOf(
-                ChatMessage(17, 5, 105, "Takk for sist! Det var gøy 🥏", "15:20", false),
-                ChatMessage(18, 5, currentUserId, "Ja, det var virkelig morsomt!", "15:25", true),
-                ChatMessage(19, 5, 105, "Må gjøre det igjen snart", "15:26", false),
-                ChatMessage(20, 5, currentUserId, "Absolutt! Neste helg kanskje?", "15:30", true),
-                ChatMessage(21, 5, 105, "Perfekt! 👍", "15:31", false)
-            )
-            else -> emptyList()
+    fun getMessages(contactEmail: String): Flow<List<ChatMessage>> = flow {
+        val token = userRepository.getAuthToken()
+        val currentUserEmail = userRepository.getUserEmail()
+
+        if (token == null || currentUserEmail == null) {
+            Log.e("MessagingRepository", "No auth token or user email available")
+            emit(emptyList())
+            return@flow
+        }
+
+        val cleanToken = token.removePrefix("Bearer ")
+        messagesRepository.getMessages(contactEmail, cleanToken)
+            .onSuccess { messagesDto ->
+                emit(messagesDto.map { it.toChatMessage(currentUserEmail, contactEmail) })
+            }
+            .onFailure { exception ->
+                Log.e("MessagingRepository", "Error loading messages", exception)
+                emit(emptyList())
+            }
+    }
+
+    /**
+     * Send a message to a contact
+     */
+    suspend fun sendMessage(contactEmail: String, text: String): Result<ChatMessage> {
+        val token = userRepository.getAuthToken()
+        val currentUserEmail = userRepository.getUserEmail()
+
+        if (token == null || currentUserEmail == null) {
+            return Result.failure(Exception("Not authenticated"))
+        }
+
+        val cleanToken = token.removePrefix("Bearer ")
+
+        // Note: Backend doesn't return full message, so we create a temporary one
+        return messagesRepository.sendMessage(contactEmail, text, cleanToken)
+            .map {
+                ChatMessage(
+                    id = 0, // Will be replaced on refresh
+                    conversationId = contactEmail.hashCode(),
+                    senderId = currentUserEmail.hashCode(),
+                    text = text,
+                    timestamp = ZonedDateTime.now().toString(),
+                    isFromMe = true,
+                    isRead = true
+                )
+            }
+    }
+
+    /**
+     * Mark messages as read (handled automatically by backend when fetching messages)
+     */
+    suspend fun markAsRead(contactEmail: String): Result<Unit> {
+        // Backend automatically marks messages as read when getMessages is called
+        val token = userRepository.getAuthToken()
+        if (token == null) {
+            return Result.failure(Exception("Not authenticated"))
+        }
+
+        val cleanToken = token.removePrefix("Bearer ")
+        return messagesRepository.getMessages(contactEmail, cleanToken)
+            .map { Unit }
+    }
+
+    /**
+     * Encrypt a message (placeholder for future end-to-end encryption)
+     * Currently returns plain text as backend doesn't support encryption yet
+     */
+    fun encryptMessage(text: String): String {
+        return try {
+            val key = SecretKeySpec(ENCRYPTION_KEY.toByteArray(), "AES")
+            val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+            cipher.init(Cipher.ENCRYPT_MODE, key)
+            val encrypted = cipher.doFinal(text.toByteArray())
+            Base64.getEncoder().encodeToString(encrypted)
+        } catch (e: Exception) {
+            Log.e("MessagingRepository", "Encryption error, returning plain text", e)
+            text // Fallback to plain text
         }
     }
 
     /**
-     * TODO: Implement when database is ready
-     * Future functions to implement:
-     * - suspend fun sendMessage(conversationId: Int, text: String): Result<ChatMessage>
-     * - suspend fun markAsRead(conversationId: Int): Result<Unit>
-     * - suspend fun getConversations(): Flow<List<Conversation>>
-     * - suspend fun getMessages(conversationId: Int): Flow<List<ChatMessage>>
-     * - fun encryptMessage(text: String): String
-     * - fun decryptMessage(encryptedText: String): String
+     * Decrypt a message (placeholder for future end-to-end encryption)
+     * Currently returns plain text as backend doesn't support encryption yet
      */
+    fun decryptMessage(encryptedText: String): String {
+        return try {
+            val key = SecretKeySpec(ENCRYPTION_KEY.toByteArray(), "AES")
+            val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+            cipher.init(Cipher.DECRYPT_MODE, key)
+            val decoded = Base64.getDecoder().decode(encryptedText)
+            val decrypted = cipher.doFinal(decoded)
+            String(decrypted)
+        } catch (e: Exception) {
+            Log.e("MessagingRepository", "Decryption error, returning as-is", e)
+            encryptedText // Fallback to returning as-is
+        }
+    }
+
+    // Conversion functions
+
+    private fun ConversationDto.toConversation(): Conversation {
+        return Conversation(
+            id = contactEmail.hashCode(),
+            contactId = contactEmail.hashCode(),
+            contactEmail = contactEmail,
+            contactName = contactUsername,
+            lastMessagePreview = lastMessage ?: "No messages yet",
+            timestamp = formatTimestamp(lastMessageTime),
+            isRead = unreadCount == 0,
+            avatarColor = generateColorFromEmail(contactEmail)
+        )
+    }
+
+    private fun MessageDto.toChatMessage(currentUserEmail: String, contactEmail: String): ChatMessage {
+        return ChatMessage(
+            id = messageId,
+            conversationId = contactEmail.hashCode(),
+            senderId = senderEmail.hashCode(),
+            text = content,
+            timestamp = formatTimestamp(createdAt),
+            isFromMe = senderEmail == currentUserEmail,
+            isRead = isRead
+        )
+    }
+
+    private fun formatTimestamp(timestamp: String): String {
+        return try {
+            val dateTime = ZonedDateTime.parse(timestamp)
+            val now = ZonedDateTime.now()
+
+            val daysBetween = ChronoUnit.DAYS.between(dateTime.toLocalDate(), now.toLocalDate())
+
+            when {
+                daysBetween == 0L -> dateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                daysBetween == 1L -> "I går"
+                daysBetween < 7 -> "$daysBetween dager siden"
+                else -> dateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+            }
+        } catch (e: Exception) {
+            Log.e("MessagingRepository", "Error parsing timestamp: $timestamp", e)
+            timestamp
+        }
+    }
+
+    private fun generateColorFromEmail(email: String): Long {
+        val colors = listOf(
+            0xFF6750A4,
+            0xFF625B71,
+            0xFF7D5260,
+            0xFF006874,
+            0xFF8E4585,
+            0xFF4A5E3F,
+            0xFF7C4DFF,
+            0xFF00BFA5,
+            0xFFFF6F00
+        )
+        val hash = email.hashCode()
+        return colors[(hash.absoluteValue % colors.size)]
+    }
+
+    private val Int.absoluteValue: Int
+        get() = if (this < 0) -this else this
 }
 

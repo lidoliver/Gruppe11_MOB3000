@@ -95,5 +95,23 @@ interface BackendApiService {
         @Path("bane_id") baneId: String,
         @Header("Authorization") token: String
     ): Response<TrackDto>
+
+    // Message endpoints
+    @GET("api/messages/conversations")
+    suspend fun getConversations(
+        @Header("Authorization") token: String
+    ): Response<List<ConversationDto>>
+
+    @GET("api/messages/conversation/{contactEmail}")
+    suspend fun getMessages(
+        @Path("contactEmail") contactEmail: String,
+        @Header("Authorization") token: String
+    ): Response<List<MessageDto>>
+
+    @POST("api/messages")
+    suspend fun sendMessage(
+        @Body request: SendMessageRequest,
+        @Header("Authorization") token: String
+    ): Response<SendMessageResponse>
 }
 

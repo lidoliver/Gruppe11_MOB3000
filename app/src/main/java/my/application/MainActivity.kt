@@ -21,6 +21,7 @@ import androidx.navigation.navArgument
 import my.application.ui.components.BottomNavigationBar
 import my.application.ui.screen.mainmenu.MainMenuScreen
 import my.application.ui.screen.messages.ConversationScreen
+import my.application.ui.screen.messages.MessagesScreen
 import my.application.ui.screen.friends.FriendsScreen
 import my.application.ui.screen.friends.FriendSearchScreen
 import my.application.ui.screen.friends.FriendRequestsScreen
@@ -106,6 +107,9 @@ fun AppNavigation() {
             composable("friends") {
                 FriendsScreen(navController = navController)
             }
+            composable("messages") {
+                MessagesScreen(navController = navController)
+            }
             composable("friend_search") {
                 FriendSearchScreen(navController = navController)
             }
@@ -116,18 +120,18 @@ fun AppNavigation() {
                 PlayerHistoryScreen(navController = navController)
             }
             composable(
-                route = "conversation/{contactId}/{contactName}",
+                route = "conversation/{contactEmail}/{contactName}",
                 arguments = listOf(
-                    navArgument("contactId") { type = NavType.IntType },
+                    navArgument("contactEmail") { type = NavType.StringType },
                     navArgument("contactName") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getInt("contactId") ?: 0
+                val contactEmail = backStackEntry.arguments?.getString("contactEmail") ?: ""
                 val contactName = backStackEntry.arguments?.getString("contactName") ?: ""
                 ConversationScreen(
                     navController = navController,
                     contactName = contactName,
-                    contactId = contactId
+                    contactEmail = contactEmail
                 )
             }
             composable("tips") {

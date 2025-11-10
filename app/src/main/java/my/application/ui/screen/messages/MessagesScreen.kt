@@ -18,20 +18,45 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.data.messaging.Conversation
-import my.application.data.messaging.MessagingDemoRepository
 
 @Composable
-fun MessagesScreen(navController: NavController) {
-    // TODO: Replace with actual database call when backend is ready
-    // Future: val conversations by viewModel.conversations.collectAsState()
-    val conversations = remember {
-        MessagingDemoRepository.getDemoConversations()
-    }
+fun MessagesScreen(
+    navController: NavController,
+    viewModel: MessagesViewModel = viewModel()
+) {
+    val conversations by viewModel.conversations.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
+
+    // Reload conversations when screen is displayed
+    LaunchedEffect(Unit) {
+        viewModel.loadConversations()
+    }
+
+    // Filter conversations based on search query
+    val filteredConversations = remember(searchQuery, conversations) {
+        if (searchQuery.isBlank()) {
+            conversations
+        } else {
+            conversations.filter {
+                it.contactName.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    // Show error snackbar if there's an error
+    error?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            // You can show a snackbar here if needed
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -69,49 +94,61 @@ fun MessagesScreen(navController: NavController) {
             )
 
             // Messages list
-            if (conversations.isEmpty()) {
-                // Empty state
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Ingen meldinger",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Dine meldinger vil vises her",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
+            when {
+                isLoading -> {
+                    // Loading state
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(conversations) { conversation ->
-                        ConversationItem(
-                            conversation = conversation,
-                            onClick = {
-                                navController.navigate("conversation/${conversation.id}/${conversation.contactName}")
-                            }
+                filteredConversations.isEmpty() -> {
+                    // Empty state
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 72.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Ingen meldinger",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Dine meldinger vil vises her",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(filteredConversations) { conversation ->
+                            ConversationItem(
+                                conversation = conversation,
+                                onClick = {
+                                    navController.navigate("conversation/${conversation.contactEmail}/${conversation.contactName}")
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 72.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package my.application.data.repository
 
+import android.content.Context
 import android.util.Log
 import my.application.data.remote.BackendApi
 import my.application.data.remote.dto.LoginRequest
@@ -12,12 +13,19 @@ import my.application.data.remote.dto.UserDto
 class UserRepository {
     private val api = BackendApi.service
     private var authToken: String? = null
+    private var userEmail: String? = null
 
     fun setAuthToken(token: String) {
         authToken = "Bearer $token"
     }
 
     fun getAuthToken(): String? = authToken
+
+    fun setUserEmail(email: String) {
+        userEmail = email
+    }
+
+    fun getUserEmail(): String? = userEmail
 
     suspend fun register(email: String, password: String): Result<RegisterResponse> {
         return try {
@@ -43,6 +51,7 @@ class UserRepository {
             if (response.isSuccessful && response.body() != null) {
                 val loginResponse = response.body()!!
                 setAuthToken(loginResponse.token)
+                setUserEmail(loginResponse.email)
                 Result.success(loginResponse)
             } else {
                 Result.failure(Exception("Login failed: ${response.message()}"))

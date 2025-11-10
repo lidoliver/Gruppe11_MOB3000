@@ -16,26 +16,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.data.messaging.ChatMessage
-import my.application.data.messaging.MessagingDemoRepository
 
 @Composable
 fun ConversationScreen(
     navController: NavController,
     contactName: String,
-    contactId: Int
+    contactEmail: String,
+    viewModel: ConversationViewModel = viewModel(
+        factory = ConversationViewModelFactory(contactEmail)
+    )
 ) {
-    // TODO: Replace with actual database call when backend is ready
-    // Future: val messages by viewModel.getMessages(contactId).collectAsState()
-    // Note: Messages will be encrypted in database and automatically decrypted by repository
-    val conversation = remember(contactId) {
-        MessagingDemoRepository.getDemoMessages(contactId)
-    }
+    val messages by viewModel.messages.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isSending by viewModel.isSending.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+
+    // Scroll to bottom when messages change
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    // Show error snackbar if there's an error
+    error?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            // You can show a snackbar here if needed
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -52,18 +68,29 @@ fun ConversationScreen(
                 .padding(innerPadding)
         ) {
             // Messages list
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                reverseLayout = false
-            ) {
-                items(conversation) { message ->
-                    ChatBubble(message = message)
+            Box(modifier = Modifier.weight(1f)) {
+                if (isLoading && messages.isEmpty()) {
+                    // Loading state
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        reverseLayout = false
+                    ) {
+                        items(messages) { message ->
+                            ChatBubble(message = message)
+                        }
+                    }
                 }
             }
 
@@ -91,16 +118,15 @@ fun ConversationScreen(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         ),
-                        maxLines = 4
+                        maxLines = 4,
+                        enabled = !isSending
                     )
 
                     // Send button
                     FilledIconButton(
                         onClick = {
-                            // TODO: Send message functionality with encryption
-                            // Future: viewModel.sendMessage(conversationId, messageText)
-                            // The message will be encrypted before storing in database
                             if (messageText.isNotBlank()) {
+                                viewModel.sendMessage(messageText)
                                 messageText = ""
                             }
                         },
@@ -108,12 +134,20 @@ fun ConversationScreen(
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                        ),
+                        enabled = !isSending && messageText.isNotBlank()
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send"
-                        )
+                        if (isSending) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send"
+                            )
+                        }
                     }
                 }
             }

@@ -1226,7 +1226,7 @@ async function getConversations(userEmail) {
       // console.log('Getting conversations for user:', userEmail); <- debuging redskap
       const conversations = await sql`
         WITH conversations AS (
-          SELECT 
+          SELECT
             CASE 
               WHEN sender_email = ${userEmail} THEN receiver_email
               ELSE sender_email
@@ -1234,13 +1234,13 @@ async function getConversations(userEmail) {
             MAX(created_at) as last_message_time,
             COUNT(CASE WHEN receiver_email = ${userEmail} AND is_read = FALSE THEN 1 END) as unread_count,
             (SELECT content FROM mydb.messages
-             WHERE (sender_email = ${userEmail} AND receiver_email = CASE 
-                                                                    WHEN sender_email = ${userEmail} THEN receiver_email 
-                                                                    ELSE sender_email 
+             WHERE (sender_email = ${userEmail} AND receiver_email = CASE
+                                                                    WHEN sender_email = ${userEmail} THEN receiver_email
+                                                                    ELSE sender_email
                                                                   END)
-                OR (receiver_email = ${userEmail} AND sender_email = CASE 
-                                                                    WHEN sender_email = ${userEmail} THEN receiver_email 
-                                                                    ELSE sender_email 
+                OR (receiver_email = ${userEmail} AND sender_email = CASE
+                                                                    WHEN sender_email = ${userEmail} THEN receiver_email
+                                                                    ELSE sender_email
                                                                     END)
              ORDER BY created_at DESC
              LIMIT 1) as last_message
@@ -1249,7 +1249,7 @@ async function getConversations(userEmail) {
           GROUP BY contact_email
         )
         SELECT 
-          c.contact_email, 
+          c.contact_email,
           c.last_message_time,
           c.unread_count,
           c.last_message,

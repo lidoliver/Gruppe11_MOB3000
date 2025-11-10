@@ -37,6 +37,7 @@ class AuthManager(private val context: Context) {
             preferences[EMAIL_KEY] = email
         }
         userRepository.setAuthToken(token)
+        userRepository.setUserEmail(email)
     }
 
     suspend fun getAuthToken(): String? {
@@ -75,8 +76,12 @@ class AuthManager(private val context: Context) {
 
     suspend fun initializeAuth() {
         val token = getAuthToken()
+        val email = getUserEmail()
         if (!token.isNullOrEmpty()) {
             userRepository.setAuthToken(token)
+        }
+        if (!email.isNullOrEmpty()) {
+            userRepository.setUserEmail(email)
         }
     }
 }
