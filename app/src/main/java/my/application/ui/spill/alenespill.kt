@@ -34,6 +34,7 @@ import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.data.GameSession
 import my.application.data.GameSessionManager
+import my.application.data.repository.TrackRepository
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -48,6 +49,7 @@ fun PlayDiscGolfScreen(
 ) {
     val context = LocalContext.current
     val sessionManager = remember { GameSessionManager(context) }
+    val trackRepository = remember { TrackRepository(context) }
 
     var courseName by remember { mutableStateOf("Disc Golf Bane") }
     var currentHole by remember { mutableIntStateOf(1) }
@@ -60,10 +62,10 @@ fun PlayDiscGolfScreen(
     val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
 
-    // Load data - check for saved session first, then load new course
+    // Load data - check for saved session first, then load course from database
     LaunchedEffect(courseId, sessionId) {
         loading = true
-        delay(500) // Simulate API call
+        error = null
 
         // Try to restore saved session if it matches current course
         val savedSession = sessionManager.getGameSession()
@@ -75,50 +77,48 @@ fun PlayDiscGolfScreen(
             currentHole = savedSession.currentHole
             totalHoles = savedSession.totalHoles
             holeScores = savedSession.holeScores
-        } else {
-            // Start new session
-            // Determine hole count from courseId
-            val holes = when {
-                courseId?.contains("6-holes") == true -> 6
-                courseId?.contains("9-holes") == true -> 9
-                courseId?.contains("12-holes") == true -> 12
-                courseId?.contains("15-holes") == true -> 15
-                courseId?.contains("18-holes") == true -> 18
-                else -> 18 // Default to 18
-            }
+            loading = false
+        } else if (courseId != null) {
+            // Fetch course from backend database
+            try {
+                val result = trackRepository.getTrackById(courseId)
+                result.onSuccess { track ->
+                    // Use data from database
+                    courseName = track.name
+                    totalHoles = track.holes
+                    holeScores = List(track.holes) { 0 }
 
-            totalHoles = holes
-            holeScores = List(holes) { 0 }
+                    if (isSessionPlay) {
+                        courseName = "${track.name} - Multiplayer"
+                    }
 
-            if (isSessionPlay) {
-                courseName = "Multiplayer Game - $sessionId"
-            } else {
-                courseName = when (holes) {
-                    6 -> "Demo 6-Hull Bane"
-                    9 -> "Demo 9-Hull Bane"
-                    12 -> "Demo 12-Hull Bane"
-                    15 -> "Demo 15-Hull Bane"
-                    18 -> "Demo 18-Hull Bane"
-                    else -> "Course $courseId"
-                }
-            }
-
-            // Save initial session
-            if (courseId != null) {
-                sessionManager.saveGameSession(
-                    GameSession(
-                        courseId = courseId,
-                        sessionId = sessionId,
-                        courseName = courseName,
-                        currentHole = currentHole,
-                        totalHoles = totalHoles,
-                        holeScores = holeScores
+                    // Save initial session
+                    sessionManager.saveGameSession(
+                        GameSession(
+                            courseId = courseId,
+                            sessionId = sessionId,
+                            courseName = courseName,
+                            currentHole = currentHole,
+                            totalHoles = totalHoles,
+                            holeScores = holeScores
+                        )
                     )
-                )
+                    loading = false
+                }.onFailure { exception ->
+                    error = "Failed to load course: ${exception.message}"
+                    loading = false
+                }
+            } catch (e: Exception) {
+                error = "Error loading course data: ${e.message}"
+                loading = false
             }
+        } else {
+            // Fallback to demo data if no courseId
+            totalHoles = 18
+            holeScores = List(18) { 0 }
+            courseName = "Demo Course"
+            loading = false
         }
-
-        loading = false
     }
 
     // Auto-save when state changes

@@ -85,5 +85,15 @@ interface BackendApiService {
         @Path("friendEmail") friendEmail: String,
         @Header("Authorization") token: String
     ): Response<FriendRequestResponseDto>
+
+    // Course/Track endpoints
+    @GET("api/baneoversikt")
+    suspend fun getAllTracks(): Response<List<TrackDto>>
+
+    @GET("api/bane/{bane_id}")
+    suspend fun getTrackById(
+        @Path("bane_id") baneId: String,
+        @Header("Authorization") token: String
+    ): Response<TrackDto>
 }
 

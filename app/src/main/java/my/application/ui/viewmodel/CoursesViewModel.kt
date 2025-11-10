@@ -1,15 +1,16 @@
 package my.application.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import my.application.data.remote.dto.CourseDto
-import my.application.data.repository.DiscGolfRepository
+import my.application.data.repository.TrackRepository
 
-class CoursesViewModel : ViewModel() {
-    private val repository = DiscGolfRepository()
+class CoursesViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = TrackRepository(application.applicationContext)
 
     private val _courses = MutableStateFlow<List<CourseDto>>(emptyList())
     val courses: StateFlow<List<CourseDto>> = _courses
@@ -24,8 +25,19 @@ class CoursesViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            repository.getAllCourses()
-                .onSuccess { _courses.value = it }
+            repository.getAllTracks()
+                .onSuccess { tracks ->
+                    // Convert TrackDto to CourseDto
+                    _courses.value = tracks.map { track ->
+                        CourseDto(
+                            courseId = track.baneId.toString(),
+                            courseName = track.name,
+                            holeCount = track.holes,
+                            city = "Unknown", // Not available in TrackDto
+                            isProLevel = false // Not available in TrackDto
+                        )
+                    }
+                }
                 .onFailure { _error.value = it.message }
             _isLoading.value = false
         }
