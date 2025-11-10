@@ -25,11 +25,20 @@ class MessagesRepository {
 
     suspend fun getMessages(contactEmail: String, token: String): Result<List<MessageDto>> {
         return try {
+            Log.d("MessagesRepository", "Fetching messages for: $contactEmail")
             val response = api.getMessages(contactEmail, "Bearer $token")
+            Log.d("MessagesRepository", "Response code: ${response.code()}")
             if (response.isSuccessful) {
-                Result.success(response.body() ?: emptyList())
+                val messages = response.body() ?: emptyList()
+                Log.d("MessagesRepository", "Received ${messages.size} messages from API")
+                messages.forEachIndexed { index, msg ->
+                    Log.d("MessagesRepository", "Message $index: from=${msg.senderEmail}, content=${msg.content.take(20)}")
+                }
+                Result.success(messages)
             } else {
-                Result.failure(Exception("Failed to get messages: ${response.message()}"))
+                val error = "Failed to get messages: ${response.code()} ${response.message()}"
+                Log.e("MessagesRepository", error)
+                Result.failure(Exception(error))
             }
         } catch (e: Exception) {
             Log.e("MessagesRepository", "Get messages error", e)

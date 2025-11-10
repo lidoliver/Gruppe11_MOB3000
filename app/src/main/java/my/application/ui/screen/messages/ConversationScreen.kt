@@ -1,5 +1,6 @@
 package my.application.ui.screen.messages
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,11 +16,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.data.messaging.ChatMessage
+import kotlin.collections.forEachIndexed
 
 @Composable
 fun ConversationScreen(
@@ -38,7 +41,14 @@ fun ConversationScreen(
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    // Scroll to bottom when messages change
+    // Log messages for debugging
+    LaunchedEffect(messages) {
+        Log.d("ConversationScreen", "Messages updated: ${messages.size} messages")
+        messages.forEachIndexed { index, msg ->
+            Log.d("ConversationScreen", "  [$index] id=${msg.id}, from=${if(msg.isFromMe) "me" else "them"}, text=${msg.text.take(30)}")
+        }
+    }
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -48,7 +58,7 @@ fun ConversationScreen(
     // Show error snackbar if there's an error
     error?.let { errorMessage ->
         LaunchedEffect(errorMessage) {
-            // You can show a snackbar here if needed
+            Log.e("ConversationScreen", "Error: $errorMessage")
             viewModel.clearError()
         }
     }
@@ -77,17 +87,30 @@ fun ConversationScreen(
                     ) {
                         CircularProgressIndicator()
                     }
+                } else if (messages.isEmpty()) {
+                    // Empty state
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Ingen meldinger ennå.\nSend den første meldingen!",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 } else {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxSize()
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         reverseLayout = false
                     ) {
-                        items(messages) { message ->
+                        items(messages, key = { it.id }) { message ->
                             ChatBubble(message = message)
                         }
                     }
@@ -126,11 +149,12 @@ fun ConversationScreen(
                     FilledIconButton(
                         onClick = {
                             if (messageText.isNotBlank()) {
-                                viewModel.sendMessage(messageText)
+                                Log.d("ConversationScreen", "Send button clicked with text: $messageText")
+                                val textToSend = messageText
+                                viewModel.sendMessage(textToSend)
                                 messageText = ""
                             }
                         },
-                        modifier = Modifier.size(48.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary

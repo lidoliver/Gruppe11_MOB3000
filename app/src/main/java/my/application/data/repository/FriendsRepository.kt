@@ -212,6 +212,7 @@ class FriendsRepository private constructor() {
             userId = 0, // Not needed for current use case
             name = fullName,
             username = dto.friendUsername,
+            email = dto.friendEmail,
             status = FriendStatus.OFFLINE, // TODO: Implement real-time online status
             lastPlayed = lastPlayedText,
             gamesPlayed = dto.gamesPlayed,

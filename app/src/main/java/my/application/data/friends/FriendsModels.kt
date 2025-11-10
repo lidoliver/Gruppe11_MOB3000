@@ -14,6 +14,7 @@ data class Friend(
     val userId: Int,
     val name: String,
     val username: String,
+    val email: String, // Friend's email address for messaging and API calls
     val status: FriendStatus = FriendStatus.ONLINE,
     val lastPlayed: String? = null, // Last time they played
     val gamesPlayed: Int = 0,

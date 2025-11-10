@@ -86,6 +86,9 @@ class MessagingRepository(
         val token = userRepository.getAuthToken()
         val currentUserEmail = userRepository.getUserEmail()
 
+        Log.d("MessagingRepository", "Loading messages for $contactEmail")
+        Log.d("MessagingRepository", "Auth token available: ${token != null}, User email: $currentUserEmail")
+
         if (token == null || currentUserEmail == null) {
             Log.e("MessagingRepository", "No auth token or user email available")
             emit(emptyList())
@@ -95,7 +98,10 @@ class MessagingRepository(
         val cleanToken = token.removePrefix("Bearer ")
         messagesRepository.getMessages(contactEmail, cleanToken)
             .onSuccess { messagesDto ->
-                emit(messagesDto.map { it.toChatMessage(currentUserEmail, contactEmail) })
+                Log.d("MessagingRepository", "Received ${messagesDto.size} messages from API")
+                val chatMessages = messagesDto.map { it.toChatMessage(currentUserEmail, contactEmail) }
+                Log.d("MessagingRepository", "Emitting ${chatMessages.size} chat messages")
+                emit(chatMessages)
             }
             .onFailure { exception ->
                 Log.e("MessagingRepository", "Error loading messages", exception)
@@ -115,10 +121,9 @@ class MessagingRepository(
         }
 
         val cleanToken = token.removePrefix("Bearer ")
-
-        // Note: Backend doesn't return full message, so we create a temporary one
         return messagesRepository.sendMessage(contactEmail, text, cleanToken)
             .map {
+                // Note: Backend doesn't return full message, so we create a temporary one
                 ChatMessage(
                     id = 0, // Will be replaced on refresh
                     conversationId = contactEmail.hashCode(),
@@ -134,8 +139,7 @@ class MessagingRepository(
     /**
      * Mark messages as read (handled automatically by backend when fetching messages)
      */
-    suspend fun markAsRead(contactEmail: String): Result<Unit> {
-        // Backend automatically marks messages as read when getMessages is called
+    suspend fun markMessagesAsRead(contactEmail: String): Result<Unit> {
         val token = userRepository.getAuthToken()
         if (token == null) {
             return Result.failure(Exception("Not authenticated"))

@@ -8,12 +8,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import my.application.data.messaging.ChatMessage
-import my.application.data.messaging.MessagingRepository
+import my.application.data.messaging.PollingMessagingRepository
 
 class ConversationViewModel(
     private val contactEmail: String
 ) : ViewModel() {
-    private val repository = MessagingRepository()
+    private val repository = PollingMessagingRepository()
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
@@ -38,12 +38,13 @@ class ConversationViewModel(
 
             try {
                 repository.getMessages(contactEmail).collect { messages ->
+                    Log.d("ConversationViewModel", "📩 Received ${messages.size} messages for $contactEmail")
                     _messages.value = messages
-                    _isLoading.value = false
+                    if (_isLoading.value) _isLoading.value = false
                 }
             } catch (e: Exception) {
-                Log.e("ConversationViewModel", "Error loading messages", e)
-                _error.value = e.message
+                Log.e("ConversationViewModel", "❌ Error loading messages", e)
+                _error.value = e.message ?: "Failed to load messages"
                 _messages.value = emptyList()
                 _isLoading.value = false
             }
@@ -57,16 +58,16 @@ class ConversationViewModel(
             _isSending.value = true
             _error.value = null
 
+            Log.d("ConversationViewModel", "📤 Sending message to $contactEmail: $text")
+
             repository.sendMessage(contactEmail, text)
                 .onSuccess { newMessage ->
-                    // Add the message optimistically to the list
-                    _messages.value = _messages.value + newMessage
-                    // Reload messages to get the actual saved message
-                    loadMessages()
+                    Log.d("ConversationViewModel", "✅ Message sent successfully!")
+                    // Polling will automatically pick up the new message
                 }
                 .onFailure { exception ->
-                    Log.e("ConversationViewModel", "Error sending message", exception)
-                    _error.value = exception.message
+                    Log.e("ConversationViewModel", "❌ Error sending message", exception)
+                    _error.value = exception.message ?: "Failed to send message"
                 }
 
             _isSending.value = false

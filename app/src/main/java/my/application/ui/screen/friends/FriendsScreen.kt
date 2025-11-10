@@ -212,7 +212,7 @@ fun FriendsScreen(
                         FriendItem(
                             friend = friend,
                             onMessageClick = {
-                                navController.navigate("conversation/${friend.id}/${friend.name}")
+                                navController.navigate("conversation/${friend.email}/${friend.name}")
                             },
                             onInviteClick = {
                                 // TODO: Implement invite to play functionality
