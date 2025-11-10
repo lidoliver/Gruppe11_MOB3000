@@ -6,14 +6,14 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import my.application.data.remote.dto.CourseDto
+import my.application.data.remote.dto.TrackDto
 import my.application.data.repository.TrackRepository
 
 class CoursesViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = TrackRepository(application.applicationContext)
 
-    private val _courses = MutableStateFlow<List<CourseDto>>(emptyList())
-    val courses: StateFlow<List<CourseDto>> = _courses
+    private val _courses = MutableStateFlow<List<TrackDto>>(emptyList())
+    val courses: StateFlow<List<TrackDto>> = _courses
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -27,16 +27,7 @@ class CoursesViewModel(application: Application) : AndroidViewModel(application)
             _error.value = null
             repository.getAllTracks()
                 .onSuccess { tracks ->
-                    // Convert TrackDto to CourseDto
-                    _courses.value = tracks.map { track ->
-                        CourseDto(
-                            courseId = track.baneId.toString(),
-                            courseName = track.name,
-                            holeCount = track.holes,
-                            city = "Unknown", // Not available in TrackDto
-                            isProLevel = false // Not available in TrackDto
-                        )
-                    }
+                    _courses.value = tracks
                 }
                 .onFailure { _error.value = it.message }
             _isLoading.value = false

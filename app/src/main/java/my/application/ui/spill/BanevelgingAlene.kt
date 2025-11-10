@@ -15,16 +15,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.ui.viewmodel.CoursesViewModel
-import my.application.data.remote.dto.CourseDto
+import my.application.data.remote.dto.TrackDto
 
 
-// Keep your Course data class
+// Keep your Course data class for UI display
 data class Course(
     val id: String,
     val name: String,
@@ -49,17 +48,17 @@ fun BanevelgingAleneScreen(
 
 
     // Replace the old state variables with ViewModel state
-    val courseDtos by viewModel.courses.collectAsState(initial = emptyList<CourseDto>())
+    val trackDtos by viewModel.courses.collectAsState(initial = emptyList<TrackDto>())
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val error by viewModel.error.collectAsState(initial = null)
 
-    // Convert CourseDto to Course for UI display
-    val courses = courseDtos.map { dto ->
+    // Convert TrackDto to Course for UI display
+    val courses = trackDtos.map { track ->
         Course(
-            id = dto.courseId,
-            name = dto.courseName,
-            holeCount = dto.holeCount,
-            description = "${dto.city} - ${if (dto.isProLevel) "Pro" else "Standard"}"
+            id = track.baneId.toString(),
+            name = track.name,
+            holeCount = track.holes,
+            description = track.descriptionText.takeIf { it.isNotEmpty() }
         )
     }
 
