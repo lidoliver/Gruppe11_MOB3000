@@ -21,6 +21,21 @@ data class FriendDto(
     @Json(name = "friend_username")
     val friendUsername: String,
 
+    @Json(name = "friend_first_name")
+    val friendFirstName: String? = null,
+
+    @Json(name = "friend_last_name")
+    val friendLastName: String? = null,
+
+    @Json(name = "games_played")
+    val gamesPlayed: Int = 0,
+
+    @Json(name = "last_played")
+    val lastPlayed: String? = null,
+
+    @Json(name = "unread_messages")
+    val unreadMessages: Int = 0,
+
     @Json(name = "created_at")
     val createdAt: String? = null
 )

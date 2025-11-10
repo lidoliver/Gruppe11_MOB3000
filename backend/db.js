@@ -1150,10 +1150,36 @@ async function declineFriendRequest(requestId, userEmail) {
 */
 async function getFriends(userEmail) {
     const result = await sql`
-        SELECT f.id, f.user_email, f.friend_email, f.status, f.created_at,
-               b.brukernavn as friend_username
+        SELECT
+            f.id,
+            f.user_email,
+            f.friend_email,
+            f.status,
+            f.created_at,
+            b.brukernavn as friend_username,
+            b.fnavn as friend_first_name,
+            b.enavn as friend_last_name,
+            COALESCE(game_stats.games_played, 0) as games_played,
+            game_stats.last_played,
+            COALESCE(unread_count.unread_messages, 0) as unread_messages
         FROM mydb.friends f
         JOIN mydb.bruker b ON f.friend_email = b.epost
+        LEFT JOIN (
+            SELECT
+                spiller_navn,
+                COUNT(*) as games_played,
+                MAX(dato) as last_played
+            FROM mydb.pointcard
+            GROUP BY spiller_navn
+        ) game_stats ON f.friend_email = game_stats.spiller_navn
+        LEFT JOIN (
+            SELECT
+                sender_email,
+                COUNT(*) as unread_messages
+            FROM mydb.messages
+            WHERE receiver_email = ${userEmail} AND is_read = FALSE
+            GROUP BY sender_email
+        ) unread_count ON f.friend_email = unread_count.sender_email
         WHERE f.user_email = ${userEmail} AND f.status = 'accepted'
         ORDER BY b.brukernavn;
     `;

@@ -8,7 +8,6 @@ import my.application.data.remote.dto.FriendDto
 import my.application.data.remote.dto.FriendRequestDto
 import my.application.data.remote.dto.SendFriendRequestDto
 import my.application.data.remote.dto.UserDto
-import kotlin.random.Random
 
 /**
  * Repository for managing friends data
@@ -197,17 +196,60 @@ class FriendsRepository private constructor() {
      * Map DTO to Friend domain model
      */
     private fun mapDtoToFriend(dto: FriendDto): Friend {
+        // Build full name from first and last name, fall back to username if not available
+        val fullName = when {
+            !dto.friendFirstName.isNullOrBlank() && !dto.friendLastName.isNullOrBlank() ->
+                "${dto.friendFirstName} ${dto.friendLastName}"
+            !dto.friendFirstName.isNullOrBlank() -> dto.friendFirstName
+            else -> dto.friendUsername
+        }
+
+        // Format last played date
+        val lastPlayedText = dto.lastPlayed?.let { formatLastPlayed(it) }
+
         return Friend(
             id = dto.id,
-            userId = 0, // Not provided by backend, could be added later
-            name = dto.friendUsername,
+            userId = 0, // Not needed for current use case
+            name = fullName,
             username = dto.friendUsername,
-            status = FriendStatus.OFFLINE, // Default status, can be enhanced with real-time status
-            lastPlayed = null, // Can be enhanced with actual data
-            gamesPlayed = 0, // Can be enhanced with actual data
+            status = FriendStatus.OFFLINE, // TODO: Implement real-time online status
+            lastPlayed = lastPlayedText,
+            gamesPlayed = dto.gamesPlayed,
             avatarColor = generateColorForUsername(dto.friendUsername),
-            hasUnreadMessages = false // Can be enhanced with message system
+            hasUnreadMessages = dto.unreadMessages > 0
         )
+    }
+
+    /**
+     * Format last played timestamp to user-friendly text
+     */
+    private fun formatLastPlayed(timestamp: String): String {
+        return try {
+            // The timestamp from backend is in ISO format (e.g., "2025-11-10T14:30:00Z")
+            val instant = java.time.Instant.parse(timestamp)
+            val lastPlayedTime = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
+            val now = java.time.LocalDateTime.now()
+
+            val daysBetween = java.time.temporal.ChronoUnit.DAYS.between(lastPlayedTime.toLocalDate(), now.toLocalDate())
+            val hoursBetween = java.time.temporal.ChronoUnit.HOURS.between(lastPlayedTime, now)
+            val minutesBetween = java.time.temporal.ChronoUnit.MINUTES.between(lastPlayedTime, now)
+
+            when {
+                minutesBetween < 1 -> "Akkurat nå"
+                minutesBetween < 60 -> "$minutesBetween min siden"
+                hoursBetween < 24 -> "$hoursBetween timer siden"
+                daysBetween == 1L -> "I går"
+                daysBetween < 7 -> "$daysBetween dager siden"
+                daysBetween < 30 -> "${daysBetween / 7} uker siden"
+                else -> {
+                    val formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
+                    lastPlayedTime.format(formatter)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("FriendsRepository", "Failed to parse timestamp: $timestamp", e)
+            timestamp.substringBefore('T')
+        }
     }
 
     /**
