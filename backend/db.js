@@ -413,19 +413,19 @@ async function getTrackById(bane_id) {
         const result = await sql`
             SELECT 
                 bane_id,
-                navn AS trackName,
-                beskrivelse AS description,
-                total_distance AS totalDistance,
-                total_par AS totalPar,
-                antall_hull AS holeCount,
+                navn AS "trackName",
+                beskrivelse AS "description",
+                total_distance AS "totalDistance",
+                total_par AS "totalPar",
+                antall_hull AS "holeCount",
                 markers,
                 lines,
-                ob_lines AS obLines,
+                ob_lines AS "obLines",
                 rating,
-                bane_bilde AS imageData,
+                bane_bilde AS "imageData",
                 klubb_id_klubb,
-                opprettet_dato AS created,
-                oppdatert_dato AS updated
+                opprettet_dato AS "created",
+                oppdatert_dato AS "updated"
             FROM mydb.bane
             WHERE bane_id = ${bane_id};
         `;
@@ -495,19 +495,19 @@ async function getAllTracks() {
         const result = await sql`
             SELECT 
                 bane_id,
-                navn AS trackName,
-                beskrivelse AS description,
-                total_distance AS totalDistance,
-                total_par AS totalPar,
-                antall_hull AS holeCount,
+                navn AS "trackName",
+                beskrivelse AS "description",
+                total_distance AS "totalDistance",
+                total_par AS "totalPar",
+                antall_hull AS "holeCount",
                 markers,
                 lines,
-                ob_lines AS obLines,
+                ob_lines AS "obLines",
                 rating,
-                bane_bilde,
+                bane_bilde AS "imageData",
                 klubb_id_klubb,
-                opprettet_dato AS created,
-                oppdatert_dato AS updated
+                opprettet_dato AS "created",
+                oppdatert_dato AS "updated"
             FROM mydb.bane
             ORDER BY opprettet_dato DESC;
         `;
