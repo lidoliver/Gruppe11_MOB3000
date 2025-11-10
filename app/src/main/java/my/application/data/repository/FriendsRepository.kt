@@ -8,7 +8,7 @@ import my.application.data.remote.dto.FriendDto
 import my.application.data.remote.dto.FriendRequestDto
 import my.application.data.remote.dto.SendFriendRequestDto
 import my.application.data.remote.dto.UserDto
-
+//TODO: fix response for sending and accepting friend requests
 /**
  * Repository for managing friends data
  * Handles communication with backend API for friends functionality
