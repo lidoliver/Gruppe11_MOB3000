@@ -142,6 +142,21 @@ class UserRepository {
         }
     }
 
+    suspend fun checkUsernameAvailability(username: String): Result<Boolean> {
+        return try {
+            val token = authToken ?: return Result.failure(Exception("Not authenticated"))
+            val response = api.checkUsernameAvailability(username, token)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.available)
+            } else {
+                Result.failure(Exception("Failed to check username: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Check username error", e)
+            Result.failure(e)
+        }
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

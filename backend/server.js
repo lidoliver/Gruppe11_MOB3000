@@ -102,15 +102,22 @@ app.get('/api/epost', async (req, res) => {
 app.put('/bruker/:email', passport.authenticate('jwt', {session: false}),
      async (req, res) => {
     try {
-        const epost = await db.redigerBruker(req.params.email, req.body);
-        if(epost) {
-            res.status(200).json(epost);
+        console.log('PUT /bruker/:email - Updating user:', req.params.email);
+        console.log('Request body:', JSON.stringify(req.body, null, 2));
+
+        const updatedUser = await db.redigerBruker(req.params.email, req.body);
+
+        if(updatedUser) {
+            console.log('User updated successfully:', JSON.stringify(updatedUser, null, 2));
+            res.status(200).json(updatedUser);
         } else {
+            console.warn('User not found:', req.params.email);
             res.status(404).send('User not found');
         }
     } catch (error) {
-        console.error(error);
-        res.status(500).send('error');
+        console.error('Error updating user:', error.message);
+        console.error('Stack:', error.stack);
+        res.status(500).json({ message: 'Error updating user', error: error.message });
     }
 });
 

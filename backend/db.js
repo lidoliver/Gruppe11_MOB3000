@@ -157,7 +157,12 @@ async function redigerBruker(email, bruker) {
             visible: typeof bruker.visible === 'boolean' ? bruker.visible : currentUser[0].visible
         };
 
-        
+        // Validate username doesn't contain @ symbol
+        if (validatedData.brukernavn && validatedData.brukernavn.includes('@')) {
+            throw new Error('Username cannot contain @ symbol');
+        }
+
+
         let finalPassword = currentUser[0].passord; 
         if (validatedData.passord && validatedData.passord !== currentUser[0].passord) {
           
@@ -180,7 +185,7 @@ async function redigerBruker(email, bruker) {
                 passord = ${finalPassword},
                 visible = ${validatedData.visible}
             WHERE epost = ${email}
-            RETURNING epost, brukernavn, fnavn, enavn, visible;
+            RETURNING epost, brukernavn, fnavn, enavn, visible, role, klubb_id_klubb;
         `;
 
         if (!result || result.length === 0) {
@@ -188,8 +193,19 @@ async function redigerBruker(email, bruker) {
             throw new Error('Update failed');
         }
 
+        const updatedUser = result[0];
 
-        return result[0];
+        // Fetch klubbnavn if user has a klubb_id_klubb
+        if (updatedUser.klubb_id_klubb) {
+            const klubb = await sql`
+                SELECT klubbnavn FROM mydb.klubb WHERE id_klubb = ${updatedUser.klubb_id_klubb}
+            `;
+            if (klubb && klubb.length > 0) {
+                updatedUser.klubbnavn = klubb[0].klubbnavn;
+            }
+        }
+
+        return updatedUser;
     } catch (error) {
         console.error('Error in redigerBruker:', error);
         console.error('Error stack:', error.stack);

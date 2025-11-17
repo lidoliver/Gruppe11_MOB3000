@@ -216,4 +216,43 @@ router.post('/change-password',
     }
 );
 
+// Check username availability (authenticated users only)
+router.get('/check-username/:username',
+    passport.authenticate('jwt', { session: false }),
+    async (req, res) => {
+        try {
+            const username = req.params.username;
+            const currentUserEmail = req.user.epost;
+
+            // Validate username
+            if (!username || username.length < 3) {
+                return res.status(400).json({ available: false, message: 'Username must be at least 3 characters' });
+            }
+
+            if (username.length > 64) {
+                return res.status(400).json({ available: false, message: 'Username must be less than 64 characters' });
+            }
+
+            // Prevent @ symbol to avoid confusion with email addresses
+            if (username.includes('@')) {
+                return res.status(400).json({ available: false, message: 'Username cannot contain @ symbol' });
+            }
+
+            // Check if username exists
+            const existingUser = await db.getBrukerByUsername(username);
+
+            // If no user found, or the user found is the current user, username is available
+            const available = !existingUser || existingUser.epost === currentUserEmail;
+
+            res.status(200).json({
+                available,
+                message: available ? 'Username is available' : 'Username is already taken'
+            });
+        } catch (error) {
+            console.error('Error checking username:', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+);
+
 export default router;
