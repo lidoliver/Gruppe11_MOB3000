@@ -197,6 +197,7 @@ fun MyProfileScreen(
 
     // Change Password Dialog
     if (showChangePasswordDialog) {
+        var dialogError by remember { mutableStateOf("") }
         ChangePasswordDialog(
             onDismiss = { showChangePasswordDialog = false },
             onConfirm = { currentPassword, newPassword ->
@@ -208,10 +209,11 @@ fun MyProfileScreen(
                         // Optionally show a success message
                     },
                     onError = { error ->
-                        // Error is already handled in the dialog
+                        dialogError = error
                     }
                 )
-            }
+            },
+            externalError = dialogError
         )
     }
 }
@@ -219,12 +221,20 @@ fun MyProfileScreen(
 @Composable
 fun ChangePasswordDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit
+    onConfirm: (String, String) -> Unit,
+    externalError: String = ""
 ) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+
+    // Update error message when external error changes
+    LaunchedEffect(externalError) {
+        if (externalError.isNotEmpty()) {
+            errorMessage = externalError
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,

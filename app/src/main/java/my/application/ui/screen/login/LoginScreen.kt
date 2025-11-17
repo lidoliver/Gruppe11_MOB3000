@@ -30,11 +30,21 @@ fun LoginScreen(
     var isRegistering by remember { mutableStateOf(false) }
     var confirmPassword by remember { mutableStateOf("") }
 
+    // Reset state when screen is first displayed
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
+
+    // Check if we can navigate back
+    val canNavigateBack = navController.previousBackStackEntry != null
+
     // Navigate on success
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess && uiState.userEmail != null) {
-            // Navigate back to previous screen or to main menu
-            navController.popBackStack()
+            // Navigate to main menu and clear back stack
+            navController.navigate("main_menu") {
+                popUpTo(0) { inclusive = true }
+            }
         }
     }
 
@@ -42,11 +52,13 @@ fun LoginScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                    if (canNavigateBack) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
                     }
                 },
                 title = { Text(if (isRegistering) "Create Account" else "Login") }
