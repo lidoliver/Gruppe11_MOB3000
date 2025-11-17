@@ -10,12 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import my.application.data.auth.AuthManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,6 +25,8 @@ fun LoginScreen(
     navController: NavController,
     viewModel: LoginViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val authManager = AuthManager.getInstance(context)
     val uiState = viewModel.uiState
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -30,7 +34,7 @@ fun LoginScreen(
     var isRegistering by remember { mutableStateOf(false) }
     var confirmPassword by remember { mutableStateOf("") }
 
-    // Reset state when screen is first displayed
+    // Reset state when screen is displayed
     LaunchedEffect(Unit) {
         viewModel.resetState()
     }
@@ -52,13 +56,20 @@ fun LoginScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    if (canNavigateBack) {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
+                    IconButton(onClick = {
+                        if (canNavigateBack) {
+                            navController.popBackStack()
+                        } else {
+                            // If nothing to go back to, go to main menu
+                            navController.navigate("main_menu") {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 },
                 title = { Text(if (isRegistering) "Create Account" else "Login") }

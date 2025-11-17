@@ -57,26 +57,6 @@ fun MyProfileScreen(
     val coroutineScope = rememberCoroutineScope()
     var showChangePasswordDialog by remember { mutableStateOf(false) }
 
-    // Check authentication and redirect to login if not authenticated
-    LaunchedEffect(userEmail) {
-        if (userEmail == null) {
-            // User is not logged in, redirect to login
-            navController.navigate("login") {
-                popUpTo("main_menu") { inclusive = false }
-            }
-        }
-    }
-
-    // If not authenticated, show loading and return early
-    if (userEmail == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
 
     // Load user profile when email is available
     LaunchedEffect(userEmail) {
@@ -95,6 +75,25 @@ fun MyProfileScreen(
                 .padding(16.dp)
         ) {
             when {
+                userEmail == null -> {
+                    // User is not logged in - show message with login button
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Please log in to view your profile",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            navController.navigate("login")
+                        }) {
+                            Text("Go to Login")
+                        }
+                    }
+                }
                 uiState.isLoading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
