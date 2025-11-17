@@ -15,10 +15,16 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -42,6 +49,7 @@ fun MyProfileScreen(
     val userEmail by authManager.getUserEmailFlow().collectAsState(initial = null)
     val uiState = viewModel.uiState
     val coroutineScope = rememberCoroutineScope()
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
 
     // Check authentication and redirect to login if not authenticated
     LaunchedEffect(userEmail) {
@@ -156,7 +164,7 @@ fun MyProfileScreen(
 
                         // Button to change password
                         Button(
-                            onClick = { /* TODO: Navigate to change password screen */ },
+                            onClick = { showChangePasswordDialog = true },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Change Password")
@@ -186,6 +194,116 @@ fun MyProfileScreen(
             }
         }
     }
+
+    // Change Password Dialog
+    if (showChangePasswordDialog) {
+        ChangePasswordDialog(
+            onDismiss = { showChangePasswordDialog = false },
+            onConfirm = { currentPassword, newPassword ->
+                viewModel.changePassword(
+                    currentPassword = currentPassword,
+                    newPassword = newPassword,
+                    onSuccess = {
+                        showChangePasswordDialog = false
+                        // Optionally show a success message
+                    },
+                    onError = { error ->
+                        // Error is already handled in the dialog
+                    }
+                )
+            }
+        )
+    }
+}
+
+@Composable
+fun ChangePasswordDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
+) {
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Change Password") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = {
+                        currentPassword = it
+                        errorMessage = ""
+                    },
+                    label = { Text("Current Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = {
+                        newPassword = it
+                        errorMessage = ""
+                    },
+                    label = { Text("New Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = {
+                        confirmPassword = it
+                        errorMessage = ""
+                    },
+                    label = { Text("Confirm New Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (errorMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    when {
+                        currentPassword.isEmpty() -> {
+                            errorMessage = "Please enter current password"
+                        }
+                        newPassword.isEmpty() -> {
+                            errorMessage = "Please enter new password"
+                        }
+                        newPassword.length < 6 -> {
+                            errorMessage = "Password must be at least 6 characters"
+                        }
+                        newPassword != confirmPassword -> {
+                            errorMessage = "Passwords do not match"
+                        }
+                        else -> {
+                            onConfirm(currentPassword, newPassword)
+                        }
+                    }
+                }
+            ) {
+                Text("Change Password")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Preview(showBackground = true)

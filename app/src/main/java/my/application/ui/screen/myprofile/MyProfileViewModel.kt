@@ -68,6 +68,26 @@ class MyProfileViewModel(
             }
         }
     }
+
+    fun changePassword(currentPassword: String, newPassword: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            uiState = uiState.copy(isLoading = true, error = null)
+
+            val result = userRepository.changePassword(currentPassword, newPassword)
+
+            uiState = uiState.copy(isLoading = false)
+
+            when {
+                result.isSuccess -> {
+                    onSuccess()
+                }
+                else -> {
+                    val errorMessage = result.exceptionOrNull()?.message ?: "Failed to change password"
+                    onError(errorMessage)
+                }
+            }
+        }
+    }
 }
 
 data class MyProfileUiState(

@@ -184,4 +184,36 @@ router.put('/:email/unban',
     }
 );
 
+// Change password (authenticated users only)
+router.post('/change-password',
+    passport.authenticate('jwt', { session: false }),
+    async (req, res) => {
+        try {
+            const { currentPassword, newPassword } = req.body;
+            const userEmail = req.user.epost; // Get email from authenticated user
+
+            // Validate input
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({ message: 'Current password and new password are required' });
+            }
+
+            if (newPassword.length < 6) {
+                return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+            }
+
+            // Change password
+            await db.changePassword(userEmail, currentPassword, newPassword);
+            res.status(200).json({ message: 'Password changed successfully' });
+        } catch (error) {
+            console.error('Error changing password:', error);
+
+            if (error.message === 'Current password is incorrect') {
+                return res.status(401).json({ message: 'Current password is incorrect' });
+            }
+
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+);
+
 export default router;

@@ -39,3 +39,12 @@ data class ScorecardDto(
     @Json(name = "totalt_poeng") val totalScore: Int
 )
 
+data class ChangePasswordRequest(
+    @Json(name = "currentPassword") val currentPassword: String,
+    @Json(name = "newPassword") val newPassword: String
+)
+
+data class ChangePasswordResponse(
+    @Json(name = "message") val message: String
+)
+

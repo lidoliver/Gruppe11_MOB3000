@@ -113,5 +113,12 @@ interface BackendApiService {
         @Body request: SendMessageRequest,
         @Header("Authorization") token: String
     ): Response<SendMessageResponse>
+
+    // Change password endpoint
+    @POST("users/change-password")
+    suspend fun changePassword(
+        @Body request: ChangePasswordRequest,
+        @Header("Authorization") token: String
+    ): Response<ChangePasswordResponse>
 }
 

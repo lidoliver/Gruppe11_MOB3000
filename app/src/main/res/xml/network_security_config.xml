@@ -5,8 +5,9 @@
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
-        <!-- Local network IP for physical device testing -->
+        <!-- Local network IPs for physical device testing -->
         <domain includeSubdomains="true">192.168.11.11</domain>
+        <domain includeSubdomains="true">10.38.11.46</domain>
     </domain-config>
 </network-security-config>
 

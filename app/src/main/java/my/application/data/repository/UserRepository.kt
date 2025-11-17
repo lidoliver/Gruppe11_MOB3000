@@ -121,6 +121,27 @@ class UserRepository {
         }
     }
 
+    suspend fun changePassword(currentPassword: String, newPassword: String): Result<String> {
+        return try {
+            val token = authToken ?: return Result.failure(Exception("Not authenticated"))
+            val request = my.application.data.remote.dto.ChangePasswordRequest(currentPassword, newPassword)
+            val response = api.changePassword(request, token)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.message)
+            } else {
+                val errorMsg = when (response.code()) {
+                    401 -> "Current password is incorrect"
+                    400 -> "Invalid password format"
+                    else -> "Failed to change password: ${response.message()}"
+                }
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Change password error", e)
+            Result.failure(e)
+        }
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

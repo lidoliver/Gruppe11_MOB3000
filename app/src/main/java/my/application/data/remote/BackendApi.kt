@@ -15,9 +15,9 @@ object BackendApi {
     // For local testing on physical device, use: http://YOUR_COMPUTER_IP:5000/
     // For production, use your deployed backend URL
 
-    // Automatically detect if running on emulator or physical device
-    // Change this to "http://10.0.2.2:5000/" for emulator or your computer's IP for physical device
-    private const val BASE_URL = "http://192.168.11.11:5000/"
+    // Use 10.0.2.2 for Android Emulator (maps to host's localhost)
+    // Use 10.38.11.46 for Physical Device (your computer's current WiFi IP)
+    private const val BASE_URL = "http://10.0.2.2:5000/"
 
     // Build the Moshi object for JSON parsing
     private val moshi = Moshi.Builder()

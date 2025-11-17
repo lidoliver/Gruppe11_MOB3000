@@ -15,6 +15,41 @@ async function comparePassword(plainPassword, hashedPassword) {
     return await bcrypt.compare(plainPassword, hashedPassword);
 }
 
+async function changePassword(email, currentPassword, newPassword) {
+    try {
+        // Get user from database
+        const user = await sql`
+            SELECT passord FROM mydb.bruker WHERE epost = ${email}
+        `;
+
+        if (!user || user.length === 0) {
+            throw new Error('User not found');
+        }
+
+        // Verify current password
+        const passwordMatch = await comparePassword(currentPassword, user[0].passord);
+        if (!passwordMatch) {
+            throw new Error('Current password is incorrect');
+        }
+
+        // Hash new password
+        const hashedNewPassword = await hashPassword(newPassword);
+
+        // Update password in database
+        const result = await sql`
+            UPDATE mydb.bruker
+            SET passord = ${hashedNewPassword}
+            WHERE epost = ${email}
+            RETURNING epost
+        `;
+
+        return result[0];
+    } catch (error) {
+        console.error('Error changing password:', error);
+        throw error;
+    }
+}
+
 function hashEmail(email) {
     // Hasher epostadressen for å beskytte personvern
     return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex');
@@ -1821,8 +1856,9 @@ export default {
      isClubMember, 
      getKlubbForAdmin, 
      hashPassword, 
-     comparePassword, 
-     hashEmail, 
+     comparePassword,
+     changePassword,
+     hashEmail,
      uploadClubDocument, 
      getClubDocuments, 
      getClubDocument, 
