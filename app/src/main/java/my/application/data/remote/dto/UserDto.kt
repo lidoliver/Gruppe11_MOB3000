@@ -12,6 +12,26 @@ data class UserDto(
     @Json(name = "klubbnavn") val clubName: String?
 )
 
+// DTO for admin panel brukere (basert på backend struktur)
+data class AdminUserDto(
+    @Json(name = "email") val email: String,
+    @Json(name = "brukernavn") val username: String?,
+    @Json(name = "role") val role: String?,
+    @Json(name = "club_id") val clubId: Int?,
+    @Json(name = "club_name") val clubName: String?
+) {
+    // Convert to UserDto for compatibility
+    fun toUserDto(): UserDto = UserDto(
+        email = email,
+        username = username,
+        firstName = null,
+        lastName = null,
+        role = role,
+        clubId = clubId,
+        clubName = clubName
+    )
+}
+
 data class LoginRequest(
     @Json(name = "email") val email: String,
     @Json(name = "password") val password: String
@@ -50,6 +70,21 @@ data class ChangePasswordResponse(
 
 data class UsernameAvailabilityResponse(
     @Json(name = "available") val available: Boolean,
+    @Json(name = "message") val message: String
+)
+
+// Admin-DTOs
+data class ClubRequestDto(
+    @Json(name = "id_forespørsel") val id: Int,
+    @Json(name = "requested_by") val requestedBy: String,
+    @Json(name = "klubbnavn") val clubName: String,
+    @Json(name = "sted") val location: String?,
+    @Json(name = "beskrivelse") val description: String?,
+    @Json(name = "status") val status: String,
+    @Json(name = "created_at") val createdAt: String
+)
+
+data class AdminResponseDto(
     @Json(name = "message") val message: String
 )
 

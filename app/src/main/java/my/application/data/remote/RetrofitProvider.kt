@@ -7,6 +7,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import my.application.data.remote.api.PlayerApi
+import my.application.data.remote.api.BackendApiService
 import java.util.concurrent.TimeUnit
 
 object RetrofitProvider {
@@ -37,6 +38,10 @@ object RetrofitProvider {
 
     val playerApi: PlayerApi by lazy {
         retrofit.create(PlayerApi::class.java)
+    }
+
+    val backendApiService: BackendApiService by lazy {
+        retrofit.create(BackendApiService::class.java)
     }
 }
 

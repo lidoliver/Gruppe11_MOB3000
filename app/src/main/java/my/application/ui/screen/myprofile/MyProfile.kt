@@ -257,6 +257,21 @@ fun MyProfileScreen(
 
                         Spacer(modifier = Modifier.height(32.dp))
 
+                        // Admin Panel button (only visible for admin users)
+                        if (uiState.user.role == "admin") {
+                            Button(
+                                onClick = { navController.navigate("admin_panel") },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary
+                                )
+                            ) {
+                                Text("Admin Panel")
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
                         // Button to change password
                         Button(
                             onClick = { showChangePasswordDialog = true },

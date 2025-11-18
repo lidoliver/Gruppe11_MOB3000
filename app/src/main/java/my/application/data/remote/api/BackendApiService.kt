@@ -27,11 +27,6 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<UserDto>
 
-    @DELETE("bruker/{email}")
-    suspend fun deleteUser(
-        @Path("email") email: String,
-        @Header("Authorization") token: String
-    ): Response<Unit>
 
     // Scorecard endpoints
     @GET("api/pointcard/{email}")
@@ -149,5 +144,47 @@ interface BackendApiService {
         @Path("username") username: String,
         @Header("Authorization") token: String
     ): Response<UsernameAvailabilityResponse>
+
+    // Admin endpoints - User management
+    @GET("users")
+    suspend fun getAllUsers(
+        @Header("Authorization") token: String
+    ): Response<List<AdminUserDto>>
+
+    @PUT("users/{email}/ban")
+    suspend fun banUser(
+        @Path("email") email: String,
+        @Header("Authorization") token: String
+    ): Response<AdminResponseDto>
+
+    @PUT("users/{email}/unban")
+    suspend fun unbanUser(
+        @Path("email") email: String,
+        @Header("Authorization") token: String
+    ): Response<AdminResponseDto>
+
+    @DELETE("users/{email}")
+    suspend fun deleteUser(
+        @Path("email") email: String,
+        @Header("Authorization") token: String
+    ): Response<AdminResponseDto>
+
+    // Admin endpoints - Club requests
+    @GET("api/club-requests")
+    suspend fun getClubRequests(
+        @Header("Authorization") token: String
+    ): Response<List<ClubRequestDto>>
+
+    @POST("api/club-requests/{id}/approve")
+    suspend fun approveClubRequest(
+        @Path("id") id: Int,
+        @Header("Authorization") token: String
+    ): Response<AdminResponseDto>
+
+    @POST("api/club-requests/{id}/reject")
+    suspend fun rejectClubRequest(
+        @Path("id") id: Int,
+        @Header("Authorization") token: String
+    ): Response<AdminResponseDto>
 }
 

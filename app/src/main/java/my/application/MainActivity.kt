@@ -186,6 +186,17 @@ fun AppNavigation() {
                 TipsScreen(navController = navController)
             }
 
+            // Admin panel routes
+            composable("admin_panel") {
+                my.application.ui.screen.admin.AdminPanelScreen(navController = navController)
+            }
+            composable("admin_users") {
+                my.application.ui.screen.admin.UserAdminScreen(navController = navController)
+            }
+            composable("admin_club_requests") {
+                my.application.ui.screen.admin.ClubRequestAdminScreen(navController = navController)
+            }
+
             // Route for playing a course (solo mode)
             composable(
                 route = "play_course/{courseId}",
