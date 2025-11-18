@@ -96,6 +96,28 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<TrackDto>
 
+    // Hole management endpoints
+    @GET("api/tracks/{trackId}/holes")
+    suspend fun getHolesForTrack(
+        @Path("trackId") trackId: String,
+        @Header("Authorization") token: String
+    ): Response<List<HoleData>>
+
+    @PUT("api/tracks/{trackId}/holes/{holeNumber}")
+    suspend fun updateHole(
+        @Path("trackId") trackId: String,
+        @Path("holeNumber") holeNumber: Int,
+        @Body hole: HoleData,
+        @Header("Authorization") token: String
+    ): Response<HoleUpdateResponse>
+
+    @POST("api/tracks/{trackId}/holes/bulk")
+    suspend fun bulkUpdateHoles(
+        @Path("trackId") trackId: String,
+        @Body request: BulkHolesRequest,
+        @Header("Authorization") token: String
+    ): Response<BulkHolesResponse>
+
     // Message endpoints
     @GET("api/messages/conversations")
     suspend fun getConversations(

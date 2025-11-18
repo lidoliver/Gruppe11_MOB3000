@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS mydb.track_images CASCADE;
 DROP TABLE IF EXISTS mydb.game_players CASCADE;
 DROP TABLE IF EXISTS mydb.game_sessions CASCADE;
 DROP TABLE IF EXISTS mydb.pointcard CASCADE;
+DROP TABLE IF EXISTS mydb.hull CASCADE;
 DROP TABLE IF EXISTS mydb.bane CASCADE;
 DROP TABLE IF EXISTS mydb.bruker CASCADE;
 DROP TABLE IF EXISTS mydb.klubb CASCADE;
@@ -65,6 +66,27 @@ CREATE TABLE mydb.bane (
 
 ALTER SEQUENCE mydb.bane_bane_id_seq RESTART WITH 1;
 CREATE INDEX idx_bane_klubb_id ON mydb.bane(klubb_id_klubb);
+
+-- Table: hull (holes for each course/bane)
+CREATE TABLE mydb.hull (
+    hull_id SERIAL PRIMARY KEY,
+    bane_id_bane INT REFERENCES mydb.bane(bane_id) ON DELETE CASCADE,
+    hull_nummer INT NOT NULL,
+    tee_latitude DECIMAL(10, 8),
+    tee_longitude DECIMAL(11, 8),
+    basket_latitude DECIMAL(10, 8),
+    basket_longitude DECIMAL(11, 8),
+    hole_par INTEGER DEFAULT 3,
+    hole_distance INTEGER,
+    beskrivelse TEXT,
+    opprettet_dato TIMESTAMP DEFAULT NOW(),
+    oppdatert_dato TIMESTAMP,
+    UNIQUE(bane_id_bane, hull_nummer)
+);
+
+ALTER SEQUENCE mydb.hull_hull_id_seq RESTART WITH 1;
+CREATE INDEX idx_hull_bane_id ON mydb.hull(bane_id_bane);
+CREATE INDEX idx_hull_nummer ON mydb.hull(hull_nummer);
 
 -- Table: pointcard
 CREATE TABLE mydb.pointcard (

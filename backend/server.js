@@ -527,6 +527,7 @@ app.patch('/api/tracks/:id',
     }
 );
 
+
 // Get all images for a track
 app.get('/api/tracks/:id/images', passport.authenticate('jwt', {session: false}),
     async (req, res) => {
@@ -571,6 +572,112 @@ app.delete('/api/tracks/images/:imageId', passport.authenticate('jwt', {session:
         res.status(500).json({ message: 'Error deleting track image' });
     }
 });
+
+// ============= HOLE MANAGEMENT ENDPOINTS =============
+
+// Get all holes for a specific track
+app.get('/api/tracks/:trackId/holes', passport.authenticate('jwt', {session: false}),
+    async (req, res) => {
+    try {
+        const { trackId } = req.params;
+        const holes = await db.getHolesForTrack(trackId);
+        res.status(200).json(holes);
+    } catch (error) {
+        console.error('Error fetching holes:', error);
+        res.status(500).json({ message: 'Error fetching holes' });
+    }
+});
+
+// Create or update a single hole for a track
+app.put('/api/tracks/:trackId/holes/:holeNumber',
+    passport.authenticate('jwt', {session: false}),
+    async (req, res) => {
+    try {
+        const { trackId, holeNumber } = req.params;
+        const { teeLatitude, teeLongitude, basketLatitude, basketLongitude, par } = req.body;
+
+        // Validate coordinates
+        if (!teeLatitude || !teeLongitude || !basketLatitude || !basketLongitude) {
+            return res.status(400).json({
+                message: 'Missing required coordinates'
+            });
+        }
+
+        await db.upsertHoleCoordinates(trackId, parseInt(holeNumber), {
+            teeLatitude: parseFloat(teeLatitude),
+            teeLongitude: parseFloat(teeLongitude),
+            basketLatitude: parseFloat(basketLatitude),
+            basketLongitude: parseFloat(basketLongitude),
+            par: parseInt(par) || 3
+        });
+
+        res.status(200).json({
+            message: 'Hole coordinates saved successfully',
+            holeNumber: parseInt(holeNumber)
+        });
+    } catch (error) {
+        console.error('Error saving hole coordinates:', error);
+        res.status(500).json({ message: 'Error saving hole coordinates' });
+    }
+});
+
+// Bulk create/update holes for a track
+app.post('/api/tracks/:trackId/holes/bulk',
+    passport.authenticate('jwt', {session: false}),
+    async (req, res) => {
+    try {
+        const { trackId } = req.params;
+        const { holes } = req.body;
+
+        if (!Array.isArray(holes) || holes.length === 0) {
+            return res.status(400).json({
+                message: 'Invalid holes data - must be a non-empty array'
+            });
+        }
+
+        const result = await db.bulkUpsertHoles(trackId, holes);
+        res.status(200).json({
+            message: 'Holes saved successfully',
+            count: result.count
+        });
+    } catch (error) {
+        console.error('Error bulk saving holes:', error);
+        res.status(500).json({ message: 'Error bulk saving holes' });
+    }
+});
+
+// Delete a specific hole
+app.delete('/api/tracks/:trackId/holes/:holeNumber',
+    passport.authenticate('jwt', {session: false}),
+    async (req, res) => {
+    try {
+        const { trackId, holeNumber } = req.params;
+        await db.deleteHole(trackId, parseInt(holeNumber));
+        res.status(200).json({ message: 'Hole deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting hole:', error);
+        res.status(500).json({ message: 'Error deleting hole' });
+    }
+});
+
+// Delete all holes for a track
+app.delete('/api/tracks/:trackId/holes',
+    passport.authenticate('jwt', {session: false}),
+    async (req, res) => {
+    try {
+        const { trackId } = req.params;
+        const result = await db.deleteAllHolesForTrack(trackId);
+        res.status(200).json({
+            message: 'All holes deleted successfully',
+            count: result.count
+        });
+    } catch (error) {
+        console.error('Error deleting holes:', error);
+        res.status(500).json({ message: 'Error deleting holes' });
+    }
+});
+
+// ============= END HOLE MANAGEMENT ENDPOINTS =============
 
 app.get('/api/game-sessions/:sessionId', passport.authenticate('jwt', {session: false}), async (req, res) => {
     try {

@@ -60,7 +60,10 @@ data class TrackDto(
     val oppdatertDato: String? = null,
 
     @Json(name = "updated")
-    val updated: String? = null
+    val updated: String? = null,
+
+    @Json(name = "holes")
+    val holesData: List<HoleData>? = null
 ) {
     // Helper properties to get the correct value regardless of which field is populated
     val name: String
@@ -78,4 +81,62 @@ data class TrackDto(
     val distance: Int
         get() = totalDistance ?: totalDistanceAlt ?: 0
 }
+
+/**
+ * Data class for individual hole information within a track
+ */
+@JsonClass(generateAdapter = true)
+data class HoleData(
+    @Json(name = "holeId")
+    val holeId: Int? = null,
+
+    @Json(name = "holeNumber")
+    val holeNumber: Int,
+
+    @Json(name = "teeLatitude")
+    val teeLatitude: Double? = null,
+
+    @Json(name = "teeLongitude")
+    val teeLongitude: Double? = null,
+
+    @Json(name = "basketLatitude")
+    val basketLatitude: Double? = null,
+
+    @Json(name = "basketLongitude")
+    val basketLongitude: Double? = null,
+
+    @Json(name = "par")
+    val par: Int = 3
+)
+
+/**
+ * Request body for bulk updating holes
+ */
+@JsonClass(generateAdapter = true)
+data class BulkHolesRequest(
+    @Json(name = "holes")
+    val holes: List<HoleData>
+)
+
+/**
+ * Response for hole update operations
+ */
+@JsonClass(generateAdapter = true)
+data class HoleUpdateResponse(
+    @Json(name = "message")
+    val message: String,
+    @Json(name = "holeNumber")
+    val holeNumber: Int? = null
+)
+
+/**
+ * Response for bulk hole operations
+ */
+@JsonClass(generateAdapter = true)
+data class BulkHolesResponse(
+    @Json(name = "message")
+    val message: String,
+    @Json(name = "count")
+    val count: Int
+)
 

@@ -64,6 +64,10 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    // Google Maps
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.1.0")
     // KSP codegen disabled while resolving KSP/Kotlin compatibility. If you prefer kapt use:
     // kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
     // Otherwise, restore ksp(...) after updating the plugin version:

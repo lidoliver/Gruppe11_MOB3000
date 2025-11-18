@@ -178,7 +178,10 @@ fun PlayDiscGolfScreen(
                 currentHole = currentHole,
                 totalHoles = totalHoles,
                 onMapClick = {
-                    // TODO: Open dynamic map with Google Maps API showing all hole locations
+                    // Navigate to course map screen
+                    courseId?.let {
+                        navController.navigate("course_map/$it")
+                    }
                 },
                 onShowScoresClick = { showScores = !showScores },
                 showScores = showScores

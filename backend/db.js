@@ -351,12 +351,62 @@ async function getCompleteRound(pointcard_id) {
 }
 
 async function getBaneInfo(bane_id) {
-    const result = await sql`
-        SELECT *
-        FROM mydb.bane
-        WHERE bane_id = ${bane_id};
-    `;
-    return result[0];
+    try {
+        const result = await sql`
+            SELECT *
+            FROM mydb.bane
+            WHERE bane_id = ${bane_id};
+        `;
+
+        if (!result || result.length === 0) {
+            return null;
+        }
+
+        const bane = result[0];
+
+        // Fetch holes data for this bane (including GPS coordinates if available)
+        try {
+            const holesResult = await sql`
+                SELECT
+                    hull_id,
+                    hull_nummer,
+                    tee_latitude,
+                    tee_longitude,
+                    basket_latitude,
+                    basket_longitude,
+                    hole_par,
+                    hole_distance
+                FROM mydb.hull
+                WHERE bane_id_bane = ${bane_id}
+                ORDER BY hull_nummer;
+            `;
+
+            if (holesResult && holesResult.length > 0) {
+                bane.holes = holesResult.map(hole => ({
+                    holeId: hole.hull_id,
+                    holeNumber: hole.hull_nummer,
+                    teeLatitude: hole.tee_latitude,
+                    teeLongitude: hole.tee_longitude,
+                    basketLatitude: hole.basket_latitude,
+                    basketLongitude: hole.basket_longitude,
+                    par: hole.hole_par || 3,
+                    distance: hole.hole_distance
+                }));
+                console.log(`Bane ${bane_id} includes ${bane.holes.length} holes with GPS data`);
+            } else {
+                bane.holes = [];
+                console.log(`Bane ${bane_id} has no holes data in database`);
+            }
+        } catch (holesError) {
+            console.error(`Error fetching holes for bane ${bane_id}:`, holesError);
+            bane.holes = []; // Empty array if error
+        }
+
+        return bane;
+    } catch (error) {
+        console.error(`Error retrieving bane with ID ${bane_id}:`, error);
+        throw error;
+    }
 }
 
 async function getRoundsForUser(email) {
@@ -512,6 +562,42 @@ async function getTrackById(bane_id) {
         // Use the helper function to ensure image fields are consistent
         const track = ensureImageDataFields(result[0]);
         
+        // Fetch holes data for this track (including GPS coordinates if available)
+        try {
+            const holesResult = await sql`
+                SELECT
+                    hull_id,
+                    hull_nummer,
+                    tee_latitude,
+                    tee_longitude,
+                    basket_latitude,
+                    basket_longitude,
+                    hole_par
+                FROM mydb.hull
+                WHERE bane_id_bane = ${bane_id}
+                ORDER BY hull_nummer;
+            `;
+
+            if (holesResult && holesResult.length > 0) {
+                track.holes = holesResult.map(hole => ({
+                    holeId: hole.hull_id,
+                    holeNumber: hole.hull_nummer,
+                    teeLatitude: hole.tee_latitude,
+                    teeLongitude: hole.tee_longitude,
+                    basketLatitude: hole.basket_latitude,
+                    basketLongitude: hole.basket_longitude,
+                    par: hole.hole_par || 3
+                }));
+                console.log(`Track ${bane_id} includes ${track.holes.length} holes with GPS data`);
+            } else {
+                track.holes = [];
+                console.log(`Track ${bane_id} has no holes data in database`);
+            }
+        } catch (holesError) {
+            console.error(`Error fetching holes for track ${bane_id}:`, holesError);
+            track.holes = []; // Empty array if error
+        }
+
         return track;
     } catch (error) {
         console.error(`Error retrieving track with ID ${bane_id}:`, error);
@@ -1796,6 +1882,158 @@ async function isTrackOwnedByUserClub(userEmail, trackId) {
     }
 }
 
+
+/**
+ * Create or update hole coordinates for a track
+ * @param {number} baneId - Track ID
+ * @param {number} holeNumber - Hole number (1-18, etc.)
+ * @param {object} coordinates - Object with teeLatitude, teeLongitude, basketLatitude, basketLongitude, par
+ */
+async function upsertHoleCoordinates(baneId, holeNumber, coordinates) {
+    try {
+        const { teeLatitude, teeLongitude, basketLatitude, basketLongitude, par = 3 } = coordinates;
+
+        // Check if hole already exists
+        const existing = await sql`
+            SELECT hull_id FROM mydb.hull
+            WHERE bane_id_bane = ${baneId} AND hull_nummer = ${holeNumber}
+        `;
+
+        if (existing && existing.length > 0) {
+            // Update existing hole
+            await sql`
+                UPDATE mydb.hull
+                SET
+                    tee_latitude = ${teeLatitude},
+                    tee_longitude = ${teeLongitude},
+                    basket_latitude = ${basketLatitude},
+                    basket_longitude = ${basketLongitude},
+                    hole_par = ${par},
+                    oppdatert_dato = NOW()
+                WHERE bane_id_bane = ${baneId} AND hull_nummer = ${holeNumber}
+            `;
+            console.log(`Updated hole ${holeNumber} for track ${baneId}`);
+        } else {
+            // Insert new hole
+            await sql`
+                INSERT INTO mydb.hull (
+                    bane_id_bane, hull_nummer,
+                    tee_latitude, tee_longitude,
+                    basket_latitude, basket_longitude,
+                    hole_par, opprettet_dato
+                )
+                VALUES (
+                    ${baneId}, ${holeNumber},
+                    ${teeLatitude}, ${teeLongitude},
+                    ${basketLatitude}, ${basketLongitude},
+                    ${par}, NOW()
+                )
+            `;
+            console.log(`Created hole ${holeNumber} for track ${baneId}`);
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error in upsertHoleCoordinates:', error);
+        throw error;
+    }
+}
+
+/**
+ * Bulk create/update holes for a track
+ * @param {number} baneId - Track ID
+ * @param {Array} holes - Array of hole objects with coordinates
+ */
+async function bulkUpsertHoles(baneId, holes) {
+    try {
+        for (const hole of holes) {
+            await upsertHoleCoordinates(baneId, hole.holeNumber, hole);
+        }
+        console.log(`Bulk upserted ${holes.length} holes for track ${baneId}`);
+        return { success: true, count: holes.length };
+    } catch (error) {
+        console.error('Error in bulkUpsertHoles:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get all holes for a specific track
+ * @param {number} baneId - Track ID
+ */
+async function getHolesForTrack(baneId) {
+    try {
+        const result = await sql`
+            SELECT
+                hull_id,
+                hull_nummer,
+                tee_latitude,
+                tee_longitude,
+                basket_latitude,
+                basket_longitude,
+                hole_par,
+                hole_distance,
+                beskrivelse
+            FROM mydb.hull
+            WHERE bane_id_bane = ${baneId}
+            ORDER BY hull_nummer
+        `;
+
+        return result.map(hole => ({
+            holeId: hole.hull_id,
+            holeNumber: hole.hull_nummer,
+            teeLatitude: hole.tee_latitude,
+            teeLongitude: hole.tee_longitude,
+            basketLatitude: hole.basket_latitude,
+            basketLongitude: hole.basket_longitude,
+            par: hole.hole_par || 3,
+            distance: hole.hole_distance,
+            description: hole.beskrivelse
+        }));
+    } catch (error) {
+        console.error('Error in getHolesForTrack:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete hole from track
+ * @param {number} baneId - Track ID
+ * @param {number} holeNumber - Hole number to delete
+ */
+async function deleteHole(baneId, holeNumber) {
+    try {
+        await sql`
+            DELETE FROM mydb.hull
+            WHERE bane_id_bane = ${baneId} AND hull_nummer = ${holeNumber}
+        `;
+        console.log(`Deleted hole ${holeNumber} from track ${baneId}`);
+        return { success: true };
+    } catch (error) {
+        console.error('Error in deleteHole:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete all holes for a track
+ * @param {number} baneId - Track ID
+ */
+async function deleteAllHolesForTrack(baneId) {
+    try {
+        const result = await sql`
+            DELETE FROM mydb.hull
+            WHERE bane_id_bane = ${baneId}
+            RETURNING hull_nummer
+        `;
+        console.log(`Deleted ${result.length} holes from track ${baneId}`);
+        return { success: true, count: result.length };
+    } catch (error) {
+        console.error('Error in deleteAllHolesForTrack:', error);
+        throw error;
+    }
+}
+
 // Add to your existing export default
 export default {
      validateConnection,
@@ -1816,10 +2054,10 @@ export default {
      getCompleteRound, 
      createTrack, 
      getTrackById, 
-     getAllTracks, 
-     updateTrack, 
-     deleteTrack, 
-     getAllSpillere, 
+     getAllTracks,
+     updateTrack,
+     deleteTrack,
+     getAllSpillere,
      createGameSession, 
      getGameSession, 
      addPlayerToSession, 
@@ -1875,4 +2113,9 @@ export default {
      restoreDatabaseFromBackup,
      isTrackOwnedByUserClub,
      getKlubbById,
+     upsertHoleCoordinates,
+     bulkUpsertHoles,
+     getHolesForTrack,
+     deleteHole,
+     deleteAllHolesForTrack,
 };

@@ -31,6 +31,7 @@ import my.application.ui.screen.tips.TipsScreen
 import my.application.ui.screen.login.LoginScreen
 import my.application.ui.spill.BanevelgingAleneScreen
 import my.application.ui.spill.PlayDiscGolfScreen
+import my.application.ui.spill.CourseMapScreen
 import my.application.ui.theme.MyApplicationTheme
 import my.application.ui.screen.playerhistory.PlayerHistoryScreen
 
@@ -174,6 +175,20 @@ fun AppNavigation() {
                     onBottomBarVisibilityChange = { visible ->
                         isBottomBarVisible = visible
                     }
+                )
+            }
+
+            // Route for course map view
+            composable(
+                route = "course_map/{courseId}",
+                arguments = listOf(
+                    navArgument("courseId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val courseId = backStackEntry.arguments?.getString("courseId")
+                CourseMapScreen(
+                    navController = navController,
+                    courseId = courseId
                 )
             }
         }
