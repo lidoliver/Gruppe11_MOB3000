@@ -18,6 +18,7 @@ import clubManagementRoutes from './endpoint/clubManagement.js';
 import clubJoinRequestsRoutes from './endpoint/clubJoinRequests.js';
 import clubRequestsRoutes from './endpoint/clubRequests.js';
 import clubJoinRequestsRouter from './endpoint/clubJoinRequests.js';
+import { getPlayerStats } from './endpoint/playerStats.js';
 
 // Import the canEditTrack middleware at the top of the file
 import { checkRole, canEditTrack } from './routes/checkRole.js';
@@ -49,7 +50,10 @@ app.use('/api/club-join-requests', clubJoinRequestsRouter);
 
 //ROUTES//
 
-// Rute for å hente spillere fra databasen. laget av Marcus 
+// Player statistics endpoint
+app.get('/api/players/:email/stats', getPlayerStats);
+
+// Rute for å hente spillere fra databasen. laget av Marcus
 app.get('/api/epost', async (req, res) => {
     try {
       const spillere = await db.getAllSpillere();

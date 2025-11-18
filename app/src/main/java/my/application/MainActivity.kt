@@ -8,9 +8,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,12 +38,17 @@ import my.application.ui.spill.PlayDiscGolfScreen
 import my.application.ui.spill.CourseMapScreen
 import my.application.ui.theme.MyApplicationTheme
 import my.application.ui.screen.playerhistory.PlayerHistoryScreen
-
+import my.application.ui.screen.playerhistory.PlayerHistoryViewModel
+import my.application.data.remote.RetrofitProvider
+import my.application.data.auth.AuthManager
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        this.enableEdgeToEdge() // make call explicit
         setContent {
             MyApplicationTheme {
                 // Initialize auth on app start
@@ -50,6 +59,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun InitializeAuth() {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -129,7 +139,33 @@ fun AppNavigation() {
                 FriendRequestsScreen(navController = navController)
             }
             composable("player_history") { backStackEntry ->
-                PlayerHistoryScreen(navController = navController)
+                val context = LocalContext.current
+                val authManager = AuthManager.getInstance(context)
+                val scope = rememberCoroutineScope()
+                var userEmail by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(Unit) {
+                    scope.launch {
+                        userEmail = authManager.getUserEmail()
+                    }
+                }
+
+                val viewModel = remember {
+                    PlayerHistoryViewModel(RetrofitProvider.playerApi)
+                }
+
+                userEmail?.let { email ->
+                    PlayerHistoryScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        playerEmail = email
+                    )
+                } ?: run {
+                    // Show loading or placeholder while fetching user email
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
             composable(
                 route = "conversation/{contactEmail}/{contactName}",
