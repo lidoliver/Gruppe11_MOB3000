@@ -88,6 +88,51 @@ class MyProfileViewModel(
             }
         }
     }
+
+    suspend fun checkUsernameAvailability(username: String): Result<Boolean> {
+        return userRepository.checkUsernameAvailability(username)
+    }
+
+    fun updateUsername(email: String, newUsername: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            uiState = uiState.copy(isLoading = true, error = null)
+
+            // First check if username is available
+            val availabilityResult = userRepository.checkUsernameAvailability(newUsername)
+
+            if (availabilityResult.isFailure || availabilityResult.getOrNull() == false) {
+                uiState = uiState.copy(isLoading = false)
+                onError("Username is already taken")
+                return@launch
+            }
+
+            // Update the user with new username
+            val currentUser = uiState.user ?: run {
+                uiState = uiState.copy(isLoading = false)
+                onError("User data not loaded")
+                return@launch
+            }
+
+            val updatedUser = currentUser.copy(username = newUsername)
+            val result = userRepository.updateUser(email, updatedUser)
+
+            when {
+                result.isSuccess -> {
+                    uiState = uiState.copy(
+                        user = result.getOrNull(),
+                        isLoading = false,
+                        error = null
+                    )
+                    onSuccess()
+                }
+                else -> {
+                    uiState = uiState.copy(isLoading = false)
+                    val errorMessage = result.exceptionOrNull()?.message ?: "Failed to update username"
+                    onError(errorMessage)
+                }
+            }
+        }
+    }
 }
 
 data class MyProfileUiState(

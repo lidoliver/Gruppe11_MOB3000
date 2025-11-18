@@ -93,6 +93,10 @@ class LoginViewModel(
     fun clearError() {
         uiState = uiState.copy(error = null)
     }
+
+    fun resetState() {
+        uiState = LoginUiState()
+    }
 }
 
 data class LoginUiState(

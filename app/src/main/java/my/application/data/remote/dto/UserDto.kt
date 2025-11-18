@@ -48,3 +48,8 @@ data class ChangePasswordResponse(
     @Json(name = "message") val message: String
 )
 
+data class UsernameAvailabilityResponse(
+    @Json(name = "available") val available: Boolean,
+    @Json(name = "message") val message: String
+)
+

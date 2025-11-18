@@ -42,9 +42,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
+                // Initialize auth on app start
+                InitializeAuth()
                 AppNavigation()
             }
         }
+    }
+}
+
+@Composable
+fun InitializeAuth() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(Unit) {
+        val authManager = my.application.data.auth.AuthManager.getInstance(context)
+        authManager.initializeAuth()
     }
 }
 

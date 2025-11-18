@@ -4,14 +4,20 @@ import my.application.ui.components.AppTopBar
 import my.application.ui.theme.MyApplicationTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
@@ -51,26 +57,6 @@ fun MyProfileScreen(
     val coroutineScope = rememberCoroutineScope()
     var showChangePasswordDialog by remember { mutableStateOf(false) }
 
-    // Check authentication and redirect to login if not authenticated
-    LaunchedEffect(userEmail) {
-        if (userEmail == null) {
-            // User is not logged in, redirect to login
-            navController.navigate("login") {
-                popUpTo("main_menu") { inclusive = false }
-            }
-        }
-    }
-
-    // If not authenticated, show loading and return early
-    if (userEmail == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
 
     // Load user profile when email is available
     LaunchedEffect(userEmail) {
@@ -89,6 +75,25 @@ fun MyProfileScreen(
                 .padding(16.dp)
         ) {
             when {
+                userEmail == null -> {
+                    // User is not logged in - show message with login button
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Please log in to view your profile",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            navController.navigate("login")
+                        }) {
+                            Text("Go to Login")
+                        }
+                    }
+                }
                 uiState.isLoading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
@@ -112,18 +117,100 @@ fun MyProfileScreen(
                     }
                 }
                 uiState.user != null -> {
+                    var isEditingUsername by remember { mutableStateOf(false) }
+                    var editedUsername by remember { mutableStateOf(uiState.user.username ?: "") }
+                    var usernameError by remember { mutableStateOf("") }
+
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Top
                     ) {
-                        // Display user information
-                        Text(
-                            text = "Player Name: ${uiState.user.username ?: "N/A"}",
-                            fontSize = 20.sp,
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        // Username section with edit capability
+                        if (isEditingUsername) {
+                            OutlinedTextField(
+                                value = editedUsername,
+                                onValueChange = {
+                                    editedUsername = it
+                                    usernameError = ""
+                                },
+                                label = { Text("Username") },
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = usernameError.isNotEmpty(),
+                                supportingText = if (usernameError.isNotEmpty()) {
+                                    { Text(usernameError, color = MaterialTheme.colorScheme.error) }
+                                } else null,
+                                singleLine = true
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        if (editedUsername.isBlank()) {
+                                            usernameError = "Username cannot be empty"
+                                        } else if (editedUsername.contains("@")) {
+                                            usernameError = "Username cannot contain @ symbol"
+                                        } else if (editedUsername.length < 3) {
+                                            usernameError = "Username must be at least 3 characters"
+                                        } else if (editedUsername.length > 64) {
+                                            usernameError = "Username must be less than 64 characters"
+                                        } else {
+                                            userEmail?.let { email ->
+                                                viewModel.updateUsername(
+                                                    email = email,
+                                                    newUsername = editedUsername,
+                                                    onSuccess = {
+                                                        isEditingUsername = false
+                                                        usernameError = ""
+                                                    },
+                                                    onError = { error ->
+                                                        usernameError = error
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Save")
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        isEditingUsername = false
+                                        editedUsername = uiState.user.username ?: ""
+                                        usernameError = ""
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Cancel")
+                                }
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Username: ${uiState.user.username ?: "Not set"}",
+                                    fontSize = 20.sp,
+                                    style = MaterialTheme.typography.headlineSmall
+                                )
+                                IconButton(onClick = {
+                                    isEditingUsername = true
+                                    editedUsername = uiState.user.username ?: ""
+                                }) {
+                                    Icon(
+                                        imageVector = androidx.compose.material.icons.Icons.Default.Edit,
+                                        contentDescription = "Edit username"
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         if (uiState.user.firstName != null || uiState.user.lastName != null) {
                             Text(
@@ -138,14 +225,6 @@ fun MyProfileScreen(
                             fontSize = 16.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        if (uiState.user.role != null) {
-                            Text(
-                                text = "Role: ${uiState.user.role}",
-                                fontSize = 16.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
 
                         if (uiState.user.clubName != null) {
                             Text(
@@ -197,6 +276,7 @@ fun MyProfileScreen(
 
     // Change Password Dialog
     if (showChangePasswordDialog) {
+        var dialogError by remember { mutableStateOf("") }
         ChangePasswordDialog(
             onDismiss = { showChangePasswordDialog = false },
             onConfirm = { currentPassword, newPassword ->
@@ -208,10 +288,11 @@ fun MyProfileScreen(
                         // Optionally show a success message
                     },
                     onError = { error ->
-                        // Error is already handled in the dialog
+                        dialogError = error
                     }
                 )
-            }
+            },
+            externalError = dialogError
         )
     }
 }
@@ -219,12 +300,20 @@ fun MyProfileScreen(
 @Composable
 fun ChangePasswordDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit
+    onConfirm: (String, String) -> Unit,
+    externalError: String = ""
 ) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+
+    // Update error message when external error changes
+    LaunchedEffect(externalError) {
+        if (externalError.isNotEmpty()) {
+            errorMessage = externalError
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,

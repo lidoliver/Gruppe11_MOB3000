@@ -142,5 +142,12 @@ interface BackendApiService {
         @Body request: ChangePasswordRequest,
         @Header("Authorization") token: String
     ): Response<ChangePasswordResponse>
+
+    // Check username availability endpoint
+    @GET("users/check-username/{username}")
+    suspend fun checkUsernameAvailability(
+        @Path("username") username: String,
+        @Header("Authorization") token: String
+    ): Response<UsernameAvailabilityResponse>
 }
 
