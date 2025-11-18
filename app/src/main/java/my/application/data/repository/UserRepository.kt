@@ -1,6 +1,5 @@
 package my.application.data.repository
 
-import android.content.Context
 import android.util.Log
 import my.application.data.remote.BackendApi
 import my.application.data.remote.dto.LoginRequest
@@ -64,12 +63,17 @@ class UserRepository {
 
     suspend fun getUser(email: String): Result<UserDto> {
         return try {
-            val token = authToken ?: return Result.failure(Exception("Not authenticated"))
+            val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
             val response = api.getUser(email, token)
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Failed to get user: ${response.message()}"))
+                // Check for authentication errors
+                if (response.code() == 401 || response.code() == 403) {
+                    Result.failure(AuthException("Authentication failed"))
+                } else {
+                    Result.failure(Exception("Failed to get user: ${response.message()}"))
+                }
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Get user error", e)
@@ -94,12 +98,17 @@ class UserRepository {
 
     suspend fun getScorecards(email: String): Result<List<ScorecardDto>> {
         return try {
-            val token = authToken ?: return Result.failure(Exception("Not authenticated"))
+            val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
             val response = api.getScorecards(email, token)
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
             } else {
-                Result.failure(Exception("Failed to get scorecards: ${response.message()}"))
+                // Check for authentication errors
+                if (response.code() == 401 || response.code() == 403) {
+                    Result.failure(AuthException("Authentication failed"))
+                } else {
+                    Result.failure(Exception("Failed to get scorecards: ${response.message()}"))
+                }
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Get scorecards error", e)
@@ -168,4 +177,7 @@ class UserRepository {
         }
     }
 }
+
+// Custom exception for authentication errors
+class AuthException(message: String) : Exception(message)
 

@@ -47,16 +47,32 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MyProfileScreen(
-    navController: NavController,
-    viewModel: MyProfileViewModel = viewModel()
+    navController: NavController
 ) {
     val context = LocalContext.current
+    val viewModel: MyProfileViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return MyProfileViewModel(context.applicationContext as android.app.Application) as T
+            }
+        }
+    )
+
     val authManager = AuthManager.getInstance(context)
     val userEmail by authManager.getUserEmailFlow().collectAsState(initial = null)
     val uiState = viewModel.uiState
     val coroutineScope = rememberCoroutineScope()
     var showChangePasswordDialog by remember { mutableStateOf(false) }
 
+    // Handle authentication errors by navigating to login
+    LaunchedEffect(uiState.authError) {
+        if (uiState.authError) {
+            navController.navigate("login") {
+                popUpTo("home") { inclusive = false }
+            }
+        }
+    }
 
     // Load user profile when email is available
     LaunchedEffect(userEmail) {

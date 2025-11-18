@@ -1,25 +1,30 @@
 package my.application.ui.screen.myprofile
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import my.application.data.auth.AuthManager
 import my.application.data.remote.dto.ScorecardDto
 import my.application.data.remote.dto.UserDto
+import my.application.data.repository.AuthException
 import my.application.data.repository.UserRepository
 
 class MyProfileViewModel(
+    application: Application
+) : AndroidViewModel(application) {
     private val userRepository: UserRepository = UserRepository.getInstance()
-) : ViewModel() {
+    private val authManager: AuthManager = AuthManager.getInstance(application)
 
     var uiState by mutableStateOf(MyProfileUiState())
         private set
 
     fun loadUserProfile(email: String) {
         viewModelScope.launch {
-            uiState = uiState.copy(isLoading = true, error = null)
+            uiState = uiState.copy(isLoading = true, error = null, authError = false)
 
             val userResult = userRepository.getUser(email)
             val scorecardsResult = userRepository.getScorecards(email)
@@ -32,13 +37,24 @@ class MyProfileViewModel(
                         user = user,
                         scorecards = scorecards,
                         isLoading = false,
-                        error = null
+                        error = null,
+                        authError = false
+                    )
+                }
+                userResult.exceptionOrNull() is AuthException -> {
+                    // Authentication failed - clear auth data
+                    authManager.clearAuth()
+                    uiState.copy(
+                        isLoading = false,
+                        error = null,
+                        authError = true
                     )
                 }
                 else -> {
                     uiState.copy(
                         isLoading = false,
-                        error = userResult.exceptionOrNull()?.message ?: "Failed to load profile"
+                        error = userResult.exceptionOrNull()?.message ?: "Failed to load profile",
+                        authError = false
                     )
                 }
             }
@@ -139,5 +155,6 @@ data class MyProfileUiState(
     val user: UserDto? = null,
     val scorecards: List<ScorecardDto> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val authError: Boolean = false
 )
