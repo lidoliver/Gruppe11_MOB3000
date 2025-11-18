@@ -7,12 +7,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,8 +34,13 @@ import my.application.ui.components.AppTopBar
 import my.application.data.GameSession
 import my.application.data.GameSessionManager
 import my.application.data.repository.TrackRepository
-import kotlinx.coroutines.delay
-import kotlin.math.abs
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.maps.android.compose.*
+import my.application.data.remote.dto.HoleData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +62,7 @@ fun PlayDiscGolfScreen(
     var showScores by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    var holesData by remember { mutableStateOf<List<HoleData>>(emptyList()) }
 
     val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
@@ -87,6 +92,10 @@ fun PlayDiscGolfScreen(
                     courseName = track.name
                     totalHoles = track.holes
                     holeScores = List(track.holes) { 0 }
+
+                    // Load hole data with GPS coordinates
+                    holesData = track.holesData ?: emptyList()
+
 
                     if (isSessionPlay) {
                         courseName = "${track.name} - Multiplayer"
@@ -187,7 +196,64 @@ fun PlayDiscGolfScreen(
                 showScores = showScores
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Map showing current hole
+            val currentHoleData = holesData.find { it.holeNumber == currentHole }
+
+
+            if (currentHoleData != null &&
+                currentHoleData.teeLatitude != null &&
+                currentHoleData.teeLongitude != null &&
+                currentHoleData.basketLatitude != null &&
+                currentHoleData.basketLongitude != null) {
+                HoleMapCard(
+                    holeNumber = currentHole,
+                    teePosition = LatLng(currentHoleData.teeLatitude, currentHoleData.teeLongitude),
+                    basketPosition = LatLng(currentHoleData.basketLatitude, currentHoleData.basketLongitude),
+                    par = currentHoleData.par
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            } else {
+                // Show placeholder when no GPS data with more detailed error message
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Place,
+                            contentDescription = "No GPS data",
+                            tint = Color(0xFFBDBDBD),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Ingen kartdata for hull $currentHole",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF757575),
+                            textAlign = TextAlign.Center
+                        )
+                        if (holesData.isEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "(GPS-data mangler i databasen)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF999999),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Current Hole Score Input
             CurrentHoleCard(
@@ -231,53 +297,10 @@ fun PlayDiscGolfScreen(
             }
         }
 
-        // Swipe detection zone covering bottom half of screen
-        var dragStartY by remember { mutableFloatStateOf(0f) }
-        var isDragging by remember { mutableStateOf(false) }
+        // Note: Removed the blocking swipe detection box that was preventing button clicks
+        // Users can click the arrow indicator at the bottom to show/hide the bottom bar
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.5f) // Bottom half of screen
-                .align(Alignment.BottomCenter)
-                .pointerInput(isBottomBarVisible) {
-                    detectVerticalDragGestures(
-                        onDragStart = { offset ->
-                            dragStartY = offset.y
-                            isDragging = true
-                        },
-                        onDragEnd = {
-                            if (isDragging) {
-                                isDragging = false
-                            }
-                        },
-                        onDragCancel = {
-                            isDragging = false
-                        },
-                        onVerticalDrag = { change, dragAmount ->
-                            val currentY = change.position.y
-                            val totalDrag = currentY - dragStartY
-
-                            // Only trigger on significant drag
-                            if (abs(totalDrag) > 120) {
-                                if (totalDrag < 0 && !isBottomBarVisible) {
-                                    // Swiped up significantly - show bottom bar
-                                    onBottomBarVisibilityChange?.invoke(true)
-                                    isDragging = false
-                                    dragStartY = currentY
-                                } else if (totalDrag > 0 && isBottomBarVisible) {
-                                    // Swiped down significantly - hide bottom bar
-                                    onBottomBarVisibilityChange?.invoke(false)
-                                    isDragging = false
-                                    dragStartY = currentY
-                                }
-                            }
-                        }
-                    )
-                }
-        )
-
-        // Animated arrow indicator at bottom
+        // Animated arrow indicator at bottom - now clickable
         val arrowRotation by animateFloatAsState(
             targetValue = if (isBottomBarVisible) 180f else 0f,
             animationSpec = tween(durationMillis = 300),
@@ -298,10 +321,14 @@ fun PlayDiscGolfScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = if (isBottomBarVisible) "Sveip ned" else "Sveip opp",
+                contentDescription = if (isBottomBarVisible) "Sveip ned for å skjule" else "Trykk for å vise navigasjon",
                 tint = Color.Gray.copy(alpha = 0.5f),
                 modifier = Modifier
-                    .size(42.dp)  // Bigger for better visibility
+                    .size(42.dp)
+                    .clickable {
+                        // Toggle bottom bar visibility when arrow is clicked
+                        onBottomBarVisibilityChange?.invoke(!isBottomBarVisible)
+                    }
                     .graphicsLayer {
                         rotationZ = arrowRotation
                     }
@@ -661,3 +688,158 @@ fun HoleSummaryItem(
     }
 }
 
+@Composable
+fun HoleMapCard(
+    holeNumber: Int,
+    teePosition: LatLng,
+    basketPosition: LatLng,
+    par: Int
+) {
+    val cameraPositionState = rememberCameraPositionState()
+    var isMapLoaded by remember { mutableStateOf(false) }
+
+    // Calculate bounds to fit both tee and basket
+    LaunchedEffect(teePosition, basketPosition) {
+        val bounds = LatLngBounds.builder()
+            .include(teePosition)
+            .include(basketPosition)
+            .build()
+
+        try {
+            kotlinx.coroutines.delay(100) // Small delay to ensure map is ready
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngBounds(bounds, 150),
+                durationMs = 1000
+            )
+            isMapLoaded = true
+        } catch (_: Exception) {
+            // Fallback to center position if bounds animation fails
+            val center = LatLng(
+                (teePosition.latitude + basketPosition.latitude) / 2,
+                (teePosition.longitude + basketPosition.longitude) / 2
+            )
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(center, 16f)
+            isMapLoaded = true
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Hull $holeNumber",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4A90E2)
+                )
+                Text(
+                    text = "Par $par",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF666666)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            ) {
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(
+                        zoomControlsEnabled = false,
+                        myLocationButtonEnabled = false,
+                        compassEnabled = false,
+                        scrollGesturesEnabled = true,
+                        zoomGesturesEnabled = true,
+                        tiltGesturesEnabled = false,
+                        rotationGesturesEnabled = false
+                    ),
+                    properties = MapProperties(
+                        mapType = MapType.HYBRID
+                    )
+                ) {
+                    // Tee marker (green)
+                    Marker(
+                        state = MarkerState(position = teePosition),
+                        title = "Tee",
+                        snippet = "Start punkt",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                    )
+
+                    // Basket marker (red)
+                    Marker(
+                        state = MarkerState(position = basketPosition),
+                        title = "Basket",
+                        snippet = "Mål",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                    )
+
+                    // Line connecting tee to basket
+                    Polyline(
+                        points = listOf(teePosition, basketPosition),
+                        color = Color(0xFF4A90E2),
+                        width = 5f
+                    )
+                }
+
+                // Legend overlay
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(8.dp)
+                        .background(
+                            Color.White.copy(alpha = 0.9f),
+                            RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(Color(0xFF34A853), CircleShape)
+                        )
+                        Text(
+                            text = "Tee",
+                            fontSize = 11.sp,
+                            color = Color(0xFF333333)
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(Color(0xFFEA4335), CircleShape)
+                        )
+                        Text(
+                            text = "Basket",
+                            fontSize = 11.sp,
+                            color = Color(0xFF333333)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
