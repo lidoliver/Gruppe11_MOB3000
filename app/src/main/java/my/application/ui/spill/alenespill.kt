@@ -86,14 +86,8 @@ fun PlayDiscGolfScreen(
         } else if (courseId != null) {
             // Fetch course from backend database
             try {
-                android.util.Log.d("AleneSpill", "========= FETCHING COURSE DATA =========")
-                android.util.Log.d("AleneSpill", "Course ID: $courseId")
-
                 val result = trackRepository.getTrackById(courseId)
                 result.onSuccess { track ->
-                    android.util.Log.d("AleneSpill", "✅ API Response received!")
-                    android.util.Log.d("AleneSpill", "Track DTO raw data: $track")
-
                     // Use data from database
                     courseName = track.name
                     totalHoles = track.holes
@@ -102,36 +96,6 @@ fun PlayDiscGolfScreen(
                     // Load hole data with GPS coordinates
                     holesData = track.holesData ?: emptyList()
 
-                    // Debug logging
-                    android.util.Log.d("AleneSpill", "========= COURSE DATA LOADED =========")
-                    android.util.Log.d("AleneSpill", "Course name: ${track.name}")
-                    android.util.Log.d("AleneSpill", "Course ID (baneId): ${track.baneId}")
-                    android.util.Log.d("AleneSpill", "Total holes (track.holes): ${track.holes}")
-                    android.util.Log.d("AleneSpill", "Holes data list size: ${holesData.size}")
-                    android.util.Log.d("AleneSpill", "Holes data is empty: ${holesData.isEmpty()}")
-                    android.util.Log.d("AleneSpill", "track.holesData is null: ${track.holesData == null}")
-
-                    if (holesData.isEmpty()) {
-                        android.util.Log.e("AleneSpill", "⚠️⚠️⚠️ WARNING: holesData is EMPTY! ⚠️⚠️⚠️")
-                        android.util.Log.e("AleneSpill", "Track.holesData field value: ${track.holesData}")
-                        android.util.Log.e("AleneSpill", "This means the API response doesn't include 'holes' array")
-                        android.util.Log.e("AleneSpill", "Or the GPS data hasn't been added to the database yet")
-                    } else {
-                        android.util.Log.d("AleneSpill", "✅ Found ${holesData.size} holes with data!")
-                    }
-
-                    holesData.forEachIndexed { index, hole ->
-                        val hasTeeCoords = hole.teeLatitude != null && hole.teeLongitude != null
-                        val hasBasketCoords = hole.basketLatitude != null && hole.basketLongitude != null
-                        val logPrefix = if (hasTeeCoords && hasBasketCoords) "✅" else "❌"
-
-                        android.util.Log.d("AleneSpill", "$logPrefix Hole ${hole.holeNumber} [index=$index]: " +
-                            "tee=(${hole.teeLatitude}, ${hole.teeLongitude}), " +
-                            "basket=(${hole.basketLatitude}, ${hole.basketLongitude}), " +
-                            "par=${hole.par}, " +
-                            "hasTee=$hasTeeCoords, hasBasket=$hasBasketCoords")
-                    }
-                    android.util.Log.d("AleneSpill", "========================================")
 
                     if (isSessionPlay) {
                         courseName = "${track.name} - Multiplayer"
@@ -237,24 +201,6 @@ fun PlayDiscGolfScreen(
             // Map showing current hole
             val currentHoleData = holesData.find { it.holeNumber == currentHole }
 
-            // Debug logging
-            LaunchedEffect(currentHole, holesData.size) {
-                android.util.Log.d("AleneSpill", "========= HOLE MAP DEBUG =========")
-                android.util.Log.d("AleneSpill", "Current hole: $currentHole")
-                android.util.Log.d("AleneSpill", "Total holes data: ${holesData.size}")
-                android.util.Log.d("AleneSpill", "Holes data list: ${holesData.map { it.holeNumber }}")
-                android.util.Log.d("AleneSpill", "Current hole data found: ${currentHoleData != null}")
-                currentHoleData?.let { hole ->
-                    android.util.Log.d("AleneSpill", "Hole ${hole.holeNumber} GPS: " +
-                        "tee=(${hole.teeLatitude}, ${hole.teeLongitude}), " +
-                        "basket=(${hole.basketLatitude}, ${hole.basketLongitude})")
-                    android.util.Log.d("AleneSpill", "Has tee coords: ${hole.teeLatitude != null && hole.teeLongitude != null}")
-                    android.util.Log.d("AleneSpill", "Has basket coords: ${hole.basketLatitude != null && hole.basketLongitude != null}")
-                } ?: run {
-                    android.util.Log.e("AleneSpill", "❌ No hole data found for hole $currentHole")
-                }
-                android.util.Log.d("AleneSpill", "==================================")
-            }
 
             if (currentHoleData != null &&
                 currentHoleData.teeLatitude != null &&
@@ -754,10 +700,6 @@ fun HoleMapCard(
 
     // Calculate bounds to fit both tee and basket
     LaunchedEffect(teePosition, basketPosition) {
-        android.util.Log.d("AleneSpill", "📍 Loading map for hole $holeNumber")
-        android.util.Log.d("AleneSpill", "   Tee: (${teePosition.latitude}, ${teePosition.longitude})")
-        android.util.Log.d("AleneSpill", "   Basket: (${basketPosition.latitude}, ${basketPosition.longitude})")
-
         val bounds = LatLngBounds.builder()
             .include(teePosition)
             .include(basketPosition)
@@ -770,7 +712,6 @@ fun HoleMapCard(
                 durationMs = 1000
             )
             isMapLoaded = true
-            android.util.Log.d("AleneSpill", "✅ Map loaded and camera animated for hole $holeNumber")
         } catch (_: Exception) {
             // Fallback to center position if bounds animation fails
             val center = LatLng(
@@ -779,7 +720,6 @@ fun HoleMapCard(
             )
             cameraPositionState.position = CameraPosition.fromLatLngZoom(center, 16f)
             isMapLoaded = true
-            android.util.Log.d("AleneSpill", "✅ Map loaded with fallback camera for hole $holeNumber")
         }
     }
 
