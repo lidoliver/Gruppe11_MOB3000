@@ -60,6 +60,8 @@ const sql = postgres(process.env.DB_CONNECTION_STRING,{
     options: '--search_path=mydb'
 });
 
+export { sql };
+
 async function validateConnection() {
     try {
         await sql`SELECT 1`;
