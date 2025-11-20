@@ -274,17 +274,19 @@ async function createPoengkortForCourse(bane_id, spiller_navn, hullPoeng) {
                 bane_id, 
                 spiller_navn, 
                 score,
-                total_score, 
+                total_score,
+                dato,
                 opprettet_dato
             ) 
             VALUES (
                 '${bane_id}', 
                 '${spiller_navn}', 
                 (SELECT jsonb_agg(json_build_object('hull_id', t.id, 'score', t.score)) FROM (VALUES ${fieldValues}) AS t(id, score)),
-                ${total_score}, 
+                ${total_score},
+                (NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Oslo',
                 (NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Oslo'
             )
-            RETURNING pointcard_id, bane_id, spiller_navn, score, total_score, opprettet_dato
+            RETURNING pointcard_id, bane_id, spiller_navn, score, total_score, dato, opprettet_dato
         `;
         
         

@@ -34,6 +34,9 @@ import my.application.ui.components.AppTopBar
 import my.application.data.GameSession
 import my.application.data.GameSessionManager
 import my.application.data.repository.TrackRepository
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -54,6 +57,7 @@ fun PlayDiscGolfScreen(
     val context = LocalContext.current
     val sessionManager = remember { GameSessionManager(context) }
     val trackRepository = remember { TrackRepository(context) }
+    val coroutineScope = rememberCoroutineScope()
 
     var courseName by remember { mutableStateOf("Disc Golf Bane") }
     var currentHole by remember { mutableIntStateOf(1) }
@@ -274,10 +278,60 @@ fun PlayDiscGolfScreen(
                 onPrevious = { if (currentHole > 1) currentHole-- },
                 onNext = { if (currentHole < totalHoles) currentHole++ },
                 onFinish = {
-                    // Clear saved session when game is finished
-                    sessionManager.clearGameSession()
-                    // Save scorecard and navigate back
-                    navController.popBackStack()
+                    // Capture current state before launching coroutine
+                    val currentHoleScores = holeScores
+                    val currentHolesData = holesData
+                    val currentCourseId = courseId
+
+                    // Save scorecard to backend before finishing
+                    coroutineScope.launch(Dispatchers.IO) {
+                        try {
+                            val authManager = my.application.data.auth.AuthManager.getInstance(context)
+                            val userRepository = my.application.data.repository.UserRepository.getInstance()
+                            val userEmail = authManager.getUserEmail() ?: "unknown"
+
+                            // Build hole scores with hole IDs
+                            val scoresToSave = if (currentHolesData.isNotEmpty()) {
+                                // Use hole data from database if available
+                                currentHolesData.mapIndexed { index, holeData ->
+                                    my.application.data.remote.dto.HoleScore(
+                                        hullId = holeData.holeId?.toString() ?: (index + 1).toString(),
+                                        poeng = currentHoleScores.getOrNull(index) ?: 0
+                                    )
+                                }
+                            } else {
+                                // Generate hole scores based on the number of holes played
+                                currentHoleScores.mapIndexed { index, score ->
+                                    my.application.data.remote.dto.HoleScore(
+                                        hullId = (index + 1).toString(),
+                                        poeng = score
+                                    )
+                                }
+                            }
+
+                            if (currentCourseId != null && scoresToSave.isNotEmpty()) {
+                                val result = userRepository.createScorecard(
+                                    baneId = currentCourseId,
+                                    spillerNavn = userEmail,
+                                    hullPoeng = scoresToSave
+                                )
+                                if (result.isSuccess) {
+                                    android.util.Log.d("PlayDiscGolfScreen", "Scorecard saved successfully")
+                                } else {
+                                    android.util.Log.e("PlayDiscGolfScreen", "Failed to save scorecard: ${result.exceptionOrNull()?.message}")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("PlayDiscGolfScreen", "Error saving scorecard", e)
+                        } finally {
+                            withContext(Dispatchers.Main) {
+                                // Clear saved session when game is finished
+                                sessionManager.clearGameSession()
+                                // Navigate back
+                                navController.popBackStack()
+                            }
+                        }
+                    }
                 }
             )
 

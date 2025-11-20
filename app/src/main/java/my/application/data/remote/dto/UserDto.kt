@@ -52,11 +52,13 @@ data class RegisterResponse(
 )
 
 data class ScorecardDto(
-    @Json(name = "id_poengkort") val id: Int,
-    @Json(name = "epost_bruker") val userEmail: String,
-    @Json(name = "bane_id_bane") val courseId: Int?,
-    @Json(name = "dato") val date: String,
-    @Json(name = "totalt_poeng") val totalScore: Int
+    @Json(name = "pointcard_id") val id: Int,
+    @Json(name = "spiller_navn") val userEmail: String,
+    @Json(name = "bane_id") val courseId: Int?,
+    @Json(name = "dato") val date: String?,
+    @Json(name = "total_score") val totalScore: Int,
+    @Json(name = "score") val score: Any? = null, // JSONB field
+    @Json(name = "oppdatert_dato") val oppdatert_dato: String? = null
 )
 
 data class ChangePasswordRequest(

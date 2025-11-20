@@ -146,11 +146,16 @@ app.get('/api/pointcard/:email', passport.authenticate('jwt', {session: false}),
     async (req, res) => {
     try {
         const email = req.params.email;
+        console.log(`========================================`);
         console.log(`Fetching scorecards for: ${email}`);
         
         const poengkort = await db.getPoengkort(email);
-        console.log('Scorecard data retrieved:', poengkort ? poengkort.length : 0);
-        
+        console.log(`Scorecard data retrieved: ${poengkort ? poengkort.length : 0} records`);
+        if (poengkort && poengkort.length > 0) {
+            console.log('First scorecard:', JSON.stringify(poengkort[0], null, 2));
+        }
+        console.log(`========================================`);
+
         res.status(200).json(poengkort || []);
         
     } catch (error) {

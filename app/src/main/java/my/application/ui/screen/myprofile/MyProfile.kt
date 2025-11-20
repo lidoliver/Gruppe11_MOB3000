@@ -74,9 +74,11 @@ fun MyProfileScreen(
         }
     }
 
-    // Load user profile when email is available
-    LaunchedEffect(userEmail) {
+    // Reload profile data whenever this screen is navigated to
+    val currentBackStackEntry = navController.currentBackStackEntry
+    LaunchedEffect(userEmail, currentBackStackEntry) {
         userEmail?.let { email ->
+            android.util.Log.d("MyProfileScreen", "Reloading profile for: $email")
             viewModel.loadUserProfile(email)
         }
     }
@@ -252,6 +254,12 @@ fun MyProfileScreen(
 
                         Text(
                             text = "Rounds Played: ${uiState.scorecards.size}",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Friends: ${uiState.friendsCount}",
                             fontSize = 16.sp
                         )
 

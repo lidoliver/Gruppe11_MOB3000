@@ -35,6 +35,12 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<List<ScorecardDto>>
 
+    @POST("api/pointcard/course")
+    suspend fun createScorecard(
+        @Body request: CreateScorecardRequest,
+        @Header("Authorization") token: String
+    ): Response<ScorecardDto>
+
     // Players endpoint
     @GET("api/epost")
     suspend fun getAllPlayers(): Response<List<UserDto>>

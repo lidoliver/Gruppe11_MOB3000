@@ -98,11 +98,16 @@ class UserRepository {
 
     suspend fun getScorecards(email: String): Result<List<ScorecardDto>> {
         return try {
+            Log.d("UserRepository", "Fetching scorecards for email: $email")
             val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
             val response = api.getScorecards(email, token)
+            Log.d("UserRepository", "Scorecards response code: ${response.code()}")
             if (response.isSuccessful) {
-                Result.success(response.body() ?: emptyList())
+                val scorecards = response.body() ?: emptyList()
+                Log.d("UserRepository", "Scorecards fetched successfully: ${scorecards.size} items")
+                Result.success(scorecards)
             } else {
+                Log.e("UserRepository", "Failed to get scorecards: ${response.code()} - ${response.message()}")
                 // Check for authentication errors
                 if (response.code() == 401 || response.code() == 403) {
                     Result.failure(AuthException("Authentication failed"))
@@ -162,6 +167,53 @@ class UserRepository {
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Check username error", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getFriends(): Result<List<my.application.data.remote.dto.FriendDto>> {
+        return try {
+            val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
+            val response = api.getFriends(token)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                if (response.code() == 401 || response.code() == 403) {
+                    Result.failure(AuthException("Authentication failed"))
+                } else {
+                    Result.failure(Exception("Failed to get friends: ${response.message()}"))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get friends error", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createScorecard(
+        baneId: String,
+        spillerNavn: String,
+        hullPoeng: List<my.application.data.remote.dto.HoleScore>
+    ): Result<ScorecardDto> {
+        return try {
+            val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
+            val request = my.application.data.remote.dto.CreateScorecardRequest(
+                baneId = baneId,
+                spillerNavn = spillerNavn,
+                hullPoeng = hullPoeng
+            )
+            val response = api.createScorecard(request, token)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                if (response.code() == 401 || response.code() == 403) {
+                    Result.failure(AuthException("Authentication failed"))
+                } else {
+                    Result.failure(Exception("Failed to create scorecard: ${response.message()}"))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Create scorecard error", e)
             Result.failure(e)
         }
     }

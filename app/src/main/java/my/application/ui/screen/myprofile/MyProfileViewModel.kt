@@ -24,18 +24,27 @@ class MyProfileViewModel(
 
     fun loadUserProfile(email: String) {
         viewModelScope.launch {
+            android.util.Log.d("MyProfileViewModel", "Loading profile for email: $email")
             uiState = uiState.copy(isLoading = true, error = null, authError = false)
 
             val userResult = userRepository.getUser(email)
             val scorecardsResult = userRepository.getScorecards(email)
+            val friendsResult = userRepository.getFriends()
+
+            android.util.Log.d("MyProfileViewModel", "User result: ${userResult.isSuccess}")
+            android.util.Log.d("MyProfileViewModel", "Scorecards result: ${scorecardsResult.isSuccess}, count: ${scorecardsResult.getOrNull()?.size ?: 0}")
+            android.util.Log.d("MyProfileViewModel", "Friends result: ${friendsResult.isSuccess}, count: ${friendsResult.getOrNull()?.size ?: 0}")
 
             uiState = when {
                 userResult.isSuccess -> {
                     val user = userResult.getOrNull()
                     val scorecards = scorecardsResult.getOrNull() ?: emptyList()
+                    val friends = friendsResult.getOrNull() ?: emptyList()
+                    android.util.Log.d("MyProfileViewModel", "Profile loaded successfully with ${scorecards.size} scorecards and ${friends.size} friends")
                     uiState.copy(
                         user = user,
                         scorecards = scorecards,
+                        friendsCount = friends.size,
                         isLoading = false,
                         error = null,
                         authError = false
@@ -154,6 +163,7 @@ class MyProfileViewModel(
 data class MyProfileUiState(
     val user: UserDto? = null,
     val scorecards: List<ScorecardDto> = emptyList(),
+    val friendsCount: Int = 0,
     val isLoading: Boolean = false,
     val error: String? = null,
     val authError: Boolean = false
