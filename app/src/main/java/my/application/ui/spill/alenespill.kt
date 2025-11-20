@@ -67,51 +67,51 @@ fun PlayDiscGolfScreen(
     val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
 
-    // Load data - check for saved session first, then load course from database
+    // Load data - always fetch course data from database, then restore session progress
     LaunchedEffect(courseId, sessionId) {
         loading = true
         error = null
 
-        // Try to restore saved session if it matches current course
-        val savedSession = sessionManager.getGameSession()
-        if (savedSession != null &&
-            savedSession.courseId == courseId &&
-            savedSession.sessionId == sessionId) {
-            // Restore saved session
-            courseName = savedSession.courseName
-            currentHole = savedSession.currentHole
-            totalHoles = savedSession.totalHoles
-            holeScores = savedSession.holeScores
-            loading = false
-        } else if (courseId != null) {
-            // Fetch course from backend database
+        if (courseId != null) {
+            // Fetch course from backend database (always needed for GPS data)
             try {
                 val result = trackRepository.getTrackById(courseId)
                 result.onSuccess { track ->
-                    // Use data from database
-                    courseName = track.name
-                    totalHoles = track.holes
-                    holeScores = List(track.holes) { 0 }
-
                     // Load hole data with GPS coordinates
                     holesData = track.holesData ?: emptyList()
 
+                    // Try to restore saved session if it matches current course
+                    val savedSession = sessionManager.getGameSession()
+                    if (savedSession != null &&
+                        savedSession.courseId == courseId &&
+                        savedSession.sessionId == sessionId) {
+                        // Restore saved session progress
+                        courseName = savedSession.courseName
+                        currentHole = savedSession.currentHole
+                        totalHoles = savedSession.totalHoles
+                        holeScores = savedSession.holeScores
+                    } else {
+                        // Start new game with data from database
+                        courseName = track.name
+                        totalHoles = track.holes
+                        holeScores = List(track.holes) { 0 }
 
-                    if (isSessionPlay) {
-                        courseName = "${track.name} - Multiplayer"
-                    }
+                        if (isSessionPlay) {
+                            courseName = "${track.name} - Multiplayer"
+                        }
 
-                    // Save initial session
-                    sessionManager.saveGameSession(
-                        GameSession(
-                            courseId = courseId,
-                            sessionId = sessionId,
-                            courseName = courseName,
-                            currentHole = currentHole,
-                            totalHoles = totalHoles,
-                            holeScores = holeScores
+                        // Save initial session
+                        sessionManager.saveGameSession(
+                            GameSession(
+                                courseId = courseId,
+                                sessionId = sessionId,
+                                courseName = courseName,
+                                currentHole = currentHole,
+                                totalHoles = totalHoles,
+                                holeScores = holeScores
+                            )
                         )
-                    )
+                    }
                     loading = false
                 }.onFailure { exception ->
                     error = "Failed to load course: ${exception.message}"

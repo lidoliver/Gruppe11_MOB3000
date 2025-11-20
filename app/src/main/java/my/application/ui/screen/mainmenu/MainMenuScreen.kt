@@ -36,6 +36,7 @@ fun MainMenuScreen(navController: NavController) {
     val sessionManager = remember { GameSessionManager(context) }
     var hasActiveSession by remember { mutableStateOf(false) }
     var savedSession by remember { mutableStateOf<my.application.data.GameSession?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     // Check for active session on composition
     LaunchedEffect(Unit) {
@@ -82,6 +83,48 @@ fun MainMenuScreen(navController: NavController) {
             description = "Se din spillerhistorikk"
         )
     )
+
+    // dialog for sletting av spill
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(text = "Avbryt spill?")
+            },
+            text = {
+                Text(text = "Er du sikker på at du vil avbryte dette spillet? All fremgang vil gå tapt.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        sessionManager.clearGameSession()
+                        hasActiveSession = false
+                        savedSession = null
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Ja, avbryt")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) {
+                    Text("Nei, behold")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -152,6 +195,20 @@ fun MainMenuScreen(navController: NavController) {
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(
+                            onClick = {
+                                showDeleteDialog = true
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Avbryt spill",
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
                     }
                 }
             }
