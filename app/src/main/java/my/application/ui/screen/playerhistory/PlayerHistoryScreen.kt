@@ -29,10 +29,10 @@ import my.application.data.remote.dto.PlayerStats
 @Composable
 fun PlayerHistoryScreen(
     navController: NavController,
-    viewModel: PlayerHistoryViewModel? = null, // made optional
-    playerEmail: String? = null // made optional
+    viewModel: PlayerHistoryViewModel? = null,
+    playerEmail: String? = null
 ) {
-    // Provide a lightweight default ViewModel (with fake API) if none provided.
+    // Lite vw
     val vm = viewModel ?: remember {
         val fakeApi = object : PlayerApi {
             override suspend fun getPlayerStats(email: String) = PlayerStats(
@@ -191,7 +191,7 @@ fun PlayerHistoryScreen(
 @Preview
 @Composable
 fun PlayerHistoryScreenPreview() {
-    // Fake API for preview
+    // Fake API for å vise frem siden
     val fakeApi = object : PlayerApi {
         override suspend fun getPlayerStats(email: String) = PlayerStats(
             email = email,

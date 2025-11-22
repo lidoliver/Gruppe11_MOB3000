@@ -23,17 +23,17 @@ class PlayerHistoryViewModel(
     val uiState: StateFlow<UiState> = _uiState
 
     fun load(email: String) {
-        Log.d("PlayerHistoryVM", "Loading stats for email: $email")
+        Log.d("PlayerHistoryVM", "Laster inn statistikk for email: $email")
         _uiState.value = UiState.Loading
         viewModelScope.launch {
             try {
                 val stats = api.getPlayerStats(email)
-                Log.d("PlayerHistoryVM", "Successfully loaded stats: $stats")
+                Log.d("PlayerHistoryVM", "Lastet inn statistikk: $stats")
                 _uiState.value = UiState.Success(stats)
             } catch (e: Exception) {
-                Log.e("PlayerHistoryVM", "Error loading stats for $email", e)
+                Log.e("PlayerHistoryVM", "Feil ved innlasting av statistikk for $email", e)
                 val errorMessage = when {
-                    e.message?.contains("Unable to resolve host") == true ->
+                    e.message?.contains("Klarer ikke å resolve host") == true ->
                         "Kan ikke koble til server. Sjekk at backend kjører."
                     e.message?.contains("timeout") == true ->
                         "Serveren svarer ikke. Prøv igjen."
