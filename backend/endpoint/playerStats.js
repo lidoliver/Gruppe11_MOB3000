@@ -7,14 +7,14 @@ export async function getPlayerStats(req, res) {
         // Decode the email parameter (handles @ symbol in URL)
         email = decodeURIComponent(email);
 
-        console.log('=== PLAYER STATS REQUEST ===');
-        console.log('Decoded email:', email);
+        console.log('=== SPILLERSTATISTIKK FORESPØRSEL ===');
+        console.log('Decode email:', email);
 
         // First, check what emails exist in database
         const allEmails = await sql`
             SELECT DISTINCT spiller_navn FROM mydb.pointcard LIMIT 10
         `;
-        console.log('Emails in database:', allEmails.map(e => e.spiller_navn));
+        console.log('Email i database:', allEmails.map(e => e.spiller_navn));
 
         // Get overall statistics using postgres template literal syntax
         const statsResult = await sql`
@@ -63,11 +63,11 @@ export async function getPlayerStats(req, res) {
         });
 
     } catch (error) {
-        console.error('❌ Error fetching player stats:', error);
-        console.error('Error details:', error.message);
+        console.error('❌ Feil, får ikke henter spiller statistikk:', error);
+        console.error('Feil melding:', error.message);
         console.error('Email param:', email);
         res.status(500).json({
-            error: 'Failed to fetch player statistics',
+            error: 'Fikk ikke henter spilerstatsitikk',
             details: error.message,
             email: email
         });
