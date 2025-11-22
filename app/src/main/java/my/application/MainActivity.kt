@@ -168,6 +168,27 @@ fun AppNavigation() {
                 }
             }
             composable(
+                route = "friend_history/{friendEmail}/{friendName}",
+                arguments = listOf(
+                    navArgument("friendEmail") { type = NavType.StringType },
+                    navArgument("friendName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val friendEmail = backStackEntry.arguments?.getString("friendEmail") ?: ""
+                val friendName = backStackEntry.arguments?.getString("friendName") ?: ""
+
+                val viewModel = remember {
+                    PlayerHistoryViewModel(RetrofitProvider.playerApi)
+                }
+
+                PlayerHistoryScreen(
+                    navController = navController,
+                    viewModel = viewModel,
+                    playerEmail = friendEmail,
+                    playerName = friendName
+                )
+            }
+            composable(
                 route = "conversation/{contactEmail}/{contactName}",
                 arguments = listOf(
                     navArgument("contactEmail") { type = NavType.StringType },

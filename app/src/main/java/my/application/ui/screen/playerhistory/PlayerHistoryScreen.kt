@@ -22,15 +22,15 @@ import my.application.ui.theme.MyApplicationTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import kotlinx.coroutines.delay
 import my.application.data.remote.api.PlayerApi
 import my.application.data.remote.dto.PlayerStats
-
+import java.util.Locale
 @Composable
 fun PlayerHistoryScreen(
     navController: NavController,
     viewModel: PlayerHistoryViewModel? = null,
-    playerEmail: String? = null
+    playerEmail: String? = null,
+    playerName: String? = null
 ) {
     // Lite vw
     val vm = viewModel ?: remember {
@@ -73,7 +73,7 @@ fun PlayerHistoryScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Din Spillerhistorikk",
+                text = if (playerName != null) "$playerName sin spillerhistorikk" else "Din Spillerhistorikk",
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -123,7 +123,7 @@ fun PlayerHistoryScreen(
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                                 Text(
-                                    text = "Gjennomsnittsscore: ${stats.averageScore?.let { String.format("%.1f", it) } ?: "-"}",
+                                    text = "Gjennomsnittsscore: ${stats.averageScore?.let { String.format(Locale.US, "%.1f", it) } ?: "-"}",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -191,33 +191,10 @@ fun PlayerHistoryScreen(
 @Preview
 @Composable
 fun PlayerHistoryScreenPreview() {
-    // Fake API for å vise frem siden
-    val fakeApi = object : PlayerApi {
-        override suspend fun getPlayerStats(email: String) = PlayerStats(
-            email = email,
-            totalGames = 15,
-            averageScore = 72.3,
-            bestScore = 65,
-            worstScore = 82,
-            lastPlayedAt = "2025-11-15T14:30:00Z",
-            totalRoundsByCourse = mapOf(
-                "Ekeberg Discgolf Park" to 8,
-                "Sognsvann DG" to 5,
-                "Tryvann Discgolf" to 2
-            )
-        )
-    }
-    val viewModel = PlayerHistoryViewModel(fakeApi)
-
-    LaunchedEffect(Unit) {
-        viewModel.load("test@example.com")
-        delay(100)
-    }
-
     MyApplicationTheme {
         PlayerHistoryScreen(
             navController = rememberNavController(),
-            viewModel = viewModel,
+            viewModel = null,
             playerEmail = "test@example.com"
         )
     }

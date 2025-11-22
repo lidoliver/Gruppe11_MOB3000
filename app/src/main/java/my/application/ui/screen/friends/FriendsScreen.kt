@@ -219,8 +219,7 @@ fun FriendsScreen(
                                 // This will be connected to the backend later
                             },
                             onHistoryClick = {
-                                // TODO: Navigate to play history screen
-                                // navController.navigate("friend_history/${friend.id}/${friend.name}")
+                                navController.navigate("friend_history/${friend.email}/${friend.name}")
                             }
                         )
                         HorizontalDivider(
