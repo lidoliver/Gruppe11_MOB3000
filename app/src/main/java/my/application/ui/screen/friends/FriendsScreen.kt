@@ -211,6 +211,9 @@ fun FriendsScreen(
                     items(filteredFriends) { friend ->
                         FriendItem(
                             friend = friend,
+                            onProfileClick = {
+                                navController.navigate("friend_profile/${friend.email}/${friend.name}")
+                            },
                             onMessageClick = {
                                 navController.navigate("conversation/${friend.email}/${friend.name}")
                             },
@@ -236,6 +239,7 @@ fun FriendsScreen(
 @Composable
 fun FriendItem(
     friend: Friend,
+    onProfileClick: () -> Unit,
     onMessageClick: () -> Unit,
     onInviteClick: () -> Unit,
     onHistoryClick: () -> Unit
@@ -255,8 +259,10 @@ fun FriendItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar with status indicator
-                Box {
+                // Avatar with status indicator - clickable to view profile
+                Box(
+                    modifier = Modifier.clickable { onProfileClick() }
+                ) {
                     Box(
                         modifier = Modifier
                             .size(48.dp)

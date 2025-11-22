@@ -44,7 +44,7 @@ router.post('/request',
             }
             
             const request = await db.sendFriendRequest(userEmail, friendEmail);
-            res.status(201).json(request);
+            res.status(201).json({ message: 'Friend request sent' });
         } catch (error) {
             console.error('Error sending friend request:', error);
             res.status(500).json({ message: 'Server error' });
@@ -101,7 +101,7 @@ router.post('/accept/:requestId',
                 return res.status(404).json({ message: 'Friend request not found or already processed' });
             }
             
-            res.status(200).json(result);
+            res.status(200).json({ message: 'Friend request accepted' });
         } catch (error) {
             console.error('Error accepting friend request:', error);
             res.status(500).json({ message: 'Server error' });
@@ -125,7 +125,7 @@ router.post('/decline/:requestId',
                 return res.status(404).json({ message: 'Friend request not found' });
             }
             
-            res.status(200).json(result);
+            res.status(200).json({ message: 'Friend request declined' });
         } catch (error) {
             console.error('Error declining friend request:', error);
             res.status(500).json({ message: 'Server error' });

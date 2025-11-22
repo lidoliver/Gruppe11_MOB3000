@@ -138,6 +138,22 @@ fun AppNavigation() {
             composable("friend_requests") {
                 FriendRequestsScreen(navController = navController)
             }
+            composable(
+                route = "friend_profile/{friendEmail}/{friendName}",
+                arguments = listOf(
+                    navArgument("friendEmail") { type = NavType.StringType },
+                    navArgument("friendName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val friendEmail = backStackEntry.arguments?.getString("friendEmail") ?: ""
+                val friendName = backStackEntry.arguments?.getString("friendName") ?: ""
+
+                my.application.ui.screen.friends.FriendProfileScreen(
+                    navController = navController,
+                    friendEmail = friendEmail,
+                    friendName = friendName
+                )
+            }
             composable("player_history") { backStackEntry ->
                 val context = LocalContext.current
                 val authManager = AuthManager.getInstance(context)
