@@ -59,10 +59,10 @@ fun MainMenuScreen(navController: NavController) {
             description = "Se din profil"
         ),
         MenuItem(
-            title = "Meldinger",
-            icon = Icons.Default.Email,
-            route = "messages",
-            description = "Se dine meldinger"
+            title = "Klubb",
+            icon = Icons.Default.Person,
+            route = "club",
+            description = "Din klubb"
         ),
         MenuItem(
             title = "Tips & Råd",

@@ -33,6 +33,7 @@ import my.application.ui.screen.myprofile.MyProfileScreen
 import my.application.ui.screen.startround.StartRoundScreen
 import my.application.ui.screen.tips.TipsScreen
 import my.application.ui.screen.login.LoginScreen
+import my.application.ui.screen.club.ClubScreen
 import my.application.ui.spill.BanevelgingAleneScreen
 import my.application.ui.spill.PlayDiscGolfScreen
 import my.application.ui.spill.CourseMapScreen
@@ -136,6 +137,9 @@ fun AppNavigation() {
             }
             composable("messages") {
                 MessagesScreen(navController = navController)
+            }
+            composable("club") {
+                ClubScreen(navController = navController)
             }
             composable("friend_search") {
                 FriendSearchScreen(navController = navController)
