@@ -43,9 +43,34 @@ fun FriendsScreen(
 
     var searchQuery by remember { mutableStateOf("") }
 
-    // Reload friends when screen is displayed
+    // Reload friends and friend request count when screen is displayed or resumed
+    // Also poll periodically (every 30 seconds) to update automatically
     LaunchedEffect(Unit) {
         viewModel.loadFriends()
+        viewModel.loadFriendRequestsCount()
+
+        // Poll every 30 seconds for updates while on this screen
+        while (true) {
+            kotlinx.coroutines.delay(30_000) // 30 seconds
+            viewModel.loadFriends()
+            viewModel.loadFriendRequestsCount()
+        }
+    }
+
+    // Reload friend request count when navigating back to this screen
+    DisposableEffect(navController) {
+        val callback = NavController.OnDestinationChangedListener { controller, destination, _ ->
+            if (destination.route == "friends") {
+                // Reload the count when returning to friends screen
+                viewModel.loadFriendRequestsCount()
+                viewModel.loadFriends() // Also reload friends in case a new friend was added
+            }
+        }
+        navController.addOnDestinationChangedListener(callback)
+
+        onDispose {
+            navController.removeOnDestinationChangedListener(callback)
+        }
     }
 
     // Filter friends based on search query

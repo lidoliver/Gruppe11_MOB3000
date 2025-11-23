@@ -65,7 +65,7 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Load friend requests count
      */
-    private fun loadFriendRequestsCount() {
+    fun loadFriendRequestsCount() {
         Log.d("FriendsViewModel", "loadFriendRequestsCount() called")
         viewModelScope.launch {
             friendsRepository.getFriendRequests()
