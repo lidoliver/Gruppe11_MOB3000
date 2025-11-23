@@ -2,6 +2,7 @@ import express from 'express';
 import passport from 'passport';
 import db from '../db.js';
 import { sendMessageNotification } from './notifications.js';
+import { sendFirestoreMessage } from '../services/firestoreMessages.js';
 
 const router = express.Router();
 
@@ -37,6 +38,15 @@ router.post('/',
             }
             
             const message = await db.sendMessage(senderEmail, receiverEmail, content);
+
+            // Also send to Firestore for real-time sync
+            try {
+                await sendFirestoreMessage(senderEmail, receiverEmail, content);
+                console.log('✅ Message synced to Firestore');
+            } catch (firestoreError) {
+                console.error('⚠️ Failed to sync to Firestore:', firestoreError);
+                // Don't fail the request if Firestore fails
+            }
 
             // Send push notification to receiver
             try {

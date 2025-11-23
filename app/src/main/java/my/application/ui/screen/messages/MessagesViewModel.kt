@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import my.application.data.messaging.Conversation
-import my.application.data.messaging.MessagingRepository
+import my.application.data.messaging.FirestoreMessagingRepository
 
 class MessagesViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = MessagingRepository()
+    private val repository = FirestoreMessagingRepository()
 
     private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
     val conversations: StateFlow<List<Conversation>> = _conversations.asStateFlow()

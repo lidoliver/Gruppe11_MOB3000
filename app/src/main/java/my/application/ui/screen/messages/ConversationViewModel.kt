@@ -8,12 +8,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import my.application.data.messaging.ChatMessage
-import my.application.data.messaging.PollingMessagingRepository
+import my.application.data.messaging.FirestoreMessagingRepository
 
 class ConversationViewModel(
     private val contactEmail: String
 ) : ViewModel() {
-    private val repository = PollingMessagingRepository()
+    private val repository = FirestoreMessagingRepository()
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
