@@ -72,8 +72,8 @@ fun MessagesScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Search bar
-            OutlinedTextField(
+            // Search bar with better styling
+            TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
@@ -87,9 +87,13 @@ fun MessagesScreen(
                     )
                 },
                 singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
                 )
             )
 
@@ -145,8 +149,8 @@ fun MessagesScreen(
                                 }
                             )
                             HorizontalDivider(
-                                modifier = Modifier.padding(start = 72.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant
+                                modifier = Modifier.padding(start = 88.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                             )
                         }
                     }
@@ -163,22 +167,19 @@ fun ConversationItem(
 ) {
     Surface(
         onClick = onClick,
-        color = if (conversation.isRead) {
-            MaterialTheme.colorScheme.surface
-        } else {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        }
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
+            // Avatar - larger and more prominent like Socialite
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(56.dp)
                     .clip(CircleShape)
                     .background(Color(conversation.avatarColor)),
                 contentAlignment = Alignment.Center
@@ -187,11 +188,9 @@ fun ConversationItem(
                     imageVector = Icons.Default.Person,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(32.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.width(16.dp))
 
             // Message content
             Column(
@@ -219,7 +218,8 @@ fun ConversationItem(
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
                             MaterialTheme.colorScheme.primary
-                        }
+                        },
+                        fontWeight = if (conversation.isRead) FontWeight.Normal else FontWeight.Bold
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
