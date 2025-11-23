@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -201,7 +204,7 @@ fun AppNavigation(intent: Intent? = null) {
                     friendName = friendName
                 )
             }
-            composable("player_history") { backStackEntry ->
+            composable("player_history") {
                 val context = LocalContext.current
                 val authManager = AuthManager.getInstance(context)
                 val scope = rememberCoroutineScope()
@@ -250,6 +253,104 @@ fun AppNavigation(intent: Intent? = null) {
                     playerEmail = friendEmail,
                     playerName = friendName
                 )
+            }
+            composable(
+                route = "courseDetail/{email}/{courseName}",
+                arguments = listOf(
+                    navArgument("email") { type = NavType.StringType },
+                    navArgument("courseName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val email = backStackEntry.arguments?.getString("email") ?: ""
+                val courseName = backStackEntry.arguments?.getString("courseName") ?: ""
+
+                val viewModel = remember {
+                    my.application.ui.screen.coursedetail.CourseDetailViewModel(RetrofitProvider.playerApi)
+                }
+
+                my.application.ui.screen.coursedetail.CourseDetailScreen(
+                    navController = navController,
+                    viewModel = viewModel,
+                    playerEmail = email,
+                    courseName = courseName,
+                    playerName = null
+                )
+            }
+            composable(
+                route = "courseDetail/{email}/{courseName}/{playerName}",
+                arguments = listOf(
+                    navArgument("email") { type = NavType.StringType },
+                    navArgument("courseName") { type = NavType.StringType },
+                    navArgument("playerName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val email = backStackEntry.arguments?.getString("email") ?: ""
+                val courseName = backStackEntry.arguments?.getString("courseName") ?: ""
+                val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
+
+                val viewModel = remember {
+                    my.application.ui.screen.coursedetail.CourseDetailViewModel(RetrofitProvider.playerApi)
+                }
+
+                my.application.ui.screen.coursedetail.CourseDetailScreen(
+                    navController = navController,
+                    viewModel = viewModel,
+                    playerEmail = email,
+                    courseName = courseName,
+                    playerName = playerName
+                )
+            }
+            composable(
+                route = "gameDetail/{gameId}/{email}/{courseName}",
+                arguments = listOf(
+                    navArgument("gameId") { type = NavType.IntType },
+                    navArgument("email") { type = NavType.StringType },
+                    navArgument("courseName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val gameId = backStackEntry.arguments?.getInt("gameId") ?: 0
+                val email = backStackEntry.arguments?.getString("email") ?: ""
+                val courseName = backStackEntry.arguments?.getString("courseName") ?: ""
+
+                // Load the course history to get the specific game
+                val viewModel = remember {
+                    my.application.ui.screen.coursedetail.CourseDetailViewModel(RetrofitProvider.playerApi)
+                }
+
+                LaunchedEffect(email, courseName) {
+                    viewModel.loadCourseHistory(email, courseName)
+                }
+
+                val uiState by viewModel.uiState.collectAsState()
+
+                when (val state = uiState) {
+                    is my.application.ui.screen.coursedetail.CourseDetailUiState.Success -> {
+                        val gameDetail = state.courseHistory.games.find { it.gameId == gameId }
+                        val holeStatistics = state.courseHistory.holeStatistics
+
+                        my.application.ui.screen.gamedetail.GameDetailScreen(
+                            navController = navController,
+                            gameDetail = gameDetail,
+                            holeStatistics = holeStatistics,
+                            courseName = courseName
+                        )
+                    }
+                    is my.application.ui.screen.coursedetail.CourseDetailUiState.Loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is my.application.ui.screen.coursedetail.CourseDetailUiState.Error -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = state.message,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                    }
+                }
             }
             composable(
                 route = "conversation/{contactEmail}/{contactName}",

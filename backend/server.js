@@ -23,6 +23,7 @@ import clubRequestsRoutes from './endpoint/clubRequests.js';
 import clubJoinRequestsRouter from './endpoint/clubJoinRequests.js';
 import notificationsRoutes from './endpoint/notifications.js';
 import { getPlayerStats } from './endpoint/playerStats.js';
+import { getPlayerCourseGames } from './endpoint/courseGames.js';
 
 // Import the canEditTrack middleware at the top of the file
 import { checkRole, canEditTrack } from './routes/checkRole.js';
@@ -58,6 +59,9 @@ app.use('/api/notifications', notificationsRoutes);
 
 // Player statistics endpoint
 app.get('/api/players/:email/stats', getPlayerStats);
+
+// Player course games endpoint - detailed history for a specific course
+app.get('/api/players/:email/courses/:courseName/games', getPlayerCourseGames);
 
 // Rute for å hente spillere fra databasen. laget av Marcus
 app.get('/api/epost', async (req, res) => {

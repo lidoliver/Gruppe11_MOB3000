@@ -22,8 +22,10 @@ import my.application.ui.theme.MyApplicationTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.*
 import my.application.data.remote.api.PlayerApi
 import my.application.data.remote.dto.PlayerStats
+import my.application.data.remote.dto.CourseGameHistory
 import java.util.Locale
 @Composable
 fun PlayerHistoryScreen(
@@ -43,6 +45,13 @@ fun PlayerHistoryScreen(
                 worstScore = null,
                 lastPlayedAt = null,
                 totalRoundsByCourse = emptyMap()
+            )
+            override suspend fun getPlayerCourseGames(email: String, courseName: String) = CourseGameHistory(
+                email = email,
+                courseName = courseName,
+                totalGames = 0,
+                games = emptyList(),
+                holeStatistics = emptyList()
             )
         }
         PlayerHistoryViewModel(fakeApi)
@@ -149,34 +158,66 @@ fun PlayerHistoryScreen(
 
                     // Per-course breakdown
                     if (stats.totalRoundsByCourse.isNotEmpty()) {
-                        Text(
-                            text = "Runder per bane",
-                            style = MaterialTheme.typography.titleMedium,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.GolfCourse,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Runder per bane",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
 
                         stats.totalRoundsByCourse.forEach { (courseName, roundCount) ->
                             ElevatedCard(
+                                onClick = {
+                                    navController.navigate("courseDetail/$emailToLoad/$courseName${if (playerName != null) "/$playerName" else ""}")
+                                },
                                 modifier = Modifier
                                     .padding(bottom = 8.dp)
                                     .fillMaxWidth(),
                                 colors = CardDefaults.elevatedCardColors()
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(12.dp),
+                                    modifier = Modifier.padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = courseName,
-                                            style = MaterialTheme.typography.titleSmall
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Terrain,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(32.dp)
                                         )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = courseName,
+                                                style = MaterialTheme.typography.titleMedium
+                                            )
+                                            Text(
+                                                text = "$roundCount runder spilt",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
-                                    Text(
-                                        text = "$roundCount runder",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.primary
+                                    Icon(
+                                        imageVector = Icons.Filled.ChevronRight,
+                                        contentDescription = "Se detaljer",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
