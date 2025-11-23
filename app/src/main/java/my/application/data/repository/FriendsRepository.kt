@@ -207,13 +207,20 @@ class FriendsRepository private constructor() {
         // Format last played date
         val lastPlayedText = dto.lastPlayed?.let { formatLastPlayed(it) }
 
+        // Map online status from backend
+        val onlineStatus = when (dto.onlineStatus?.lowercase()) {
+            "online" -> FriendStatus.ONLINE
+            "in_game" -> FriendStatus.IN_GAME
+            else -> FriendStatus.OFFLINE
+        }
+
         return Friend(
             id = dto.id,
             userId = 0, // Not needed for current use case
             name = fullName,
             username = dto.friendUsername,
             email = dto.friendEmail,
-            status = FriendStatus.OFFLINE, // TODO: Implement real-time online status
+            status = onlineStatus,
             lastPlayed = lastPlayedText,
             gamesPlayed = dto.gamesPlayed,
             avatarColor = generateColorForUsername(dto.friendUsername),

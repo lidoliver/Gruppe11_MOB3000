@@ -218,6 +218,26 @@ class UserRepository {
         }
     }
 
+    /**
+     * Send heartbeat to backend to update last active status
+     * This should be called periodically to keep online status updated
+     */
+    suspend fun updateHeartbeat(): Result<Unit> {
+        return try {
+            val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
+            val response = api.updateHeartbeat(token)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                // Don't log heartbeat failures as errors since they're routine
+                Result.failure(Exception("Heartbeat failed"))
+            }
+        } catch (e: Exception) {
+            // Don't log heartbeat failures as errors
+            Result.failure(e)
+        }
+    }
+
     companion object {
         @Volatile
         private var instance: UserRepository? = null

@@ -115,6 +115,9 @@ router.post('/login', async (req, res, next) => {
             return res.status(401).json({ message: 'Incorrect username/email or password' });
         }
         
+        // Update last_active timestamp on successful login
+        await db.updateLastActive(user.epost);
+
         // Create and send token
         const token = jwt.sign({ email: user.epost, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
         

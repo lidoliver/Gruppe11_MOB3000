@@ -87,6 +87,12 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<FriendRequestResponseDto>
 
+    // Heartbeat endpoint to update last active status
+    @POST("api/me/heartbeat")
+    suspend fun updateHeartbeat(
+        @Header("Authorization") token: String
+    ): Response<Unit>
+
     // Course/Track endpoints
     @GET("api/baneoversikt")
     suspend fun getAllTracks(): Response<List<TrackDto>>

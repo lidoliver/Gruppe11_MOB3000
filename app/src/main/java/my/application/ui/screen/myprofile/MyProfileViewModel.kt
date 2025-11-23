@@ -1,15 +1,22 @@
 package my.application.ui.screen.myprofile
 
 import android.app.Application
+import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import my.application.data.auth.AuthManager
+import my.application.data.remote.dto.PlayerStats
 import my.application.data.remote.dto.ScorecardDto
 import my.application.data.remote.dto.UserDto
+import my.application.data.remote.RetrofitProvider
 import my.application.data.repository.AuthException
 import my.application.data.repository.UserRepository
 
@@ -18,33 +25,48 @@ class MyProfileViewModel(
 ) : AndroidViewModel(application) {
     private val userRepository: UserRepository = UserRepository.getInstance()
     private val authManager: AuthManager = AuthManager.getInstance(application)
+    private val playerApi = RetrofitProvider.playerApi
+    private val sharedPreferences = application.getSharedPreferences("profile_prefs", Context.MODE_PRIVATE)
 
     var uiState by mutableStateOf(MyProfileUiState())
         private set
 
+    private val _stats = MutableStateFlow<PlayerStats?>(null)
+    val stats: StateFlow<PlayerStats?> = _stats.asStateFlow()
+
     fun loadUserProfile(email: String) {
         viewModelScope.launch {
-            android.util.Log.d("MyProfileViewModel", "Loading profile for email: $email")
+            Log.d("MyProfileViewModel", "Loading profile for email: $email")
             uiState = uiState.copy(isLoading = true, error = null, authError = false)
 
             val userResult = userRepository.getUser(email)
             val scorecardsResult = userRepository.getScorecards(email)
             val friendsResult = userRepository.getFriends()
 
-            android.util.Log.d("MyProfileViewModel", "User result: ${userResult.isSuccess}")
-            android.util.Log.d("MyProfileViewModel", "Scorecards result: ${scorecardsResult.isSuccess}, count: ${scorecardsResult.getOrNull()?.size ?: 0}")
-            android.util.Log.d("MyProfileViewModel", "Friends result: ${friendsResult.isSuccess}, count: ${friendsResult.getOrNull()?.size ?: 0}")
+            Log.d("MyProfileViewModel", "User result: ${userResult.isSuccess}")
+            Log.d("MyProfileViewModel", "Scorecards result: ${scorecardsResult.isSuccess}, count: ${scorecardsResult.getOrNull()?.size ?: 0}")
+            Log.d("MyProfileViewModel", "Friends result: ${friendsResult.isSuccess}, count: ${friendsResult.getOrNull()?.size ?: 0}")
 
             uiState = when {
                 userResult.isSuccess -> {
                     val user = userResult.getOrNull()
                     val scorecards = scorecardsResult.getOrNull() ?: emptyList()
                     val friends = friendsResult.getOrNull() ?: emptyList()
-                    android.util.Log.d("MyProfileViewModel", "Profile loaded successfully with ${scorecards.size} scorecards and ${friends.size} friends")
+
+                    // Load saved profile color from SharedPreferences, or generate new one
+                    val savedColor = sharedPreferences.getLong("profile_color_$email", -1L)
+                    val profileColor = if (savedColor != -1L) {
+                        savedColor
+                    } else {
+                        generateColorForUser(user?.username ?: user?.email ?: "")
+                    }
+
+                    Log.d("MyProfileViewModel", "Profile loaded successfully with ${scorecards.size} scorecards and ${friends.size} friends")
                     uiState.copy(
                         user = user,
                         scorecards = scorecards,
                         friendsCount = friends.size,
+                        profileColor = profileColor,
                         isLoading = false,
                         error = null,
                         authError = false
@@ -68,6 +90,48 @@ class MyProfileViewModel(
                 }
             }
         }
+    }
+
+    fun loadPlayerStats(email: String) {
+        viewModelScope.launch {
+            try {
+                val statsData = playerApi.getPlayerStats(email)
+                _stats.value = statsData
+                Log.d("MyProfileViewModel", "Loaded stats: ${statsData.totalGames} games")
+            } catch (e: Exception) {
+                Log.e("MyProfileViewModel", "Failed to load player stats", e)
+                _stats.value = null
+            }
+        }
+    }
+
+    fun updateProfileColor(color: Long) {
+        // Update UI state
+        uiState = uiState.copy(profileColor = color)
+
+        // Save to SharedPreferences for persistence
+        uiState.user?.email?.let { email ->
+            sharedPreferences.edit().putLong("profile_color_$email", color).apply()
+            Log.d("MyProfileViewModel", "Profile color saved: $color for user: $email")
+        }
+    }
+
+    private fun generateColorForUser(identifier: String): Long {
+        val colors = listOf(
+            0xFF1976D2, // Blue
+            0xFF388E3C, // Green
+            0xFFD32F2F, // Red
+            0xFF7B1FA2, // Purple
+            0xFFF57C00, // Orange
+            0xFF0097A7, // Cyan
+            0xFFC2185B, // Pink
+            0xFF5D4037, // Brown
+            0xFF455A64  // Blue Grey
+        )
+
+        val hash = identifier.hashCode()
+        val index = Math.abs(hash) % colors.size
+        return colors[index]
     }
 
     fun updateProfile(email: String, updatedUser: UserDto) {
@@ -164,6 +228,7 @@ data class MyProfileUiState(
     val user: UserDto? = null,
     val scorecards: List<ScorecardDto> = emptyList(),
     val friendsCount: Int = 0,
+    val profileColor: Long = 0xFF1976D2, // Default blue color
     val isLoading: Boolean = false,
     val error: String? = null,
     val authError: Boolean = false

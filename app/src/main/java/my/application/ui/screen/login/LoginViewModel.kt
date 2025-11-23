@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import my.application.data.auth.AuthManager
+import my.application.data.auth.HeartbeatManager
 import my.application.data.repository.UserRepository
 
 class LoginViewModel(
@@ -36,6 +37,13 @@ class LoginViewModel(
                     val response = result.getOrNull()!!
                     // Save token and email
                     authManager.saveAuthToken(response.token, response.email)
+
+                    // Send immediate heartbeat to update online status
+                    val heartbeatManager = HeartbeatManager.getInstance(getApplication())
+                    viewModelScope.launch {
+                        heartbeatManager.sendImmediateHeartbeat()
+                    }
+
                     LoginUiState(
                         isLoading = false,
                         isSuccess = true,

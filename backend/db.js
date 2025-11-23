@@ -1300,9 +1300,15 @@ async function getFriends(userEmail) {
             b.brukernavn as friend_username,
             b.fnavn as friend_first_name,
             b.enavn as friend_last_name,
+            b.last_active,
             COALESCE(game_stats.games_played, 0) as games_played,
             game_stats.last_played,
-            COALESCE(unread_count.unread_messages, 0) as unread_messages
+            COALESCE(unread_count.unread_messages, 0) as unread_messages,
+            CASE
+                WHEN b.last_active IS NULL THEN 'offline'
+                WHEN b.last_active > NOW() - INTERVAL '3 minutes' THEN 'online'
+                ELSE 'offline'
+            END as online_status
         FROM mydb.friends f
         JOIN mydb.bruker b ON f.friend_email = b.epost
         LEFT JOIN (
@@ -1322,10 +1328,36 @@ async function getFriends(userEmail) {
             GROUP BY sender_email
         ) unread_count ON f.friend_email = unread_count.sender_email
         WHERE f.user_email = ${userEmail} AND f.status = 'accepted'
-        ORDER BY b.brukernavn;
+        ORDER BY
+            CASE
+                WHEN b.last_active > NOW() - INTERVAL '3 minutes' THEN 0
+                ELSE 1
+            END,
+            b.brukernavn;
     `;
     return result;
 }
+
+/*
+* This function updates the user's last active timestamp to track online status.
+* Users are considered online if they were active within the last 5 minutes.
+* Developed by: AI Assistant
+*/
+async function updateLastActive(userEmail) {
+    try {
+        const result = await sql`
+            UPDATE mydb.bruker
+            SET last_active = CURRENT_TIMESTAMP
+            WHERE epost = ${userEmail}
+            RETURNING epost, last_active;
+        `;
+        return result[0];
+    } catch (error) {
+        console.error('Error updating last active:', error);
+        throw error;
+    }
+}
+
 /*
 * Denne funksjonen fjerner en venn fra brukerens venneliste.
 * Den tar inn brukerens e-postadresse og vennens e-postadresse som parametere.
@@ -2093,8 +2125,9 @@ export default {
      acceptFriendRequest,
      declineFriendRequest,
      getFriends, 
-     removeFriend, 
-     sendMessage, 
+     removeFriend,
+     updateLastActive,
+     sendMessage,
      getConversations, 
      getMessages, 
      createClubRequest, 

@@ -41,6 +41,7 @@ import my.application.ui.screen.playerhistory.PlayerHistoryScreen
 import my.application.ui.screen.playerhistory.PlayerHistoryViewModel
 import my.application.data.remote.RetrofitProvider
 import my.application.data.auth.AuthManager
+import my.application.data.auth.HeartbeatManager
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
@@ -62,10 +63,14 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun InitializeAuth() {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
-        val authManager = my.application.data.auth.AuthManager.getInstance(context)
+        val authManager = AuthManager.getInstance(context)
         authManager.initializeAuth()
+
+        // Initialize HeartbeatManager - it will automatically manage heartbeats based on app lifecycle
+        val application = context.applicationContext as android.app.Application
+        HeartbeatManager.getInstance(application)
     }
 }
 

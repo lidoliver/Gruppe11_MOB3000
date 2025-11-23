@@ -19,4 +19,16 @@ router.get('/me', passport.authenticate('jwt', { session: false }), async (req, 
     }
 });
 
+// Update user's last active status (heartbeat)
+router.post('/heartbeat', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        const userEmail = req.user.epost;
+        await db.updateLastActive(userEmail);
+        res.status(200).json({ message: 'Last active updated' });
+    } catch (error) {
+        console.error('Error updating last active:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 export default router;

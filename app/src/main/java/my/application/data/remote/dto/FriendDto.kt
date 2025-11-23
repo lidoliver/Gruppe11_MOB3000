@@ -36,6 +36,9 @@ data class FriendDto(
     @Json(name = "unread_messages")
     val unreadMessages: Int = 0,
 
+    @Json(name = "online_status")
+    val onlineStatus: String? = "offline",
+
     @Json(name = "created_at")
     val createdAt: String? = null
 )

@@ -34,6 +34,17 @@ fun FriendRequestsScreen(
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Auto-refresh friend requests periodically (every 30 seconds)
+    LaunchedEffect(Unit) {
+        viewModel.loadFriendRequests() // Initial load
+
+        // Poll every 30 seconds for new friend requests
+        while (true) {
+            kotlinx.coroutines.delay(30_000) // 30 seconds
+            viewModel.loadFriendRequests()
+        }
+    }
+
     // Show snackbar when there's a message
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let { message ->

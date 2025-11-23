@@ -5,15 +5,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import my.application.data.GameSessionManager
+import my.application.ui.screen.friends.FriendsViewModel
 
 sealed class BottomNavItem(
     val route: String,
@@ -32,6 +36,28 @@ fun BottomNavigationBar(navController: NavController) {
     val context = LocalContext.current
     val sessionManager = remember { GameSessionManager(context) }
 
+    // Get FriendsViewModel to track friend request count
+    val friendsViewModel: FriendsViewModel = viewModel(
+        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(
+            context.applicationContext as android.app.Application
+        )
+    )
+
+    // Collect friend request count
+    val friendRequestsCount by friendsViewModel.friendRequestsCount.collectAsState()
+
+    // Reload friend requests count periodically (every 30 seconds) to update badge
+    // This ensures the badge updates even when user is not on the Friends screen
+    LaunchedEffect(Unit) {
+        friendsViewModel.loadFriendRequestsCount() // Initial load
+
+        // Poll every 30 seconds for new friend requests
+        while (true) {
+            kotlinx.coroutines.delay(30_000) // 30 seconds
+            friendsViewModel.loadFriendRequestsCount()
+        }
+    }
+
     val items = listOf(
         BottomNavItem.Home,
         BottomNavItem.Tips,
@@ -43,6 +69,11 @@ fun BottomNavigationBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Also refresh when navigation changes (user switches screens)
+    LaunchedEffect(currentRoute) {
+        friendsViewModel.loadFriendRequestsCount()
+    }
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 8.dp
@@ -52,15 +83,37 @@ fun BottomNavigationBar(navController: NavController) {
 
             NavigationBarItem(
                 icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.label,
-                        modifier = if (item == BottomNavItem.Play) {
-                            Modifier.size(32.dp)
-                        } else {
-                            Modifier.size(24.dp)
+                    // Add badge for Friends icon when there are pending requests
+                    if (item == BottomNavItem.Friends && friendRequestsCount > 0) {
+                        BadgedBox(
+                            badge = {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.error
+                                ) {
+                                    Text(
+                                        text = if (friendRequestsCount > 9) "9+" else friendRequestsCount.toString(),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
-                    )
+                    } else {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.label,
+                            modifier = if (item == BottomNavItem.Play) {
+                                Modifier.size(32.dp)
+                            } else {
+                                Modifier.size(24.dp)
+                            }
+                        )
+                    }
                 },
                 label = { Text(item.label) },
                 selected = isSelected,
@@ -113,6 +166,11 @@ fun BottomNavigationBar(navController: NavController) {
                             launchSingleTop = true
                             // Restore state when reselecting a previously selected item
                             restoreState = true
+                        }
+
+                        // Refresh friend requests count when navigating to friends screen
+                        if (item == BottomNavItem.Friends) {
+                            friendsViewModel.loadFriendRequestsCount()
                         }
                     }
                 },
