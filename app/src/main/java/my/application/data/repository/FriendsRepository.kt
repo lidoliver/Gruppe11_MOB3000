@@ -224,7 +224,7 @@ class FriendsRepository private constructor() {
             lastPlayed = lastPlayedText,
             gamesPlayed = dto.gamesPlayed,
             avatarColor = generateColorForUsername(dto.friendUsername),
-            hasUnreadMessages = dto.unreadMessages > 0
+            hasUnreadMessages = false // Notification badges disabled
         )
     }
 

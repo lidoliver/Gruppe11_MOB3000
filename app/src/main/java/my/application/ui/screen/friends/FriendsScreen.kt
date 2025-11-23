@@ -46,13 +46,14 @@ fun FriendsScreen(
     // Reload friends and friend request count when screen is displayed or resumed
     // Also poll periodically (every 30 seconds) to update automatically
     LaunchedEffect(Unit) {
-        viewModel.loadFriends()
+        viewModel.loadFriends() // Initial load with loading indicator
         viewModel.loadFriendRequestsCount()
 
         // Poll every 30 seconds for updates while on this screen
+        // Use showLoading=false to avoid jarring UI resets
         while (true) {
             kotlinx.coroutines.delay(30_000) // 30 seconds
-            viewModel.loadFriends()
+            viewModel.loadFriends(showLoading = false) // Silent refresh
             viewModel.loadFriendRequestsCount()
         }
     }
@@ -62,8 +63,9 @@ fun FriendsScreen(
         val callback = NavController.OnDestinationChangedListener { controller, destination, _ ->
             if (destination.route == "friends") {
                 // Reload the count when returning to friends screen
+                // Use silent refresh to avoid jarring UI reset
                 viewModel.loadFriendRequestsCount()
-                viewModel.loadFriends() // Also reload friends in case a new friend was added
+                viewModel.loadFriends(showLoading = false) // Silent refresh when returning
             }
         }
         navController.addOnDestinationChangedListener(callback)

@@ -38,12 +38,15 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
 
     /**
      * Load friends from repository
+     * @param showLoading Whether to show loading indicator (default true for initial load, false for background refresh)
      */
-    fun loadFriends() {
-        Log.d("FriendsViewModel", "loadFriends() called")
+    fun loadFriends(showLoading: Boolean = true) {
+        Log.d("FriendsViewModel", "loadFriends() called with showLoading=$showLoading")
         viewModelScope.launch {
-            Log.d("FriendsViewModel", "Setting loading state to true")
-            _isLoading.value = true
+            if (showLoading) {
+                Log.d("FriendsViewModel", "Setting loading state to true")
+                _isLoading.value = true
+            }
             _error.value = null
 
             Log.d("FriendsViewModel", "Calling friendsRepository.getFriends()")
@@ -51,13 +54,17 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
                 .onSuccess { friendsList ->
                     Log.d("FriendsViewModel", "Success! Received ${friendsList.size} friends")
                     _friends.value = friendsList
-                    _isLoading.value = false
+                    if (showLoading) {
+                        _isLoading.value = false
+                    }
                     Log.d("FriendsViewModel", "Updated friends state flow")
                 }
                 .onFailure { exception ->
                     Log.e("FriendsViewModel", "Failed to load friends: ${exception.message}", exception)
                     _error.value = exception.message ?: "Failed to load friends"
-                    _isLoading.value = false
+                    if (showLoading) {
+                        _isLoading.value = false
+                    }
                 }
         }
     }
