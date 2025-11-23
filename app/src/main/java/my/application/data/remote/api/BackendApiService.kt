@@ -198,5 +198,12 @@ interface BackendApiService {
         @Path("id") id: Int,
         @Header("Authorization") token: String
     ): Response<AdminResponseDto>
+
+    // FCM Token Registration
+    @POST("api/notifications/register-token")
+    suspend fun registerFcmToken(
+        @Body request: RegisterFcmTokenRequest,
+        @Header("Authorization") token: String
+    ): Response<FcmResponse>
 }
 

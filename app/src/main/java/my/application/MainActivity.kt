@@ -1,6 +1,7 @@
 // In app/src/main/java/My/Application/MainActivity.kt
 package my.application
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -43,6 +44,7 @@ import my.application.ui.screen.playerhistory.PlayerHistoryViewModel
 import my.application.data.remote.RetrofitProvider
 import my.application.data.auth.AuthManager
 import my.application.data.auth.HeartbeatManager
+import my.application.service.FcmTokenManager
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
@@ -51,13 +53,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.enableEdgeToEdge() // make call explicit
+
+        // Request notification permission for FCM
+        FcmTokenManager.requestNotificationPermission(this)
+
         setContent {
             MyApplicationTheme {
                 // Initialize auth on app start
                 InitializeAuth()
-                AppNavigation()
+                // Pass intent to AppNavigation for notification handling
+                AppNavigation(intent = intent)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 }
 
@@ -76,10 +88,36 @@ fun InitializeAuth() {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(intent: Intent? = null) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // Handle notification intent and navigate to appropriate screen
+    LaunchedEffect(intent) {
+        intent?.let {
+            val notificationType = it.getStringExtra("notification_type")
+            val senderEmail = it.getStringExtra("sender_email")
+            val senderName = it.getStringExtra("sender_name")
+
+            when (notificationType) {
+                "message" -> {
+                    // Navigate to conversation with sender
+                    if (!senderEmail.isNullOrBlank()) {
+                        navController.navigate("conversation/$senderEmail/${senderName ?: "User"}")
+                    }
+                }
+                "friend_request" -> {
+                    // Navigate to friend requests screen
+                    navController.navigate("friend_requests")
+                }
+                "club_invite" -> {
+                    // Navigate to club screen
+                    navController.navigate("club")
+                }
+            }
+        }
+    }
 
     // State to control bottom bar visibility
     var isBottomBarVisible by remember { mutableStateOf(true) }

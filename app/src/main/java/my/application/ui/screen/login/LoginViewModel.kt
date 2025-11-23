@@ -1,6 +1,7 @@
 package my.application.ui.screen.login
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,6 +11,9 @@ import kotlinx.coroutines.launch
 import my.application.data.auth.AuthManager
 import my.application.data.auth.HeartbeatManager
 import my.application.data.repository.UserRepository
+import my.application.service.FcmTokenManager
+import my.application.data.remote.api.RegisterFcmTokenRequest
+import my.application.data.remote.BackendApi
 
 class LoginViewModel(
     application: Application
@@ -42,6 +46,11 @@ class LoginViewModel(
                     val heartbeatManager = HeartbeatManager.getInstance(getApplication())
                     viewModelScope.launch {
                         heartbeatManager.sendImmediateHeartbeat()
+                    }
+
+                    // Register FCM token after successful login
+                    viewModelScope.launch {
+                        registerFcmToken(response.email, response.token)
                     }
 
                     LoginUiState(
@@ -104,6 +113,39 @@ class LoginViewModel(
 
     fun resetState() {
         uiState = LoginUiState()
+    }
+
+    private suspend fun registerFcmToken(userEmail: String, authToken: String) {
+        try {
+            // Get FCM token
+            val fcmToken = FcmTokenManager.getToken()
+
+            if (fcmToken != null) {
+                // Save locally
+                FcmTokenManager.saveToken(getApplication(), fcmToken)
+
+                // Send to backend
+                val request = RegisterFcmTokenRequest(
+                    userEmail = userEmail,
+                    fcmToken = fcmToken
+                )
+
+                val response = BackendApi.service.registerFcmToken(
+                    request = request,
+                    token = "Bearer $authToken"
+                )
+
+                if (response.isSuccessful) {
+                    Log.d("LoginViewModel", "FCM token registered successfully")
+                } else {
+                    Log.e("LoginViewModel", "Failed to register FCM token: ${response.code()}")
+                }
+            } else {
+                Log.e("LoginViewModel", "Failed to get FCM token")
+            }
+        } catch (e: Exception) {
+            Log.e("LoginViewModel", "Error registering FCM token", e)
+        }
     }
 }
 

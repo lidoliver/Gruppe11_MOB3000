@@ -17,7 +17,7 @@ object BackendApi {
 
     // Use 10.0.2.2 for Android Emulator (maps to host's localhost)
     // Use 10.38.11.46 for Physical Device (your computer's current WiFi IP)
-    private const val BASE_URL = "http://10.0.2.2:5000/"
+    private const val BASE_URL = "http://192.168.11.11:5000/"
 
     // Build the Moshi object for JSON parsing
     private val moshi = Moshi.Builder()

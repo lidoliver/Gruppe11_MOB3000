@@ -1,6 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import db from '../db.js';
+import { sendMessageNotification } from './notifications.js';
 
 const router = express.Router();
 
@@ -36,6 +37,29 @@ router.post('/',
             }
             
             const message = await db.sendMessage(senderEmail, receiverEmail, content);
+
+            // Send push notification to receiver
+            try {
+                const sender = await db.getBruker(senderEmail);
+                const senderName = sender.brukernavn || sender.fnavn || senderEmail.split('@')[0];
+
+                const notificationResult = await sendMessageNotification(
+                    receiverEmail,
+                    senderEmail,
+                    senderName,
+                    content
+                );
+
+                if (notificationResult) {
+                    console.log(`✅ Push notification sent to ${receiverEmail}`);
+                } else {
+                    console.log(`⚠️ Push notification not sent to ${receiverEmail} (no FCM token registered)`);
+                }
+            } catch (notifError) {
+                // Don't fail the message send if notification fails
+                console.error('❌ Failed to send push notification:', notifError);
+            }
+
             res.status(201).json(message);
         } catch (error) {
             console.error('Error sending message:', error);

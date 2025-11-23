@@ -8,6 +8,8 @@ import passport from 'passport';
 //import JWT auth routes
 import jwtAuth from './routes/jwtAuth.js';
 import crypto from 'crypto';
+// Import Firebase Admin
+import admin, { auth, firestore, storage } from './firebaseAdmin.js';
 
 // Import the users endpoint
 import usersRoutes from './endpoint/users.js';
@@ -19,6 +21,7 @@ import clubManagementRoutes from './endpoint/clubManagement.js';
 import clubJoinRequestsRoutes from './endpoint/clubJoinRequests.js';
 import clubRequestsRoutes from './endpoint/clubRequests.js';
 import clubJoinRequestsRouter from './endpoint/clubJoinRequests.js';
+import notificationsRoutes from './endpoint/notifications.js';
 import { getPlayerStats } from './endpoint/playerStats.js';
 
 // Import the canEditTrack middleware at the top of the file
@@ -49,6 +52,7 @@ app.use('/api', clubManagementRoutes);
 app.use('/api/club-join-requests', clubJoinRequestsRoutes);
 app.use('/api/club-requests', clubRequestsRoutes);
 app.use('/api/club-join-requests', clubJoinRequestsRouter);
+app.use('/api/notifications', notificationsRoutes);
 
 //ROUTES//
 
