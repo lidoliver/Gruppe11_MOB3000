@@ -24,6 +24,7 @@ import clubJoinRequestsRouter from './endpoint/clubJoinRequests.js';
 import notificationsRoutes from './endpoint/notifications.js';
 import { getPlayerStats } from './endpoint/playerStats.js';
 import { getPlayerCourseGames } from './endpoint/courseGames.js';
+import multiplayerRouter from './endpoint/multiplayer.js';
 
 // Import the canEditTrack middleware at the top of the file
 import { checkRole, canEditTrack } from './routes/checkRole.js';
@@ -54,6 +55,7 @@ app.use('/api/club-join-requests', clubJoinRequestsRoutes);
 app.use('/api/club-requests', clubRequestsRoutes);
 app.use('/api/club-join-requests', clubJoinRequestsRouter);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/multiplayer', multiplayerRouter);
 
 //ROUTES//
 

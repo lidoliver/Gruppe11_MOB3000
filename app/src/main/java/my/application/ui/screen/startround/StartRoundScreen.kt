@@ -69,7 +69,9 @@ fun StartRoundScreen(navController: NavController) {
                 icon = Icons.Filled.Groups,
                 title = "Inviter spillere",
                 description = "Lag en gruppe og spill med venner.",
-                onClick = { /* TODO: Navigate to multiplayer setup */ }
+                onClick = {
+                    navController.navigate("course_selection_multiplayer")
+                }
             )
         }
     }

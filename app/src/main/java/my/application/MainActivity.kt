@@ -52,6 +52,10 @@ import my.application.service.FcmTokenManager
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import my.application.ui.spill.MultiplayerLobbyScreen
+import my.application.ui.spill.MultiplayerCourseSelectionScreen as MultiplayerCourseSelection
+
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -192,6 +196,9 @@ fun AppNavigation(intent: Intent? = null) {
             composable("friend_requests") {
                 FriendRequestsScreen(navController = navController)
             }
+            composable("course_selection_multiplayer") {
+                MultiplayerCourseSelection(navController = navController)
+            }
             composable(
                 route = "friend_profile/{friendEmail}/{friendName}",
                 arguments = listOf(
@@ -236,6 +243,13 @@ fun AppNavigation(intent: Intent? = null) {
                         CircularProgressIndicator()
                     }
                 }
+            }
+            composable("multiplayer_lobby/{sessionId}") { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+                MultiplayerLobbyScreen(
+                    navController = navController,
+                    sessionId = sessionId
+                )
             }
             composable(
                 route = "friend_history/{friendEmail}/{friendName}",
