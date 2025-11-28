@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -206,7 +207,8 @@ fun AppNavigation(intent: Intent? = null) {
                     }
                 }
             }
-        }
+        },
+        floatingActionButtonPosition = FabPosition.Start
     ) { paddingValues ->
         NavHost(
             navController = navController,
