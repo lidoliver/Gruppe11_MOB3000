@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -22,11 +23,17 @@ fun AppTopBar(
 
     if (!isLandscapeMode) {
         TopAppBar(
-            title = { Text(text = title, style = MaterialTheme.typography.titleLarge) },
+            title = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ),
             navigationIcon = {
                 if (canNavigateBack) {

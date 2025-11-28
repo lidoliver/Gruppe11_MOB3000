@@ -70,7 +70,13 @@ fun FriendSearchScreen(
             // Hide top bar in landscape mode to save vertical space
             if (!isLandscapeMode) {
                 TopAppBar(
-                    title = { Text("Søk etter venner") },
+                    title = {
+                        Text(
+                            "Søk etter venner",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(
@@ -80,9 +86,9 @@ fun FriendSearchScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 )
             }
