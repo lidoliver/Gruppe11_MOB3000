@@ -52,7 +52,7 @@ fun ClubRequestAdminScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Club Requests",
+                title = "Klub Requests",
                 canNavigateBack = true,
                 navController = navController
             )
@@ -99,7 +99,7 @@ fun ClubRequestAdminScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { viewModel.loadClubRequests() }) {
-                            Text("Retry")
+                            Text("Prøv på nytt")
                         }
                     }
                 }
@@ -109,7 +109,7 @@ fun ClubRequestAdminScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No pending club requests",
+                            text = "Ingen klubb forespørsler",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -124,12 +124,12 @@ fun ClubRequestAdminScreen(
                                 request = request,
                                 onApprove = {
                                     selectedRequest = request
-                                    actionType = "approve"
+                                    actionType = "Godkjenn"
                                     showConfirmDialog = true
                                 },
                                 onReject = {
                                     selectedRequest = request
-                                    actionType = "reject"
+                                    actionType = "Avvis"
                                     showConfirmDialog = true
                                 }
                             )
@@ -146,13 +146,13 @@ fun ClubRequestAdminScreen(
             onDismissRequest = { showConfirmDialog = false },
             title = {
                 Text(
-                    if (actionType == "approve") "Approve Club Request" else "Reject Club Request"
+                    if (actionType == "approve") "Godta Klubbforespørsel" else "Avvis Klubbforespørsel"
                 )
             },
             text = {
                 Text(
                     if (actionType == "approve")
-                        "Are you sure you want to approve the club request for \"${selectedRequest?.clubName}\"? The user will become a club admin."
+                        "Er du sikker på at du vil godkjenne forespørselen for \"${selectedRequest?.clubName}\"? Brukeren vil bli tildelt klubbadmin."
                     else
                         "Are you sure you want to reject the club request for \"${selectedRequest?.clubName}\"?"
                 )
@@ -166,7 +166,7 @@ fun ClubRequestAdminScreen(
                                 viewModel.approveClubRequest(
                                     request.id,
                                     onSuccess = {
-                                        actionMessage = "Club request approved successfully"
+                                        actionMessage = "Klubb godkjent"
                                         showSnackbar = true
                                     },
                                     onError = { error ->
@@ -178,7 +178,7 @@ fun ClubRequestAdminScreen(
                                 viewModel.rejectClubRequest(
                                     request.id,
                                     onSuccess = {
-                                        actionMessage = "Club request rejected"
+                                        actionMessage = "Klubb avvist"
                                         showSnackbar = true
                                     },
                                     onError = { error ->
@@ -196,12 +196,12 @@ fun ClubRequestAdminScreen(
                             MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Confirm")
+                    Text("Bekreft")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text("Avbryt")
                 }
             }
         )
@@ -280,7 +280,7 @@ fun ClubRequestCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Approve")
+                    Text("Godkjenn")
                 }
 
                 OutlinedButton(
@@ -296,7 +296,7 @@ fun ClubRequestCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Reject")
+                    Text("Avvis")
                 }
             }
         }

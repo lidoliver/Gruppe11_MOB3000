@@ -77,13 +77,23 @@ data class UsernameAvailabilityResponse(
 
 // Admin-DTOs
 data class ClubRequestDto(
-    @Json(name = "id_forespørsel") val id: Int,
+    @Json(name = "id") val id: Int,
     @Json(name = "requested_by") val requestedBy: String,
     @Json(name = "klubbnavn") val clubName: String,
     @Json(name = "sted") val location: String?,
     @Json(name = "beskrivelse") val description: String?,
     @Json(name = "status") val status: String,
-    @Json(name = "created_at") val createdAt: String
+    @Json(name = "request_date") val createdAt: String
+)
+
+data class SubmitClubRequestDto(
+    @Json(name = "klubbnavn") val clubName: String,
+    @Json(name = "beskrivelse") val description: String
+)
+
+data class ClubRequestResponseDto(
+    @Json(name = "message") val message: String,
+    @Json(name = "requestId") val requestId: Int?
 )
 
 data class AdminResponseDto(
