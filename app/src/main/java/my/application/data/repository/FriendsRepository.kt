@@ -232,34 +232,8 @@ class FriendsRepository private constructor() {
      */
     private fun formatLastPlayed(timestamp: String): String {
         return try {
-        return try {
-            // The timestamp from backend is in ISO format (e.g., "2025-11-10T14:30:00Z")
-            val instant = java.time.Instant.parse(timestamp)
-            val lastPlayedTime = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
-            val now = java.time.LocalDateTime.now()
-
-            val daysBetween = java.time.temporal.ChronoUnit.DAYS.between(lastPlayedTime.toLocalDate(), now.toLocalDate())
-            val hoursBetween = java.time.temporal.ChronoUnit.HOURS.between(lastPlayedTime, now)
-            val minutesBetween = java.time.temporal.ChronoUnit.MINUTES.between(lastPlayedTime, now)
-
-            when {
-                minutesBetween < 1 -> "Akkurat nå"
-                minutesBetween < 60 -> "$minutesBetween min siden"
-                hoursBetween < 24 -> "$hoursBetween timer siden"
-                daysBetween == 1L -> "I går"
-                daysBetween < 7 -> "$daysBetween dager siden"
-                daysBetween < 30 -> "${daysBetween / 7} uker siden"
-                else -> {
-                    val formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
-                    lastPlayedTime.format(formatter)
-                }
-            }
-        } catch (e: Exception) {
-            Log.w("FriendsRepository", "Failed to parse timestamp: $timestamp", e)
-            timestamp.substringBefore('T')
-        }
-            val instant = java.time.Instant.parse(timestamp)
-            val lastPlayedTime = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
+            // Backend now sends timestamps in format "2025-11-28T13:55:49" (already in local time with +2h offset)
+            val lastPlayedTime = java.time.LocalDateTime.parse(timestamp.substringBefore("+").substringBefore("Z"))
             val now = java.time.LocalDateTime.now()
 
             val daysBetween = java.time.temporal.ChronoUnit.DAYS.between(lastPlayedTime.toLocalDate(), now.toLocalDate())

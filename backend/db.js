@@ -1285,7 +1285,7 @@ async function getFriends(userEmail) {
             SELECT
                 spiller_navn,
                 COUNT(*) as games_played,
-                MAX(dato) as last_played
+                TO_CHAR(MAX(dato) + INTERVAL '2 hours', 'YYYY-MM-DD"T"HH24:MI:SS') as last_played
             FROM mydb.pointcard
             GROUP BY spiller_navn
         ) game_stats ON f.friend_email = game_stats.spiller_navn
