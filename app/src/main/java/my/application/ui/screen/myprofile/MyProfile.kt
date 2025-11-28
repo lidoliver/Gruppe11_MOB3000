@@ -449,6 +449,28 @@ fun MyProfileScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                         }
 
+                        // Club Admin Panel button (only visible for klubbadmin users)
+                        if (uiState.user.role == "klubbadmin") {
+                            Button(
+                                onClick = { navController.navigate("club_admin_panel") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondary
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Group,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Klubbadmin Panel")
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
                         // Logout Button
                         OutlinedButton(
                             onClick = {

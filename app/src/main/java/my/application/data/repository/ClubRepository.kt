@@ -2,7 +2,9 @@ package my.application.data.repository
 
 import android.util.Log
 import my.application.data.remote.BackendApi
+import my.application.data.remote.dto.ClubDto
 import my.application.data.remote.dto.SubmitClubRequestDto
+import my.application.data.remote.dto.SubmitClubJoinRequestDto
 
 /**
  * Repository for managing club-related operations
@@ -10,6 +12,171 @@ import my.application.data.remote.dto.SubmitClubRequestDto
 class ClubRepository private constructor() {
     private val api = BackendApi.service
     private val userRepository = UserRepository.getInstance()
+
+    /**
+     * Get all clubs
+     */
+    suspend fun getAllClubs(): Result<List<ClubDto>> {
+        return try {
+            Log.d("ClubRepository", "Fetching all clubs")
+
+            val token = userRepository.getAuthToken()
+            if (token == null) {
+                Log.e("ClubRepository", "No auth token available")
+                return Result.failure(Exception("Not authenticated"))
+            }
+
+            val response = api.getAllClubs(token)
+            Log.d("ClubRepository", "API response code: ${response.code()}")
+
+            if (response.isSuccessful && response.body() != null) {
+                val clubs = response.body()!!
+                Log.d("ClubRepository", "Fetched ${clubs.size} clubs")
+                Result.success(clubs)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMsg = "Failed to fetch clubs: ${response.code()} - ${response.message()}\nError body: $errorBody"
+                Log.e("ClubRepository", errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("ClubRepository", "Fetch clubs error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Submit a club join request
+     */
+    suspend fun submitClubJoinRequest(clubId: Int, message: String?): Result<String> {
+        return try {
+            Log.d("ClubRepository", "Submitting club join request for club ID: $clubId")
+
+            val token = userRepository.getAuthToken()
+            if (token == null) {
+                Log.e("ClubRepository", "No auth token available")
+                return Result.failure(Exception("Not authenticated"))
+            }
+
+            val request = SubmitClubJoinRequestDto(
+                clubId = clubId,
+                message = message
+            )
+
+            val response = api.submitClubJoinRequest(request, token)
+            Log.d("ClubRepository", "API response code: ${response.code()}")
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseMessage = response.body()!!.message
+                Log.d("ClubRepository", "Club join request submitted successfully")
+                Result.success(responseMessage)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMsg = "Failed to submit join request: ${response.code()} - ${response.message()}\nError body: $errorBody"
+                Log.e("ClubRepository", errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("ClubRepository", "Submit join request error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get club join requests for a specific club (for klubbadmin)
+     */
+    suspend fun getClubJoinRequests(clubId: Int): Result<List<my.application.data.remote.dto.ClubJoinRequestDto>> {
+        return try {
+            Log.d("ClubRepository", "Fetching join requests for club ID: $clubId")
+
+            val token = userRepository.getAuthToken()
+            if (token == null) {
+                Log.e("ClubRepository", "No auth token available")
+                return Result.failure(Exception("Not authenticated"))
+            }
+
+            val response = api.getClubJoinRequests(clubId, token)
+            Log.d("ClubRepository", "API response code: ${response.code()}")
+
+            if (response.isSuccessful && response.body() != null) {
+                val requests = response.body()!!
+                Log.d("ClubRepository", "Fetched ${requests.size} join requests")
+                Result.success(requests)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMsg = "Failed to fetch join requests: ${response.code()} - ${response.message()}\nError body: $errorBody"
+                Log.e("ClubRepository", errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("ClubRepository", "Fetch join requests error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Approve a club join request
+     */
+    suspend fun approveJoinRequest(requestId: Int): Result<String> {
+        return try {
+            Log.d("ClubRepository", "Approving join request ID: $requestId")
+
+            val token = userRepository.getAuthToken()
+            if (token == null) {
+                Log.e("ClubRepository", "No auth token available")
+                return Result.failure(Exception("Not authenticated"))
+            }
+
+            val response = api.approveClubJoinRequest(requestId, token)
+            Log.d("ClubRepository", "API response code: ${response.code()}")
+
+            if (response.isSuccessful && response.body() != null) {
+                val message = response.body()!!.message
+                Log.d("ClubRepository", "Join request approved successfully")
+                Result.success(message)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMsg = "Failed to approve join request: ${response.code()} - ${response.message()}\nError body: $errorBody"
+                Log.e("ClubRepository", errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("ClubRepository", "Approve join request error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Reject a club join request
+     */
+    suspend fun rejectJoinRequest(requestId: Int): Result<String> {
+        return try {
+            Log.d("ClubRepository", "Rejecting join request ID: $requestId")
+
+            val token = userRepository.getAuthToken()
+            if (token == null) {
+                Log.e("ClubRepository", "No auth token available")
+                return Result.failure(Exception("Not authenticated"))
+            }
+
+            val response = api.rejectClubJoinRequest(requestId, token)
+            Log.d("ClubRepository", "API response code: ${response.code()}")
+
+            if (response.isSuccessful && response.body() != null) {
+                val message = response.body()!!.message
+                Log.d("ClubRepository", "Join request rejected successfully")
+                Result.success(message)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMsg = "Failed to reject join request: ${response.code()} - ${response.message()}\nError body: $errorBody"
+                Log.e("ClubRepository", errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("ClubRepository", "Reject join request error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
 
     /**
      * Submit a club creation request

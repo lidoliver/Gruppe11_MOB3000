@@ -100,3 +100,34 @@ data class AdminResponseDto(
     @Json(name = "message") val message: String
 )
 
+data class ClubDto(
+    @Json(name = "id_klubb") val id: Int,
+    @Json(name = "klubbnavn") val name: String,
+    @Json(name = "sted") val location: String?,
+    @Json(name = "klubbeskrivelse") val description: String?,
+    @Json(name = "kontakt_email") val contactEmail: String?,
+    @Json(name = "kontakt_telefon") val contactPhone: String?,
+    @Json(name = "member_count") val memberCount: Int?
+)
+
+data class SubmitClubJoinRequestDto(
+    @Json(name = "klubId") val clubId: Int,
+    @Json(name = "message") val message: String?
+)
+
+data class ClubJoinRequestResponseDto(
+    @Json(name = "message") val message: String,
+    @Json(name = "requestId") val requestId: Int?
+)
+
+data class ClubJoinRequestDto(
+    @Json(name = "id") val id: Int,
+    @Json(name = "user_email") val userEmail: String,
+    @Json(name = "klub_id") val clubId: Int,
+    @Json(name = "message") val message: String?,
+    @Json(name = "status") val status: String,
+    @Json(name = "request_date") val requestDate: String,
+    @Json(name = "brukernavn") val username: String?,
+    @Json(name = "klubbnavn") val clubName: String?
+)
+

@@ -9,14 +9,28 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 
 @Composable
 fun ClubScreen(navController: NavController) {
+    val context = LocalContext.current
+    val viewModel: ClubScreenViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return ClubScreenViewModel(context.applicationContext as android.app.Application) as T
+            }
+        }
+    )
+
+    val uiState = viewModel.uiState
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -64,38 +78,98 @@ fun ClubScreen(navController: NavController) {
 
             // Club Information Card
             item {
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        CircularProgressIndicator()
+                    }
+                } else if (uiState.isMember && uiState.clubName != null) {
+                    // User is a member - show club info with button to club page
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Din Klubb",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                             Text(
-                                text = "Klubbstatus",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                text = uiState.clubName,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = { /* TODO: Navigate to club detail page */ },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Gå til klubbside")
+                            }
+                        }
+                    }
+                } else {
+                    // Not a member
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Klubbstatus",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                text = "Du er ikke medlem av noen klubb ennå.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Text(
-                            text = "Du er ikke medlem av noen klubb ennå.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             }
@@ -113,7 +187,7 @@ fun ClubScreen(navController: NavController) {
             // Find Club Button
             item {
                 ElevatedCard(
-                    onClick = { /* TODO: Navigate to find club screen */ },
+                    onClick = { navController.navigate("club_list") },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -131,12 +205,12 @@ fun ClubScreen(navController: NavController) {
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Finn Klubb",
+                                text = "Se Alle Klubber",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Søk etter klubber i ditt område",
+                                text = "Bla gjennom og søk om medlemskap",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

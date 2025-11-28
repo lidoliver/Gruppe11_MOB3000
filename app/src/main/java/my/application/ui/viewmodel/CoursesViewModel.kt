@@ -1,6 +1,7 @@
 package my.application.ui.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,16 +22,32 @@ class CoursesViewModel(application: Application) : AndroidViewModel(application)
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    companion object {
+        private const val TAG = "CoursesViewModel"
+    }
+
     fun loadCourses() {
         viewModelScope.launch {
+            Log.d(TAG, "Starting to load courses...")
             _isLoading.value = true
             _error.value = null
-            repository.getAllTracks()
-                .onSuccess { tracks ->
-                    _courses.value = tracks
-                }
-                .onFailure { _error.value = it.message }
-            _isLoading.value = false
+            try {
+                repository.getAllTracks()
+                    .onSuccess { tracks ->
+                        Log.d(TAG, "Successfully loaded ${tracks.size} courses")
+                        _courses.value = tracks
+                    }
+                    .onFailure { exception ->
+                        Log.e(TAG, "Failed to load courses: ${exception.message}", exception)
+                        _error.value = exception.message ?: "Unknown error occurred"
+                    }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception during loadCourses: ${e.message}", e)
+                _error.value = e.message ?: "Unknown error occurred"
+            } finally {
+                _isLoading.value = false
+                Log.d(TAG, "Finished loading courses. isLoading=${_isLoading.value}, error=${_error.value}, courses size=${_courses.value.size}")
+            }
         }
     }
 }

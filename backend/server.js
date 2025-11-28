@@ -24,6 +24,7 @@ import clubJoinRequestsRouter from './endpoint/clubJoinRequests.js';
 import notificationsRoutes from './endpoint/notifications.js';
 import { getPlayerStats } from './endpoint/playerStats.js';
 import { getPlayerCourseGames } from './endpoint/courseGames.js';
+import multiplayerRouter from './endpoint/multiplayer.js';
 
 // Import the canEditTrack middleware at the top of the file
 import { checkRole, canEditTrack } from './routes/checkRole.js';
@@ -54,6 +55,7 @@ app.use('/api/club-join-requests', clubJoinRequestsRoutes);
 app.use('/api/club-requests', clubRequestsRoutes);
 app.use('/api/club-join-requests', clubJoinRequestsRouter);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/multiplayer', multiplayerRouter);
 
 //ROUTES//
 
@@ -81,7 +83,21 @@ app.get('/api/epost', async (req, res) => {
         console.log(`User data fetched from database:`, bruker);
         
         if (bruker) {
-            // Don't overwrite existing klubb_id_klubb if it exists
+            // Fetch club name if user has a club
+            if (bruker.klubb_id_klubb) {
+                try {
+                    const klubbInfo = await db.getKlubbById(bruker.klubb_id_klubb);
+                    console.log(`Club info fetched:`, klubbInfo);
+                    if (klubbInfo) {
+                        bruker.klubbnavn = klubbInfo.klubbnavn;
+                    }
+                } catch (clubError) {
+                    console.error('Error fetching club info:', clubError);
+                    // Continue without club name if error
+                }
+            }
+
+            // Don't overwrite existing klubb_id_klubb for klubbadmin
             if (bruker.role === 'klubbadmin' && !bruker.klubb_id_klubb) {
                 const klubbInfo = await db.getKlubbForAdmin(req.params.email);
                 console.log(`Club info fetched for klubbadmin:`, klubbInfo);
@@ -95,7 +111,8 @@ app.get('/api/epost', async (req, res) => {
             const responseData = {
                 epost: bruker.epost,
                 role: bruker.role,
-                klubb_id_klubb: bruker.klubb_id_klubb, // Make sure this field is included
+                klubb_id_klubb: bruker.klubb_id_klubb,
+                klubbnavn: bruker.klubbnavn, // Include club name
                 brukernavn: bruker.brukernavn,
                 fnavn: bruker.fnavn,
                 enavn: bruker.enavn

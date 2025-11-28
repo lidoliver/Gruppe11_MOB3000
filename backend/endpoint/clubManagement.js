@@ -5,6 +5,37 @@ import { requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Get all clubs (public)
+router.get('/clubs',
+  passport.authenticate('jwt', {session: false}),
+  async (req, res) => {
+    try {
+      const clubs = await db.getAllClubs();
+      res.status(200).json(clubs);
+    } catch (error) {
+      console.error('Error getting all clubs:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+
+// Get club by ID
+router.get('/clubs/:clubId',
+  passport.authenticate('jwt', {session: false}),
+  async (req, res) => {
+    try {
+      const club = await db.getClubById(req.params.clubId);
+      if (!club) {
+        return res.status(404).json({ message: 'Club not found' });
+      }
+      res.status(200).json(club);
+    } catch (error) {
+      console.error('Error getting club:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+
 // Get club info for logged in klubbadmin
 router.get('/my-club', 
   passport.authenticate('jwt', {session: false}),
