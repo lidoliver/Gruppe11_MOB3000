@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Login
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -64,13 +66,13 @@ fun StartRoundScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // "Invite Players" option
+            // New multiplayer entry: goes to a new MultiplayerHomeScreen
             GameModeCard(
                 icon = Icons.Filled.Groups,
-                title = "Inviter spillere",
-                description = "Lag en gruppe og spill med venner.",
+                title = "Multiplayer",
+                description = "Lag eller bli med i en multiplayer-runde.",
                 onClick = {
-                    navController.navigate("course_selection_multiplayer")
+                    navController.navigate("multiplayer_home")
                 }
             )
         }

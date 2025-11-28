@@ -66,7 +66,6 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import my.application.ui.spill.MultiplayerLobbyScreen
-import my.application.ui.spill.MultiplayerCourseSelectionScreen as MultiplayerCourseSelection
 
 
 
@@ -217,48 +216,19 @@ fun AppNavigation(intent: Intent? = null) {
                 bottom = if (isBottomBarVisible) paddingValues.calculateBottomPadding() else 0.dp
             )
         ) {
-            composable("main_menu") {
-                MainMenuScreen(navController = navController)
-            }
-            composable("login") {
-                LoginScreen(navController = navController)
-            }
-            composable("start_round") {
-                StartRoundScreen(navController = navController)
-            }
-            composable("course_selection_alone") {
-                BanevelgingAleneScreen(navController = navController)
-            }
-            composable("my_profile") {
-                MyProfileScreen(navController = navController)
-            }
-            composable("friends") {
-                FriendsScreen(navController = navController)
-            }
-            composable("messages") {
-                MessagesScreen(navController = navController)
-            }
-            composable("club") {
-                ClubScreen(navController = navController)
-            }
-            composable("club_list") {
-                ClubListScreen(navController = navController)
-            }
-            composable("create_club") {
-                CreateClubScreen(navController = navController)
-            }
-            composable("club_admin_panel") {
-                ClubAdminPanelScreen(navController = navController)
-            }
-            composable("friend_search") {
-                FriendSearchScreen(navController = navController)
-            }
-            composable("friend_requests") {
-                FriendRequestsScreen(navController = navController)
-            }
-            composable("course_selection_multiplayer") {
-                MultiplayerCourseSelection(navController = navController)
-            }
+            composable("main_menu") { MainMenuScreen(navController = navController) }
+            composable("login") { LoginScreen(navController = navController) }
+            composable("start_round") { StartRoundScreen(navController = navController) }
+            composable("course_selection_alone") { BanevelgingAleneScreen(navController = navController) }
+            composable("my_profile") { MyProfileScreen(navController = navController) }
+            composable("friends") { FriendsScreen(navController = navController) }
+            composable("messages") { MessagesScreen(navController = navController) }
+            composable("club") { ClubScreen(navController = navController) }
+            composable("club_list") { ClubListScreen(navController = navController) }
+            composable("create_club") { CreateClubScreen(navController = navController) }
+            composable("club_admin_panel") { ClubAdminPanelScreen(navController = navController) }
+            composable("friend_search") { FriendSearchScreen(navController = navController) }
+            composable("friend_requests") { FriendRequestsScreen(navController = navController) }
             composable(
                 route = "friend_profile/{friendEmail}/{friendName}",
                 arguments = listOf(
@@ -303,6 +273,15 @@ fun AppNavigation(intent: Intent? = null) {
                         CircularProgressIndicator()
                     }
                 }
+            }
+            composable("multiplayer_home") {
+                my.application.ui.spill.MultiplayerHomeScreen(navController = navController)
+            }
+            composable("multiplayer_create") {
+                my.application.ui.spill.MultiplayerCreateScreen(navController = navController)
+            }
+            composable("multiplayer_join") {
+                my.application.ui.spill.MultiplayerJoinScreen(navController = navController)
             }
             composable("multiplayer_lobby/{sessionId}") { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
