@@ -153,7 +153,7 @@ fun ClubScreen(navController: NavController) {
             // Create Club Button
             item {
                 ElevatedCard(
-                    onClick = { /* TODO: Navigate to create club screen */ },
+                    onClick = { navController.navigate("create_club") },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(

@@ -38,6 +38,7 @@ import my.application.ui.screen.startround.StartRoundScreen
 import my.application.ui.screen.tips.TipsScreen
 import my.application.ui.screen.login.LoginScreen
 import my.application.ui.screen.club.ClubScreen
+import my.application.ui.screen.club.CreateClubScreen
 import my.application.ui.spill.BanevelgingAleneScreen
 import my.application.ui.spill.PlayDiscGolfScreen
 import my.application.ui.spill.CourseMapScreen
@@ -181,6 +182,9 @@ fun AppNavigation(intent: Intent? = null) {
             }
             composable("club") {
                 ClubScreen(navController = navController)
+            }
+            composable("create_club") {
+                CreateClubScreen(navController = navController)
             }
             composable("friend_search") {
                 FriendSearchScreen(navController = navController)

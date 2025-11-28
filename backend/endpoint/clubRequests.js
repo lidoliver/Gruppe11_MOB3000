@@ -11,22 +11,38 @@ router.post('/',
     passport.authenticate('jwt', {session: false}),
     async (req, res) => {
         try {
+            console.log('Received club request body:', req.body);
+            console.log('User:', req.user?.epost);
+
             const { klubbnavn, sted, beskrivelse } = req.body;
             const userEmail = req.user.epost;
             
             // Basic validation
             if (!klubbnavn) {
+                console.error('Missing klubbnavn');
                 return res.status(400).json({ message: 'Club name is required' });
             }
             
-            const result = await db.createClubRequest(userEmail, klubbnavn, sted, beskrivelse);
-            res.status(201).json({ 
+            if (!beskrivelse) {
+                console.error('Missing beskrivelse');
+                return res.status(400).json({ message: 'Description is required' });
+            }
+
+            console.log('Creating club request:', { userEmail, klubbnavn, sted, beskrivelse: beskrivelse?.substring(0, 50) });
+            const result = await db.createClubRequest(userEmail, klubbnavn, sted || null, beskrivelse);
+            console.log('Club request created successfully:', result);
+
+            res.status(201).json({
                 message: 'Club request submitted successfully',
                 requestId: result.id 
             });
         } catch (error) {
             console.error('Error submitting club request:', error);
-            res.status(500).json({ message: 'Server error' });
+            console.error('Error stack:', error.stack);
+            res.status(500).json({
+                message: 'Server error',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
         }
     }
 );

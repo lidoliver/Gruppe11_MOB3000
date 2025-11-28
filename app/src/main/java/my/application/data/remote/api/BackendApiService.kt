@@ -181,6 +181,13 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<AdminResponseDto>
 
+    // Club request endpoints
+    @POST("api/club-requests")
+    suspend fun submitClubRequest(
+        @Body request: SubmitClubRequestDto,
+        @Header("Authorization") token: String
+    ): Response<ClubRequestResponseDto>
+
     // Admin endpoints - Club requests
     @GET("api/club-requests")
     suspend fun getClubRequests(

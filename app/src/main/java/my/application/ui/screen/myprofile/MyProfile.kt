@@ -48,6 +48,7 @@ fun MyProfileScreen(
 
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showProfilePictureDialog by remember { mutableStateOf(false) }
+    var showEditUsernameDialog by remember { mutableStateOf(false) }
 
     // Handle authentication errors by navigating to login
     LaunchedEffect(uiState.authError) {
@@ -419,15 +420,6 @@ fun MyProfileScreen(
                                     label = "Venner",
                                     value = uiState.friendsCount.toString()
                                 )
-
-                                if (uiState.user.role != null) {
-                                    InfoRow(
-                                        label = "Role",
-                                        value = uiState.user.role.replaceFirstChar {
-                                            if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
-                                        }
-                                    )
-                                }
                             }
                         }
 
@@ -513,6 +505,30 @@ fun MyProfileScreen(
                 viewModel.updateProfileColor(color)
                 showProfilePictureDialog = false
             }
+        )
+    }
+
+    // Edit Username Dialog
+    if (showEditUsernameDialog) {
+        EditUsernameDialog(
+            currentUsername = uiState.user?.username,
+            onDismiss = { showEditUsernameDialog = false },
+            onSave = { newUsername ->
+                userEmail?.let { email ->
+                    viewModel.updateUsername(
+                        email = email,
+                        newUsername = newUsername,
+                        onSuccess = {
+                            showEditUsernameDialog = false
+                        },
+                        onError = { error ->
+                            // Error is handled in the ViewModel
+                            showEditUsernameDialog = false
+                        }
+                    )
+                }
+            },
+            viewModel = viewModel
         )
     }
 }
@@ -777,3 +793,142 @@ fun ProfilePictureDialog(
     )
 }
 
+@Composable
+fun EditUsernameDialog(
+    currentUsername: String?,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    viewModel: MyProfileViewModel
+) {
+    var username by remember { mutableStateOf(currentUsername ?: "") }
+    var errorMessage by remember { mutableStateOf("") }
+    var isChecking by remember { mutableStateOf(false) }
+    var isAvailable by remember { mutableStateOf<Boolean?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Validate username in real-time
+    LaunchedEffect(username) {
+        if (username.isEmpty() || username == currentUsername) {
+            isAvailable = null
+            errorMessage = ""
+            return@LaunchedEffect
+        }
+
+        // Validate format
+        if (username.contains("@")) {
+            errorMessage = "Brukernavn kan ikke inneholde '@'"
+            isAvailable = false
+            return@LaunchedEffect
+        }
+
+        if (username.length < 3) {
+            errorMessage = "Brukernavn må være minst 3 tegn"
+            isAvailable = false
+            return@LaunchedEffect
+        }
+
+        if (username.length > 30) {
+            errorMessage = "Brukernavn kan være maks 30 tegn"
+            isAvailable = false
+            return@LaunchedEffect
+        }
+
+        if (!username.matches(Regex("^[a-zA-Z0-9_]*$"))) {
+            errorMessage = "Brukernavn kan kun inneholde bokstaver, tall og _"
+            isAvailable = false
+            return@LaunchedEffect
+        }
+
+        // Check availability
+        isChecking = true
+        errorMessage = ""
+        kotlinx.coroutines.delay(500) // Debounce
+
+        coroutineScope.launch {
+            val result = viewModel.checkUsernameAvailability(username)
+            isChecking = false
+            result.fold(
+                onSuccess = { available ->
+                    isAvailable = available
+                    if (!available) {
+                        errorMessage = "Brukernavn er allerede tatt"
+                    }
+                },
+                onFailure = {
+                    errorMessage = "Kunne ikke sjekke tilgjengelighet"
+                    isAvailable = false
+                }
+            )
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rediger brukernavn") },
+        text = {
+            Column {
+                Text(
+                    text = "Brukernavn kan kun inneholde bokstaver, tall og _, og kan ikke inneholde @-tegn.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = {
+                        username = it
+                        isAvailable = null
+                    },
+                    label = { Text("Brukernavn") },
+                    placeholder = { Text("dittbrukernavn") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = errorMessage.isNotEmpty() || isAvailable == false,
+                    supportingText = {
+                        when {
+                            errorMessage.isNotEmpty() -> {
+                                Text(
+                                    text = errorMessage,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            isChecking -> {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Sjekker tilgjengelighet...")
+                                }
+                            }
+                            isAvailable == true -> {
+                                Text(
+                                    text = "✓ Brukernavn er tilgjengelig",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (username.isNotEmpty() && isAvailable == true) {
+                        onSave(username)
+                    }
+                },
+                enabled = username.isNotEmpty() && isAvailable == true && !isChecking
+            ) {
+                Text("Lagre")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Avbryt")
+            }
+        }
+    )
+}
