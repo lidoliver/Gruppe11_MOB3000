@@ -206,6 +206,43 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<AdminResponseDto>
 
+    // Club endpoints
+    @GET("api/clubs")
+    suspend fun getAllClubs(
+        @Header("Authorization") token: String
+    ): Response<List<ClubDto>>
+
+    @GET("api/clubs/{clubId}")
+    suspend fun getClubById(
+        @Path("clubId") clubId: Int,
+        @Header("Authorization") token: String
+    ): Response<ClubDto>
+
+    // Club join request endpoints
+    @POST("api/club-join-requests")
+    suspend fun submitClubJoinRequest(
+        @Body request: SubmitClubJoinRequestDto,
+        @Header("Authorization") token: String
+    ): Response<ClubJoinRequestResponseDto>
+
+    @GET("api/club-join-requests/club/{clubId}")
+    suspend fun getClubJoinRequests(
+        @Path("clubId") clubId: Int,
+        @Header("Authorization") token: String
+    ): Response<List<ClubJoinRequestDto>>
+
+    @POST("api/club-join-requests/{id}/approve")
+    suspend fun approveClubJoinRequest(
+        @Path("id") id: Int,
+        @Header("Authorization") token: String
+    ): Response<AdminResponseDto>
+
+    @POST("api/club-join-requests/{id}/reject")
+    suspend fun rejectClubJoinRequest(
+        @Path("id") id: Int,
+        @Header("Authorization") token: String
+    ): Response<AdminResponseDto>
+
     // FCM Token Registration
     @POST("api/notifications/register-token")
     suspend fun registerFcmToken(
