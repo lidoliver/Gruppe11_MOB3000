@@ -216,8 +216,7 @@ fun PlayDiscGolfScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Location debug card - shows if location is working
-            LocationDebugCard()
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
