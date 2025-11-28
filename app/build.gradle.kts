@@ -84,6 +84,8 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:4.3.3")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.1.0")
+    // Coroutines support for Google Play Services
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     // KSP codegen disabled while resolving KSP/Kotlin compatibility. If you prefer kapt use:
     // kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
     // Otherwise, restore ksp(...) after updating the plugin version:
