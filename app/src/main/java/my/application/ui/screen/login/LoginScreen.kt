@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -20,6 +21,7 @@ import androidx.navigation.NavController
 import my.application.data.auth.AuthManager
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import my.application.ui.utils.isLandscape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,28 +56,44 @@ fun LoginScreen(
         }
     }
 
+    val isLandscapeMode = isLandscape()
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (canNavigateBack) {
-                            navController.popBackStack()
-                        } else {
-                            // If nothing to go back to, go to main menu
-                            navController.navigate("main_menu") {
-                                popUpTo(0) { inclusive = true }
+            // Hide top bar in landscape mode to save vertical space
+            if (!isLandscapeMode) {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            if (canNavigateBack) {
+                                navController.popBackStack()
+                            } else {
+                                // If nothing to go back to, go to main menu
+                                navController.navigate("main_menu") {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back"
+                    },
+                    title = {
+                        Text(
+                            if (isRegistering) "Create Account" else "Login",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-                },
-                title = { Text(if (isRegistering) "Create Account" else "Login") }
-            )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            }
         }
     ) { padding ->
         Column(
