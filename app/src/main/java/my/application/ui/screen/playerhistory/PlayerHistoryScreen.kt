@@ -27,6 +27,9 @@ import my.application.data.remote.api.PlayerApi
 import my.application.data.remote.dto.PlayerStats
 import my.application.data.remote.dto.CourseGameHistory
 import java.util.Locale
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+
 @Composable
 fun PlayerHistoryScreen(
     navController: NavController,
@@ -77,6 +80,7 @@ fun PlayerHistoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
