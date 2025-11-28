@@ -1782,7 +1782,169 @@ async function isTrackOwnedByUserClub(userEmail, trackId) {
     }
 }
 
-// Stub functions for club documents and announcements (not yet implemented)
+// Club announcements (posts) functions
+async function addClubAnnouncement(klubId, content, authorEmail) {
+    const result = await sql`
+        INSERT INTO mydb.club_announcements (klubb_id, content, author_email, created_at)
+        VALUES (${klubId}, ${content}, ${authorEmail}, NOW())
+        RETURNING id, klubb_id, content, author_email, created_at;
+    `;
+    return result[0];
+}
+
+async function getClubAnnouncements(klubId, limit = null) {
+    const limitClause = limit ? sql`LIMIT ${limit}` : sql``;
+    const result = await sql`
+        SELECT
+            a.id,
+            a.klubb_id,
+            a.content,
+            a.author_email,
+            a.created_at,
+            b.brukernavn as author_name
+        FROM mydb.club_announcements a
+        LEFT JOIN mydb.bruker b ON a.author_email = b.epost
+        WHERE a.klubb_id = ${klubId}
+        ORDER BY a.created_at DESC
+        ${limitClause};
+    `;
+    return result;
+}
+
+async function getClubAnnouncement(announcementId) {
+    const result = await sql`
+        SELECT
+            a.id,
+            a.klubb_id,
+            a.content,
+            a.author_email,
+            a.created_at,
+            b.brukernavn as author_name
+        FROM mydb.club_announcements a
+        LEFT JOIN mydb.bruker b ON a.author_email = b.epost
+        WHERE a.id = ${announcementId};
+    `;
+    return result[0];
+}
+
+async function deleteClubAnnouncement(announcementId) {
+    const result = await sql`
+        DELETE FROM mydb.club_announcements
+        WHERE id = ${announcementId}
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+// Club events functions
+async function addClubEvent(klubId, title, description, eventDate, authorEmail) {
+    const result = await sql`
+        INSERT INTO mydb.club_events (klubb_id, title, description, event_date, author_email, created_at)
+        VALUES (${klubId}, ${title}, ${description}, ${eventDate}, ${authorEmail}, NOW())
+        RETURNING id, klubb_id, title, description, event_date, author_email, created_at;
+    `;
+    const event = result[0];
+    // Add participant_count (will be 0 for new events)
+    event.participant_count = 0;
+    return event;
+}
+
+async function getClubEvents(klubId, limit = null) {
+    const limitClause = limit ? sql`LIMIT ${limit}` : sql``;
+    const result = await sql`
+        SELECT
+            e.id,
+            e.klubb_id,
+            e.title,
+            e.description,
+            e.event_date,
+            e.author_email,
+            e.created_at,
+            b.brukernavn as author_name,
+            (SELECT COUNT(*) FROM mydb.event_participants WHERE event_id = e.id) as participant_count
+        FROM mydb.club_events e
+        LEFT JOIN mydb.bruker b ON e.author_email = b.epost
+        WHERE e.klubb_id = ${klubId}
+        ORDER BY e.event_date ASC
+        ${limitClause};
+    `;
+    return result;
+}
+
+async function getClubEvent(eventId) {
+    const result = await sql`
+        SELECT
+            e.id,
+            e.klubb_id,
+            e.title,
+            e.description,
+            e.event_date,
+            e.author_email,
+            e.created_at,
+            b.brukernavn as author_name,
+            (SELECT COUNT(*) FROM mydb.event_participants WHERE event_id = e.id) as participant_count
+        FROM mydb.club_events e
+        LEFT JOIN mydb.bruker b ON e.author_email = b.epost
+        WHERE e.id = ${eventId};
+    `;
+    return result[0];
+}
+
+async function deleteClubEvent(eventId) {
+    const result = await sql`
+        DELETE FROM mydb.club_events
+        WHERE id = ${eventId}
+        RETURNING id;
+    `;
+    return result[0];
+}
+
+// Event participants functions
+async function joinEvent(eventId, userEmail) {
+    const result = await sql`
+        INSERT INTO mydb.event_participants (event_id, user_email, joined_at)
+        VALUES (${eventId}, ${userEmail}, NOW())
+        ON CONFLICT (event_id, user_email) DO NOTHING
+        RETURNING event_id, user_email, joined_at;
+    `;
+    return result[0];
+}
+
+async function leaveEvent(eventId, userEmail) {
+    const result = await sql`
+        DELETE FROM mydb.event_participants
+        WHERE event_id = ${eventId} AND user_email = ${userEmail}
+        RETURNING event_id, user_email;
+    `;
+    return result[0];
+}
+
+async function getEventParticipants(eventId) {
+    const result = await sql`
+        SELECT
+            ep.event_id,
+            ep.user_email,
+            ep.joined_at,
+            b.brukernavn,
+            b.fnavn,
+            b.enavn
+        FROM mydb.event_participants ep
+        LEFT JOIN mydb.bruker b ON ep.user_email = b.epost
+        WHERE ep.event_id = ${eventId}
+        ORDER BY ep.joined_at ASC;
+    `;
+    return result;
+}
+
+async function isUserParticipating(eventId, userEmail) {
+    const result = await sql`
+        SELECT event_id FROM mydb.event_participants
+        WHERE event_id = ${eventId} AND user_email = ${userEmail};
+    `;
+    return result.length > 0;
+}
+
+// Stub functions for club documents (not yet implemented)
 async function uploadClubDocument(klubId, title, fileData, uploadedBy) {
     console.warn('uploadClubDocument not fully implemented');
     return { id: 0 };
@@ -1800,46 +1962,6 @@ async function getClubDocument(documentId) {
 
 async function deleteClubDocument(documentId) {
     console.warn('deleteClubDocument not fully implemented');
-    return null;
-}
-
-async function addClubAnnouncement(klubId, content, authorEmail) {
-    console.warn('addClubAnnouncement not fully implemented');
-    return { id: 0 };
-}
-
-async function getClubAnnouncements(klubId, limit = null) {
-    console.warn('getClubAnnouncements not fully implemented');
-    return [];
-}
-
-async function addClubEvent(klubId, title, description, eventDate, authorEmail) {
-    console.warn('addClubEvent not fully implemented');
-    return { id: 0 };
-}
-
-async function getClubEvents(klubId, limit = null) {
-    console.warn('getClubEvents not fully implemented');
-    return [];
-}
-
-async function deleteClubAnnouncement(announcementId) {
-    console.warn('deleteClubAnnouncement not fully implemented');
-    return null;
-}
-
-async function deleteClubEvent(eventId) {
-    console.warn('deleteClubEvent not fully implemented');
-    return null;
-}
-
-async function getClubAnnouncement(announcementId) {
-    console.warn('getClubAnnouncement not fully implemented');
-    return null;
-}
-
-async function getClubEvent(eventId) {
-    console.warn('getClubEvent not fully implemented');
     return null;
 }
 
@@ -1968,4 +2090,8 @@ export default {
      deleteAllHolesForTrack,
      getAllClubs,
      getClubById,
+     joinEvent,
+     leaveEvent,
+     getEventParticipants,
+     isUserParticipating,
 };

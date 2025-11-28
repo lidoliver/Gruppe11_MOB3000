@@ -21,6 +21,7 @@ import clubManagementRoutes from './endpoint/clubManagement.js';
 import clubJoinRequestsRoutes from './endpoint/clubJoinRequests.js';
 import clubRequestsRoutes from './endpoint/clubRequests.js';
 import clubJoinRequestsRouter from './endpoint/clubJoinRequests.js';
+import clubPageRoutes from './endpoint/clubPage.js';
 import notificationsRoutes from './endpoint/notifications.js';
 import { getPlayerStats } from './endpoint/playerStats.js';
 import { getPlayerCourseGames } from './endpoint/courseGames.js';
@@ -54,6 +55,7 @@ app.use('/api', clubManagementRoutes);
 app.use('/api/club-join-requests', clubJoinRequestsRoutes);
 app.use('/api/club-requests', clubRequestsRoutes);
 app.use('/api/club-join-requests', clubJoinRequestsRouter);
+app.use('/api/club-page', clubPageRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/multiplayer', multiplayerRouter);
 

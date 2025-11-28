@@ -122,7 +122,11 @@ fun ClubScreen(navController: NavController) {
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
-                                onClick = { /* TODO: Navigate to club detail page */ },
+                                onClick = {
+                                    uiState.clubId?.let { clubId ->
+                                        navController.navigate("club_detail/$clubId")
+                                    }
+                                },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(

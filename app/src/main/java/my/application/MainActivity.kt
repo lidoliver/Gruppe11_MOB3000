@@ -41,6 +41,7 @@ import my.application.ui.screen.club.ClubScreen
 import my.application.ui.screen.club.CreateClubScreen
 import my.application.ui.screen.club.ClubListScreen
 import my.application.ui.screen.club.ClubAdminPanelScreen
+import my.application.ui.screen.club.ClubDetailScreen
 import my.application.ui.spill.BanevelgingAleneScreen
 import my.application.ui.spill.PlayDiscGolfScreen
 import my.application.ui.spill.CourseMapScreen
@@ -197,6 +198,15 @@ fun AppNavigation(intent: Intent? = null) {
             }
             composable("club_admin_panel") {
                 ClubAdminPanelScreen(navController = navController)
+            }
+            composable(
+                route = "club_detail/{clubId}",
+                arguments = listOf(
+                    navArgument("clubId") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val clubId = backStackEntry.arguments?.getInt("clubId") ?: 0
+                ClubDetailScreen(navController = navController, clubId = clubId)
             }
             composable("friend_search") {
                 FriendSearchScreen(navController = navController)
