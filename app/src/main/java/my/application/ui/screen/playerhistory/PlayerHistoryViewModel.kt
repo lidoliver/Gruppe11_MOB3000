@@ -28,7 +28,10 @@ class PlayerHistoryViewModel(
         viewModelScope.launch {
             try {
                 val stats = api.getPlayerStats(email)
-                Log.d("PlayerHistoryVM", "Lastet inn statistikk: $stats")
+                Log.d("PlayerHistoryVM", "==========================================")
+                Log.d("PlayerHistoryVM", "API RESPONSE - lastPlayedAt: '${stats.lastPlayedAt}'")
+                Log.d("PlayerHistoryVM", "Full stats: $stats")
+                Log.d("PlayerHistoryVM", "==========================================")
                 _uiState.value = UiState.Success(stats)
             } catch (e: Exception) {
                 Log.e("PlayerHistoryVM", "Feil ved innlasting av statistikk for $email", e)

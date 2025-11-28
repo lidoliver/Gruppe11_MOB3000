@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import my.application.data.repository.MessagesRepository
 import my.application.data.repository.UserRepository
-import java.time.ZonedDateTime
 
 /**
  * Firebase Firestore-based messaging repository with real-time updates
@@ -214,7 +213,7 @@ class FirestoreMessagingRepository(
         return try {
             val dateTime = java.time.Instant.ofEpochMilli(timestampMillis)
                 .atZone(java.time.ZoneId.systemDefault())
-            val now = ZonedDateTime.now()
+            val now = java.time.ZonedDateTime.now()
 
             val daysBetween = java.time.temporal.ChronoUnit.DAYS.between(
                 dateTime.toLocalDate(),

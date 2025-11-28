@@ -29,6 +29,7 @@ import my.application.data.remote.dto.CourseGameHistory
 import java.util.Locale
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import my.application.ui.utils.DateUtils
 
 @Composable
 fun PlayerHistoryScreen(
@@ -151,7 +152,7 @@ fun PlayerHistoryScreen(
                                 )
                                 stats.lastPlayedAt?.let {
                                     Text(
-                                        text = "Sist spilt: $it",
+                                        text = "Sist spilt: ${DateUtils.formatTimestamp(it)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

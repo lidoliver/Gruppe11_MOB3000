@@ -16,7 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import my.application.data.remote.dto.*
 import my.application.ui.components.AppTopBar
 import my.application.ui.theme.MyApplicationTheme
-
+import my.application.ui.utils.DateUtils
 @Composable
 fun GameDetailScreen(
     navController: NavController,
@@ -132,7 +132,7 @@ fun GameDetailContent(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = game.playedAt,
+                        text = DateUtils.formatTimestamp(game.playedAt),
                         style = MaterialTheme.typography.bodyMedium,
                         color = when {
                             scoreDiff < 0 -> MaterialTheme.colorScheme.onPrimaryContainer

@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import my.application.data.repository.MessagesRepository
 import my.application.data.repository.UserRepository
-
 /**
  * Simple polling-based messaging repository
  * Automatically refreshes messages every few seconds
