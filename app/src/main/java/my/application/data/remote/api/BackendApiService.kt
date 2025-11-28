@@ -243,6 +243,62 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<AdminResponseDto>
 
+    // Club Page endpoints
+    @GET("api/club-page/{clubId}")
+    suspend fun getClubPage(
+        @Path("clubId") clubId: Int,
+        @Header("Authorization") token: String
+    ): Response<ClubPageDto>
+
+    @POST("api/club-page/{clubId}/announcements")
+    suspend fun createAnnouncement(
+        @Path("clubId") clubId: Int,
+        @Body request: CreateAnnouncementRequest,
+        @Header("Authorization") token: String
+    ): Response<ClubAnnouncementDto>
+
+    @DELETE("api/club-page/{clubId}/announcements/{announcementId}")
+    suspend fun deleteAnnouncement(
+        @Path("clubId") clubId: Int,
+        @Path("announcementId") announcementId: Int,
+        @Header("Authorization") token: String
+    ): Response<Unit>
+
+    @POST("api/club-page/{clubId}/events")
+    suspend fun createEvent(
+        @Path("clubId") clubId: Int,
+        @Body request: CreateEventRequest,
+        @Header("Authorization") token: String
+    ): Response<ClubEventDto>
+
+    @DELETE("api/club-page/{clubId}/events/{eventId}")
+    suspend fun deleteEvent(
+        @Path("clubId") clubId: Int,
+        @Path("eventId") eventId: Int,
+        @Header("Authorization") token: String
+    ): Response<Unit>
+
+    @POST("api/club-page/{clubId}/events/{eventId}/join")
+    suspend fun joinEvent(
+        @Path("clubId") clubId: Int,
+        @Path("eventId") eventId: Int,
+        @Header("Authorization") token: String
+    ): Response<Unit>
+
+    @DELETE("api/club-page/{clubId}/events/{eventId}/join")
+    suspend fun leaveEvent(
+        @Path("clubId") clubId: Int,
+        @Path("eventId") eventId: Int,
+        @Header("Authorization") token: String
+    ): Response<Unit>
+
+    @GET("api/club-page/{clubId}/events/{eventId}/participants")
+    suspend fun getEventParticipants(
+        @Path("clubId") clubId: Int,
+        @Path("eventId") eventId: Int,
+        @Header("Authorization") token: String
+    ): Response<List<EventParticipantDto>>
+
     // FCM Token Registration
     @POST("api/notifications/register-token")
     suspend fun registerFcmToken(

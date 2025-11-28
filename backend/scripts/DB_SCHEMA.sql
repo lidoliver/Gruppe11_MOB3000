@@ -236,3 +236,14 @@ CREATE TABLE mydb.club_events (
 
 ALTER SEQUENCE mydb.club_events_id_seq RESTART WITH 1;
 CREATE INDEX idx_club_events_klubb ON mydb.club_events(klubb_id);
+
+-- Table: event_participants (tracks who signs up for events)
+CREATE TABLE IF NOT EXISTS mydb.event_participants (
+    event_id INT REFERENCES mydb.club_events(id) ON DELETE CASCADE,
+    user_email VARCHAR(255) REFERENCES mydb.bruker(epost) ON DELETE CASCADE,
+    joined_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (event_id, user_email)
+);
+
+CREATE INDEX idx_event_participants_event ON mydb.event_participants(event_id);
+CREATE INDEX idx_event_participants_user ON mydb.event_participants(user_email);
