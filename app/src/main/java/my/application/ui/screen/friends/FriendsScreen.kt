@@ -396,6 +396,19 @@ fun FriendItem(
                         }
                     }
                 }
+
+                // Message button - always visible
+                IconButton(
+                    onClick = onMessageClick,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Email,
+                        contentDescription = "Send melding",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             // Action buttons - shown when item is clicked
@@ -403,25 +416,8 @@ fun FriendItem(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Message button
-                    OutlinedButton(
-                        onClick = onMessageClick,
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Email,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            "Melding",
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
 
                     // Invite to play button
                     Button(
