@@ -33,40 +33,45 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
         Log.d(TAG, "Message received from: ${message.from}")
+        Log.d(TAG, "Has notification payload: ${message.notification != null}")
+        Log.d(TAG, "Has data payload: ${message.data.isNotEmpty()}")
+        Log.d(TAG, "Data contents: ${message.data}")
 
-        // Check if message contains a notification payload
-        message.notification?.let { notification ->
-            Log.d(TAG, "Notification Title: ${notification.title}")
-            Log.d(TAG, "Notification Body: ${notification.body}")
-
-            showNotification(
-                title = notification.title ?: "New Message",
-                body = notification.body ?: "",
-                data = message.data
-            )
-        }
-
-        // Check if message contains a data payload
+        // Prioritize data payload for custom handling
         if (message.data.isNotEmpty()) {
-            Log.d(TAG, "Message data payload: ${message.data}")
-
-            // Handle data payload
-            handleDataPayload(message.data)
+            Log.d(TAG, "Processing data payload")
+            handleDataPayload(message.data, message.notification)
+        } else if (message.notification != null) {
+            // Fallback to notification payload if no data
+            Log.d(TAG, "Processing notification payload only")
+            message.notification?.let { notification ->
+                showNotification(
+                    title = notification.title ?: "New Message",
+                    body = notification.body ?: "",
+                    data = message.data
+                )
+            }
+        } else {
+            Log.w(TAG, "Message has neither notification nor data payload!")
         }
     }
 
-    private fun handleDataPayload(data: Map<String, String>) {
-        // Handle different types of messages based on your app's needs
-        when (data["type"]) {
+    private fun handleDataPayload(data: Map<String, String>, notification: RemoteMessage.Notification? = null) {
+        val dataType = data["type"]
+        Log.d(TAG, "Handling data payload with type: $dataType")
+
+        when (dataType) {
             "message" -> {
                 // Handle chat message
                 val senderEmail = data["senderEmail"]
                 val senderName = data["senderName"]
                 val messageText = data["message"]
 
+                Log.d(TAG, "Message notification - sender: $senderName, text: ${messageText?.take(20)}")
+
                 showNotification(
-                    title = senderName ?: "New Message",
-                    body = messageText ?: "",
+                    title = senderName ?: notification?.title ?: "New Message",
+                    body = messageText ?: notification?.body ?: "",
                     data = data,
                     notificationType = "message",
                     targetId = senderEmail
@@ -76,6 +81,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 // Handle friend request
                 val senderEmail = data["senderEmail"]
                 val senderName = data["senderName"]
+
+                Log.d(TAG, "Friend request notification - sender: $senderName")
 
                 showNotification(
                     title = "New Friend Request",
@@ -90,6 +97,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 val clubName = data["clubName"]
                 val inviterName = data["inviterName"]
 
+                Log.d(TAG, "Club invite notification - club: $clubName")
+
                 showNotification(
                     title = "Club Invitation",
                     body = "$inviterName invited you to join $clubName",
@@ -99,10 +108,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
             else -> {
-                // Generic notification
+                // Generic notification or fallback to notification payload
+                Log.d(TAG, "Generic/unknown notification type: $dataType")
+
                 showNotification(
-                    title = data["title"] ?: "Notification",
-                    body = data["body"] ?: "",
+                    title = data["title"] ?: notification?.title ?: "Notification",
+                    body = data["body"] ?: notification?.body ?: "",
                     data = data
                 )
             }
@@ -116,7 +127,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         notificationType: String? = null,
         targetId: String? = null
     ) {
+        Log.d(TAG, "showNotification called - title: $title, body: ${body.take(30)}, type: $notificationType")
+
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // Check if notifications are enabled
+        if (!notificationManager.areNotificationsEnabled()) {
+            Log.e(TAG, "❌ Notifications are disabled for this app! User needs to enable in Settings.")
+            return
+        }
 
         // Create notification channel for Android O and above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -130,6 +149,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 enableVibration(true)
             }
             notificationManager.createNotificationChannel(channel)
+            Log.d(TAG, "Notification channel created/verified")
         }
 
         // Create an intent to open the app when notification is tapped
@@ -161,7 +181,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .build()
 
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        val notificationId = System.currentTimeMillis().toInt()
+        notificationManager.notify(notificationId, notification)
+        Log.d(TAG, "✅ Notification displayed with ID: $notificationId")
     }
 }
 
