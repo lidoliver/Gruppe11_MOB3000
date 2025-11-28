@@ -67,9 +67,23 @@ fun PlayDiscGolfScreen(
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var holesData by remember { mutableStateOf<List<HoleData>>(emptyList()) }
+    var locationPermissionGranted by remember { mutableStateOf(false) }
+    var locationPermissionDenied by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
+
+    // Request location permission
+    my.application.ui.components.RequestLocationPermission(
+        onPermissionGranted = {
+            locationPermissionGranted = true
+            locationPermissionDenied = false
+        },
+        onPermissionDenied = {
+            locationPermissionGranted = false
+            locationPermissionDenied = true
+        }
+    )
 
     // Load data - always fetch course data from database, then restore session progress
     LaunchedEffect(courseId, sessionId) {
@@ -215,7 +229,8 @@ fun PlayDiscGolfScreen(
                     holeNumber = currentHole,
                     teePosition = LatLng(currentHoleData.teeLatitude, currentHoleData.teeLongitude),
                     basketPosition = LatLng(currentHoleData.basketLatitude, currentHoleData.basketLongitude),
-                    par = currentHoleData.par
+                    par = currentHoleData.par,
+                    hasLocationPermission = locationPermissionGranted
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             } else {
@@ -747,10 +762,23 @@ fun HoleMapCard(
     holeNumber: Int,
     teePosition: LatLng,
     basketPosition: LatLng,
-    par: Int
+    par: Int,
+    hasLocationPermission: Boolean = false
 ) {
+    val context = LocalContext.current
+    val locationManager = remember { my.application.service.LocationManager(context) }
     val cameraPositionState = rememberCameraPositionState()
     var isMapLoaded by remember { mutableStateOf(false) }
+    var userLocation by remember { mutableStateOf<LatLng?>(null) }
+
+    // Collect location updates - now reactive to permission changes
+    LaunchedEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
+            locationManager.getLocationUpdates(intervalMillis = 3000).collect { location ->
+                userLocation = location
+            }
+        }
+    }
 
     // Calculate bounds to fit both tee and basket
     LaunchedEffect(teePosition, basketPosition) {
@@ -814,16 +842,17 @@ fun HoleMapCard(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
                     uiSettings = MapUiSettings(
-                        zoomControlsEnabled = false,
-                        myLocationButtonEnabled = false,
-                        compassEnabled = false,
+                        zoomControlsEnabled = true,
+                        myLocationButtonEnabled = true,
+                        compassEnabled = true,
                         scrollGesturesEnabled = true,
                         zoomGesturesEnabled = true,
-                        tiltGesturesEnabled = false,
-                        rotationGesturesEnabled = false
+                        tiltGesturesEnabled = true,
+                        rotationGesturesEnabled = true
                     ),
                     properties = MapProperties(
-                        mapType = MapType.HYBRID
+                        mapType = MapType.HYBRID,
+                        isMyLocationEnabled = hasLocationPermission
                     )
                 ) {
                     // Tee marker (green)
@@ -841,6 +870,16 @@ fun HoleMapCard(
                         snippet = "Mål",
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
+
+                    // User location marker (blue) - custom marker for visibility
+                    userLocation?.let { location ->
+                        Marker(
+                            state = MarkerState(position = location),
+                            title = "Din posisjon",
+                            snippet = "Du er her",
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                        )
+                    }
 
                     // Line connecting tee to basket
                     Polyline(
@@ -891,6 +930,23 @@ fun HoleMapCard(
                             fontSize = 11.sp,
                             color = Color(0xFF333333)
                         )
+                    }
+                    if (userLocation != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .background(Color(0xFF00B8D4), CircleShape)
+                            )
+                            Text(
+                                text = "Deg",
+                                fontSize = 11.sp,
+                                color = Color(0xFF333333)
+                            )
+                        }
                     }
                 }
             }

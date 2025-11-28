@@ -47,7 +47,7 @@ fun MyProfileScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showChangePasswordDialog by remember { mutableStateOf(false) }
-    var showProfilePictureDialog by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
     var showEditUsernameDialog by remember { mutableStateOf(false) }
 
     // Handle authentication errors by navigating to login
@@ -178,7 +178,7 @@ fun MyProfileScreen(
                                             .size(100.dp)
                                             .clip(CircleShape)
                                             .background(Color(uiState.profileColor))
-                                            .clickable { showProfilePictureDialog = true },
+                                            .clickable { showEditProfileDialog = true },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
@@ -196,12 +196,12 @@ fun MyProfileScreen(
                                             .clip(CircleShape)
                                             .background(MaterialTheme.colorScheme.primary)
                                             .align(Alignment.BottomEnd)
-                                            .clickable { showProfilePictureDialog = true },
+                                            .clickable { showEditProfileDialog = true },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
-                                            contentDescription = "Endre profilbilde",
+                                            contentDescription = "Rediger profil",
                                             tint = Color.White,
                                             modifier = Modifier.size(18.dp)
                                         )
@@ -210,7 +210,7 @@ fun MyProfileScreen(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                // Name
+                                // Name - clickable to edit
                                 Text(
                                     text = if (uiState.user.firstName != null || uiState.user.lastName != null) {
                                         "${uiState.user.firstName ?: ""} ${uiState.user.lastName ?: ""}".trim()
@@ -219,15 +219,17 @@ fun MyProfileScreen(
                                     },
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.clickable { showEditProfileDialog = true }
                                 )
 
-                                // Username
+                                // Username - clickable to edit
                                 if (uiState.user.username != null) {
                                     Text(
                                         text = "@${uiState.user.username}",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                        modifier = Modifier.clickable { showEditProfileDialog = true }
                                     )
                                 }
 
@@ -518,15 +520,24 @@ fun MyProfileScreen(
         )
     }
 
-    // Profile Picture Color Picker Dialog
-    if (showProfilePictureDialog) {
-        ProfilePictureDialog(
+    // Edit Profile Dialog (merged: profile picture, username, first name, last name)
+    if (showEditProfileDialog) {
+        EditProfileDialog(
+            user = uiState.user,
             currentColor = uiState.profileColor,
-            onDismiss = { showProfilePictureDialog = false },
-            onColorSelected = { color ->
-                viewModel.updateProfileColor(color)
-                showProfilePictureDialog = false
-            }
+            onDismiss = { showEditProfileDialog = false },
+            onSave = { updatedUser, newColor ->
+                userEmail?.let { email ->
+                    // Update profile color
+                    if (newColor != uiState.profileColor) {
+                        viewModel.updateProfileColor(newColor)
+                    }
+                    // Update user profile
+                    viewModel.updateProfile(email, updatedUser)
+                    showEditProfileDialog = false
+                }
+            },
+            viewModel = viewModel
         )
     }
 
@@ -639,6 +650,290 @@ fun ChangePasswordDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
+                Text("Avbryt")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditProfileDialog(
+    user: my.application.data.remote.dto.UserDto?,
+    currentColor: Long,
+    onDismiss: () -> Unit,
+    onSave: (my.application.data.remote.dto.UserDto, Long) -> Unit,
+    viewModel: MyProfileViewModel
+) {
+    var firstName by remember { mutableStateOf(user?.firstName ?: "") }
+    var lastName by remember { mutableStateOf(user?.lastName ?: "") }
+    var username by remember { mutableStateOf(user?.username ?: "") }
+    var selectedColor by remember { mutableStateOf(currentColor) }
+    var errorMessage by remember { mutableStateOf("") }
+    var isCheckingUsername by remember { mutableStateOf(false) }
+    var currentTab by remember { mutableStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val availableColors = listOf(
+        0xFF1976D2 to "Blå",
+        0xFF388E3C to "Grønn",
+        0xFFD32F2F to "Rød",
+        0xFF7B1FA2 to "Lilla",
+        0xFFF57C00 to "Oransje",
+        0xFF0097A7 to "Cyan",
+        0xFFC2185B to "Rosa",
+        0xFF5D4037 to "Brun",
+        0xFF455A64 to "Blågrå",
+        0xFFE91E63 to "Pink",
+        0xFF9C27B0 to "Fiolett",
+        0xFF673AB7 to "Dyp lilla"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rediger profil") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp)
+            ) {
+                // Tab selector
+                TabRow(selectedTabIndex = currentTab) {
+                    Tab(
+                        selected = currentTab == 0,
+                        onClick = { currentTab = 0 },
+                        text = { Text("Profilinfo") }
+                    )
+                    Tab(
+                        selected = currentTab == 1,
+                        onClick = { currentTab = 1 },
+                        text = { Text("Profilbilde") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Tab content
+                when (currentTab) {
+                    0 -> {
+                        // Profile Info Tab
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            OutlinedTextField(
+                                value = firstName,
+                                onValueChange = {
+                                    firstName = it
+                                    errorMessage = ""
+                                },
+                                label = { Text("Fornavn") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = lastName,
+                                onValueChange = {
+                                    lastName = it
+                                    errorMessage = ""
+                                },
+                                label = { Text("Etternavn") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = username,
+                                onValueChange = {
+                                    username = it
+                                    errorMessage = ""
+                                },
+                                label = { Text("Brukernavn") },
+                                prefix = { Text("@") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                isError = errorMessage.isNotEmpty()
+                            )
+
+                            if (errorMessage.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = errorMessage,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+
+                            if (isCheckingUsername) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Sjekker tilgjengelighet...",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "Tips: Du kan la fornavn og etternavn være tomt hvis du kun vil vise brukernavnet ditt.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    1 -> {
+                        // Profile Picture Tab
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            // Preview
+                            Box(
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(selectedColor))
+                                    .align(Alignment.CenterHorizontally),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(60.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "Velg en farge for profilbildet ditt",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Color grid
+                            val rows = availableColors.chunked(3)
+                            rows.forEach { rowColors ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    rowColors.forEach { (colorValue, colorName) ->
+                                        Column(
+                                            modifier = Modifier.weight(1f),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(64.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(colorValue))
+                                                    .clickable { selectedColor = colorValue },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (colorValue == selectedColor) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = "Valgt",
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(32.dp)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = colorName,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    repeat(3 - rowColors.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    when {
+                        username.isEmpty() -> {
+                            errorMessage = "Brukernavnet kan ikke være tomt"
+                        }
+                        username.length < 3 -> {
+                            errorMessage = "Brukernavnet må være minst 3 tegn"
+                        }
+                        username.contains(" ") -> {
+                            errorMessage = "Brukernavnet kan ikke inneholde mellomrom"
+                        }
+                        !username.matches(Regex("^[a-zA-Z0-9_]+$")) -> {
+                            errorMessage = "Brukernavnet kan bare inneholde bokstaver, tall og understreker"
+                        }
+                        username != user?.username -> {
+                            // Check if username is available
+                            isCheckingUsername = true
+                            coroutineScope.launch {
+                                val result = viewModel.checkUsernameAvailability(username)
+                                isCheckingUsername = false
+                                if (result.isSuccess && result.getOrNull() == true) {
+                                    val updatedUser = user!!.copy(
+                                        firstName = firstName.takeIf { it.isNotBlank() },
+                                        lastName = lastName.takeIf { it.isNotBlank() },
+                                        username = username
+                                    )
+                                    onSave(updatedUser, selectedColor)
+                                } else {
+                                    errorMessage = "Dette brukernavnet er allerede tatt"
+                                }
+                            }
+                        }
+                        else -> {
+                            // Username hasn't changed, just update other fields
+                            val updatedUser = user!!.copy(
+                                firstName = firstName.takeIf { it.isNotBlank() },
+                                lastName = lastName.takeIf { it.isNotBlank() },
+                                username = username
+                            )
+                            onSave(updatedUser, selectedColor)
+                        }
+                    }
+                },
+                enabled = !isCheckingUsername
+            ) {
+                Text("Lagre")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isCheckingUsername
+            ) {
                 Text("Avbryt")
             }
         }

@@ -15,7 +15,8 @@ const serviceAccount = JSON.parse(
 // Initialize Firebase Admin
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  projectId: 'mob3000-81751'
+  projectId: 'mob3000-81751',
+  databaseURL: 'https://mob3000-81751-default-rtdb.europe-west1.firebasedatabase.app'
 });
 
 console.log('Firebase Admin initialized successfully');
@@ -25,4 +26,5 @@ export default admin;
 export const auth = admin.auth();
 export const firestore = admin.firestore();
 export const storage = admin.storage();
+export const database = admin.database();
 
