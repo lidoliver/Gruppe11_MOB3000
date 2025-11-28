@@ -216,11 +216,6 @@ fun PlayDiscGolfScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Location debug card - shows if location is working
-            LocationDebugCard()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Map showing current hole
             val currentHoleData = holesData.find { it.holeNumber == currentHole }
 
@@ -234,7 +229,8 @@ fun PlayDiscGolfScreen(
                     holeNumber = currentHole,
                     teePosition = LatLng(currentHoleData.teeLatitude, currentHoleData.teeLongitude),
                     basketPosition = LatLng(currentHoleData.basketLatitude, currentHoleData.basketLongitude),
-                    par = currentHoleData.par
+                    par = currentHoleData.par,
+                    hasLocationPermission = locationPermissionGranted
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             } else {
@@ -766,16 +762,16 @@ fun HoleMapCard(
     holeNumber: Int,
     teePosition: LatLng,
     basketPosition: LatLng,
-    par: Int
+    par: Int,
+    hasLocationPermission: Boolean = false
 ) {
     val context = LocalContext.current
     val locationManager = remember { my.application.service.LocationManager(context) }
     val cameraPositionState = rememberCameraPositionState()
     var isMapLoaded by remember { mutableStateOf(false) }
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
-    var hasLocationPermission by remember { mutableStateOf(locationManager.hasLocationPermission()) }
 
-    // Collect location updates
+    // Collect location updates - now reactive to permission changes
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
             locationManager.getLocationUpdates(intervalMillis = 3000).collect { location ->
@@ -846,13 +842,13 @@ fun HoleMapCard(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
                     uiSettings = MapUiSettings(
-                        zoomControlsEnabled = false,
+                        zoomControlsEnabled = true,
                         myLocationButtonEnabled = true,
-                        compassEnabled = false,
+                        compassEnabled = true,
                         scrollGesturesEnabled = true,
                         zoomGesturesEnabled = true,
-                        tiltGesturesEnabled = false,
-                        rotationGesturesEnabled = false
+                        tiltGesturesEnabled = true,
+                        rotationGesturesEnabled = true
                     ),
                     properties = MapProperties(
                         mapType = MapType.HYBRID,
