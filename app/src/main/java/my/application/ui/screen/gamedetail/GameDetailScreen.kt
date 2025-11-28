@@ -64,7 +64,7 @@ fun GameDetailContent(
 ) {
     val coursePar = holeStats.sumOf { it.par ?: 3 }
     val scoreDiff = game.totalScore - coursePar
-    
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -196,7 +196,7 @@ fun HoleDetailCard(
     bestScore: Int?
 ) {
     val diff = par?.let { score - it } ?: 0
-    
+
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.elevatedCardColors()
@@ -243,7 +243,7 @@ fun HoleDetailCard(
                         }
                     }
                 }
-                
+
                 // Score badge
                 Surface(
                     shape = MaterialTheme.shapes.medium,
@@ -265,13 +265,13 @@ fun HoleDetailCard(
                     )
                 }
             }
-            
+
             // Performance indicators
             if (averageScore != null || bestScore != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
