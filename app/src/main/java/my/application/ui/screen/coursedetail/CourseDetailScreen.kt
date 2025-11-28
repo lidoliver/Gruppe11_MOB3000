@@ -18,7 +18,7 @@ import my.application.data.remote.api.PlayerApi
 import my.application.data.remote.dto.*
 import my.application.ui.components.AppTopBar
 import my.application.ui.theme.MyApplicationTheme
-import java.util.Locale
+import my.application.ui.utils.DateUtils
 
 @Composable
 fun CourseDetailScreen(
@@ -264,7 +264,7 @@ fun GameSelectionCard(
                         }
                     )
                     Text(
-                        text = game.playedAt,
+                        text = DateUtils.formatTimestamp(game.playedAt),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

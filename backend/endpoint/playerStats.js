@@ -17,13 +17,15 @@ export async function getPlayerStats(req, res) {
         console.log('Email i database:', allEmails.map(e => e.spiller_navn));
 
         // Get overall statistics using postgres template literal syntax
+        // Note: dato is stored as timestamp without time zone in UTC
+        // We need to add +02:00 offset for Europe/Oslo (CET with DST)
         const statsResult = await sql`
             SELECT
                 COUNT(*)::int AS total_games,
                 ROUND(AVG(total_score)::numeric, 2) AS average_score,
                 MIN(total_score) AS best_score,
                 MAX(total_score) AS worst_score,
-                MAX(dato) AS last_played_at
+                TO_CHAR(MAX(dato) + INTERVAL '2 hours', 'YYYY-MM-DD"T"HH24:MI:SS') AS last_played_at
             FROM mydb.pointcard
             WHERE spiller_navn = ${email}
         `;

@@ -17,13 +17,15 @@ export async function getPlayerCourseGames(req, res) {
         console.log('Bane:', courseName);
 
         // Get detailed games for this player on this specific course
+        // Note: dato is stored as timestamp without time zone in UTC
+        // We need to add +02:00 offset for Europe/Oslo (CET with DST)
         const gamesResult = await sql`
             SELECT
                 p.pointcard_id,
                 p.bane_id,
                 p.total_score,
                 p.score as hole_scores,
-                (p.dato AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Oslo') as played_at,
+                TO_CHAR(p.dato + INTERVAL '2 hours', 'YYYY-MM-DD"T"HH24:MI:SS') as played_at,
                 b.navn as course_name,
                 b.total_par,
                 b.antall_hull

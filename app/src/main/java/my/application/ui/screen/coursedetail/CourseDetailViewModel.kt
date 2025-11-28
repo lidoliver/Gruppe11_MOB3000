@@ -28,7 +28,12 @@ class CourseDetailViewModel(
         viewModelScope.launch {
             try {
                 val history = api.getPlayerCourseGames(email, courseName)
-                Log.d("CourseDetailVM", "Lastet historikk: ${history.totalGames} runder")
+                Log.d("CourseDetailVM", "==========================================")
+                Log.d("CourseDetailVM", "API RESPONSE - Total games: ${history.totalGames}")
+                history.games.forEach { game ->
+                    Log.d("CourseDetailVM", "Game ${game.gameId} playedAt: '${game.playedAt}'")
+                }
+                Log.d("CourseDetailVM", "==========================================")
                 _uiState.value = CourseDetailUiState.Success(history)
             } catch (e: Exception) {
                 Log.e("CourseDetailVM", "Feil ved innlasting av banehistorikk", e)
