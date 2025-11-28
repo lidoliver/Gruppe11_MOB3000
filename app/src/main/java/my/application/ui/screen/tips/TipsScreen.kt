@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import my.application.ui.utils.isLandscape
 
 data class TipCategory(
     val title: String,
@@ -164,22 +165,26 @@ fun TipsScreen(navController: NavController) {
     }
 
     var selectedTabIndex by remember { mutableStateOf(0) }
+    val isLandscapeMode = isLandscape()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Tips & Tricks",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+            // Hide top bar in landscape mode to save vertical space
+            if (!isLandscapeMode) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Tips & Tricks",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            )
+            }
         }
     ) { paddingValues ->
         Column(

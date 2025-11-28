@@ -8,6 +8,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import my.application.ui.theme.MyApplicationTheme
+import my.application.ui.utils.isLandscape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -16,24 +17,29 @@ fun AppTopBar(
     canNavigateBack: Boolean,
     navController: NavController
 ) {
-    TopAppBar(
-        title = { Text(text = title, style = MaterialTheme.typography.titleLarge) },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Tilbake"
-                    )
+    // Hide top bar in landscape mode to save vertical space
+    val isLandscapeMode = isLandscape()
+
+    if (!isLandscapeMode) {
+        TopAppBar(
+            title = { Text(text = title, style = MaterialTheme.typography.titleLarge) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            navigationIcon = {
+                if (canNavigateBack) {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Tilbake"
+                        )
+                    }
                 }
             }
-        }
-    )
+        )
+    }
 }
 
 @Preview

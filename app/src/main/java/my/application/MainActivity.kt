@@ -8,18 +8,28 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import my.application.ui.utils.isLandscape
+import my.application.ui.utils.rememberLandscapeUiState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -103,6 +113,10 @@ fun AppNavigation(intent: Intent? = null) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Detect landscape orientation
+    val isLandscapeMode = isLandscape()
+    val landscapeUiState = rememberLandscapeUiState()
+
     // Handle notification intent and navigate to appropriate screen
     LaunchedEffect(intent) {
         intent?.let {
@@ -137,14 +151,27 @@ fun AppNavigation(intent: Intent? = null) {
     val isLoginScreen = currentRoute == "login"
 
     // Automatically hide bottom bar when entering play screen or login screen
-    LaunchedEffect(currentRoute) {
+    // In landscape mode, hide bars by default unless user toggles them
+    LaunchedEffect(currentRoute, isLandscapeMode) {
         isBottomBarVisible = !isPlayScreen && !isLoginScreen
+
+        // In landscape mode, start with bars hidden
+        if (isLandscapeMode) {
+            landscapeUiState.hide()
+        }
+    }
+
+    // Calculate actual visibility based on orientation and state
+    val actualBottomBarVisible = if (isLandscapeMode) {
+        isBottomBarVisible && landscapeUiState.isBottomBarVisible
+    } else {
+        isBottomBarVisible
     }
 
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
-                visible = isBottomBarVisible,
+                visible = actualBottomBarVisible,
                 enter = slideInVertically(
                     initialOffsetY = { it },
                     animationSpec = tween(300)
@@ -155,6 +182,29 @@ fun AppNavigation(intent: Intent? = null) {
                 ) + fadeOut(animationSpec = tween(300))
             ) {
                 BottomNavigationBar(navController = navController)
+            }
+        },
+        floatingActionButton = {
+            // Show FAB only in landscape mode when not on play/login screens
+            if (isLandscapeMode && !isPlayScreen && !isLoginScreen) {
+                AnimatedVisibility(
+                    visible = !actualBottomBarVisible,
+                    enter = scaleIn(animationSpec = tween(200)) + fadeIn(animationSpec = tween(200)),
+                    exit = scaleOut(animationSpec = tween(200)) + fadeOut(animationSpec = tween(200))
+                ) {
+                    FloatingActionButton(
+                        onClick = { landscapeUiState.toggleVisibility() },
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Toggle Navigation",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
             }
         }
     ) { paddingValues ->

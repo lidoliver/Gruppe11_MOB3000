@@ -20,6 +20,7 @@ import androidx.navigation.NavController
 import my.application.data.auth.AuthManager
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import my.application.ui.utils.isLandscape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,28 +55,33 @@ fun LoginScreen(
         }
     }
 
+    val isLandscapeMode = isLandscape()
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (canNavigateBack) {
-                            navController.popBackStack()
-                        } else {
-                            // If nothing to go back to, go to main menu
-                            navController.navigate("main_menu") {
-                                popUpTo(0) { inclusive = true }
+            // Hide top bar in landscape mode to save vertical space
+            if (!isLandscapeMode) {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            if (canNavigateBack) {
+                                navController.popBackStack()
+                            } else {
+                                // If nothing to go back to, go to main menu
+                                navController.navigate("main_menu") {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                title = { Text(if (isRegistering) "Create Account" else "Login") }
-            )
+                    },
+                    title = { Text(if (isRegistering) "Create Account" else "Login") }
+                )
+            }
         }
     ) { padding ->
         Column(
