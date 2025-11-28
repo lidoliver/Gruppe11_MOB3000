@@ -12,14 +12,17 @@ const serviceAccount = JSON.parse(
   readFileSync(join(__dirname, 'serviceAccountKey.json'), 'utf8')
 );
 
-// Initialize Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  projectId: 'mob3000-81751',
-  databaseURL: 'https://mob3000-81751-default-rtdb.europe-west1.firebasedatabase.app'
-});
-
-console.log('Firebase Admin initialized successfully');
+// Initialize Firebase Admin only if not already initialized
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId: 'mob3000-81751',
+    databaseURL: 'https://mob3000-81751-default-rtdb.europe-west1.firebasedatabase.app'
+  });
+  console.log('Firebase Admin initialized successfully');
+} else {
+  console.log('Firebase Admin already initialized, reusing existing instance');
+}
 
 // Export the admin instance and commonly used services
 export default admin;

@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "games": {
+      "$sessionId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}
+

@@ -61,6 +61,7 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
     var createError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        Log.d(TAG, "LaunchedEffect triggered - loading courses")
         viewModel.loadCourses()
     }
 
@@ -79,12 +80,14 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                 .padding(innerPadding)
         ) {
             when {
-                isLoading -> {
+                isLoading && trackDtos.isEmpty() -> {
+                    Log.d(TAG, "Rendering: Loading state")
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
                 error != null -> {
+                    Log.d(TAG, "Rendering: Error state - $error")
                     Column(
                         modifier = Modifier
                             .align(Alignment.Center)
@@ -109,6 +112,7 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                     }
                 }
                 trackDtos.isEmpty() && !isLoading -> {
+                    Log.d(TAG, "Rendering: Empty state")
                     Text(
                         text = "Ingen baner tilgjengelig",
                         modifier = Modifier.align(Alignment.Center),
@@ -117,6 +121,7 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                     )
                 }
                 else -> {
+                    Log.d(TAG, "Rendering: Courses list with ${trackDtos.size} courses")
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -153,19 +158,23 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable(enabled = !creating) {
+                                        Log.d(TAG, "Course clicked: ${track.name} (ID: ${track.baneId})")
                                         creating = true
                                         createError = null
                                         coroutineScope.launch {
+                                            Log.d(TAG, "Starting session creation...")
                                             val result = repository.createSession(
                                                 courseId = track.baneId.toString(),
                                                 courseName = track.name,
                                                 totalHoles = track.holes
                                             )
                                             result.onSuccess { sessionId ->
+                                                Log.d(TAG, "Session created successfully, navigating to lobby: $sessionId")
                                                 navController.navigate("multiplayer_lobby/$sessionId")
                                                 creating = false
-                                            }.onFailure {
-                                                createError = it.message
+                                            }.onFailure { exception ->
+                                                Log.e(TAG, "Failed to create session: ${exception.message}", exception)
+                                                createError = exception.message
                                                 creating = false
                                             }
                                         }

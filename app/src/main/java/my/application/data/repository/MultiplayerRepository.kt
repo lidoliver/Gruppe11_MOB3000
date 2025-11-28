@@ -11,13 +11,17 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import my.application.data.auth.AuthManager
+import my.application.data.auth.FirebaseAuthManager
 import my.application.data.model.MultiplayerSession
 import my.application.data.model.Player
 import java.util.UUID
 import kotlin.toString
 class MultiplayerRepository(private val context: Context) {
-    private val database: DatabaseReference = FirebaseDatabase.getInstance().reference
+    private val database: DatabaseReference = FirebaseDatabase.getInstance(
+        "https://mob3000-81751-default-rtdb.europe-west1.firebasedatabase.app"
+    ).reference
     private val authManager = AuthManager.getInstance(context)
+    private val firebaseAuthManager = FirebaseAuthManager.getInstance()
     companion object {
         private const val TAG = "MultiplayerRepository"
         private const val SESSIONS_PATH = "game_sessions"
@@ -48,12 +52,27 @@ class MultiplayerRepository(private val context: Context) {
         totalHoles: Int
     ): Result<String> {
         return try {
-            val userEmail = authManager.getUserEmail() ?: return Result.failure(
-                Exception("User not authenticated")
-            )
+            Log.d(TAG, "createSession called - courseId: $courseId, courseName: $courseName, totalHoles: $totalHoles")
+
+            val userEmail = authManager.getUserEmail()
+            Log.d(TAG, "User email retrieved: $userEmail")
+
+            if (userEmail == null) {
+                Log.e(TAG, "User not authenticated")
+                return Result.failure(Exception("User not authenticated"))
+            }
+
+            // Ensure signed in to Firebase Auth for database access
+            Log.d(TAG, "Ensuring Firebase Auth sign-in...")
+            firebaseAuthManager.ensureFirebaseSignedIn(userEmail).onFailure { error ->
+                Log.e(TAG, "Failed to sign in to Firebase: ${error.message}")
+                return Result.failure(Exception("Failed to authenticate with Firebase: ${error.message}"))
+            }
+            Log.d(TAG, "Firebase Auth confirmed")
 
             val sessionId = UUID.randomUUID().toString()
             val encodedEmail = encodeEmail(userEmail)
+            Log.d(TAG, "Session ID generated: $sessionId, Encoded email: $encodedEmail")
 
             // Match the backend structure exactly
             val sessionData = mapOf(
@@ -75,14 +94,25 @@ class MultiplayerRepository(private val context: Context) {
                 )
             )
 
-            database.child("games")
-                .child(sessionId)
-                .setValue(sessionData)
-                .await()
+            Log.d(TAG, "Session data prepared, writing to Firebase...")
+            try {
+                database.child("games")
+                    .child(sessionId)
+                    .setValue(sessionData)
+                    .await()
+                Log.d(TAG, "Session created successfully: $sessionId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Firebase write failed", e)
+                // Check if it's a permission error
+                if (e.message?.contains("Permission denied", ignoreCase = true) == true) {
+                    throw Exception("Firebase permission denied. Please update Realtime Database rules in Firebase Console.")
+                }
+                throw e
+            }
 
             Result.success(sessionId)
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating session", e)
+            Log.e(TAG, "Error creating session: ${e.message}", e)
             Result.failure(e)
         }
     }

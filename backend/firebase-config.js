@@ -1,8 +1,7 @@
 // Re-export from firebaseAdmin.js to avoid double initialization
-import admin from './firebaseAdmin.js';
-import { getDatabase } from 'firebase-admin/database';
+import admin, { database } from './firebaseAdmin.js';
 
-
-const db = getDatabase();
+// Use the already initialized database instance
+const db = database;
 
 export { db, admin };
