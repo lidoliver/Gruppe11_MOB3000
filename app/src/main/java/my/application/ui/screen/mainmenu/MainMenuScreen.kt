@@ -218,6 +218,7 @@ fun MainMenuScreen(navController: NavController) {
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(menuItems) { item ->
