@@ -50,10 +50,10 @@ fun MessagesScreen(
         }
     }
 
-    // Show error snackbar if there's an error
+    // Vis feil-snackbar hvis det er en feil
     error?.let { errorMessage ->
         LaunchedEffect(errorMessage) {
-            // You can show a snackbar here if needed
+            // Du kan vise en snackbar her hvis nødvendig
             viewModel.clearError()
         }
     }
@@ -72,7 +72,7 @@ fun MessagesScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Search bar with better styling
+            // Søkefelt med bedre styling
             TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -97,10 +97,10 @@ fun MessagesScreen(
                 )
             )
 
-            // Messages list
+            // Meldingsliste
             when {
                 isLoading -> {
-                    // Loading state
+                    // Lastingstilstand
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center

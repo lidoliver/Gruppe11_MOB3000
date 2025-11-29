@@ -37,17 +37,17 @@ fun MultiplayerLobbyScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var currentUserEmail by remember { mutableStateOf<String?>(null) }
 
-    // Get current user email
+    // Hent nåværende brukers e-post
     LaunchedEffect(Unit) {
         currentUserEmail = authManager.getUserEmail()
     }
 
-    // Observe session updates
+    // Observer øktopdateringer
     LaunchedEffect(sessionId) {
         repository.observeSession(sessionId).collect { updatedSession ->
             session = updatedSession
 
-            // Navigate to game if session started
+            // Naviger til spill hvis økten er startet
             if (updatedSession?.status == "active") {
                 navController.navigate("play_session/${updatedSession.baneId}/$sessionId") {
                     popUpTo("multiplayer_lobby/$sessionId") { inclusive = true }
@@ -71,7 +71,7 @@ fun MultiplayerLobbyScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Error message
+            // Feilmelding
             error?.let {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -86,7 +86,7 @@ fun MultiplayerLobbyScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Session info
+            // Øktinformasjon
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -107,7 +107,7 @@ fun MultiplayerLobbyScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Players list
+            // Spillerliste
             Text(
                 text = "Players",
                 style = MaterialTheme.typography.headlineSmall,
@@ -132,7 +132,7 @@ fun MultiplayerLobbyScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Ready button
+            // Klar-knapp
             Button(
                 onClick = {
                     coroutineScope.launch {
@@ -158,7 +158,7 @@ fun MultiplayerLobbyScreen(
                 Text(if (isReady) "Ready!" else "Mark as Ready")
             }
 
-            // Start game button (host only)
+            // Start spill-knapp (kun for vert)
             if (session?.hostEmail == currentUserEmail) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
@@ -180,7 +180,7 @@ fun MultiplayerLobbyScreen(
                 }
             }
 
-            // Leave button
+            // Forlat-knapp
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {

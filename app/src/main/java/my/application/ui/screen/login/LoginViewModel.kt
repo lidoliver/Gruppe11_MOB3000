@@ -39,16 +39,16 @@ class LoginViewModel(
             uiState = when {
                 result.isSuccess -> {
                     val response = result.getOrNull()!!
-                    // Save token and email
+                    // Lagre token og e-post
                     authManager.saveAuthToken(response.token, response.email)
 
-                    // Send immediate heartbeat to update online status
+                    // Send umiddelbar heartbeat for å oppdatere online-status
                     val heartbeatManager = HeartbeatManager.getInstance(getApplication())
                     viewModelScope.launch {
                         heartbeatManager.sendImmediateHeartbeat()
                     }
 
-                    // Register FCM token after successful login
+                    // Registrer FCM-token etter vellykket innlogging
                     viewModelScope.launch {
                         registerFcmToken(response.email, response.token)
                     }
@@ -117,14 +117,14 @@ class LoginViewModel(
 
     private suspend fun registerFcmToken(userEmail: String, authToken: String) {
         try {
-            // Get FCM token
+            // Hent FCM-token
             val fcmToken = FcmTokenManager.getToken()
 
             if (fcmToken != null) {
-                // Save locally
+                // Lagre lokalt
                 FcmTokenManager.saveToken(getApplication(), fcmToken)
 
-                // Send to backend
+                // Send til backend
                 val request = RegisterFcmTokenRequest(
                     userEmail = userEmail,
                     fcmToken = fcmToken

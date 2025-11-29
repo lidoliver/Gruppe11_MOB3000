@@ -150,14 +150,14 @@ interface BackendApiService {
         @Header("Authorization") token: String
     ): Response<ChangePasswordResponse>
 
-    // Check username availability endpoint
+    // Endepunkt for å sjekke brukernavn-tilgjengelighet
     @GET("users/check-username/{username}")
     suspend fun checkUsernameAvailability(
         @Path("username") username: String,
         @Header("Authorization") token: String
     ): Response<UsernameAvailabilityResponse>
 
-    // Admin endpoints - User management
+    // Admin-endepunkter - Brukeradministrasjon
     @GET("users")
     suspend fun getAllUsers(
         @Header("Authorization") token: String

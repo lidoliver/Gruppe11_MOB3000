@@ -80,7 +80,7 @@ class PollingMessagingRepository(
 
         return messagesRepository.sendMessage(contactEmail, text, cleanToken)
             .map {
-                // Create temporary message for immediate display
+                // Opprett midlertidig melding for umiddelbar visning
                 ChatMessage(
                     id = System.currentTimeMillis().toInt(),
                     conversationId = contactEmail.hashCode(),

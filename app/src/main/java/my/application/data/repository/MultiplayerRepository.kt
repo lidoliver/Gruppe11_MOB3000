@@ -103,7 +103,7 @@ class MultiplayerRepository(private val context: Context) {
                 Log.d(TAG, "Session created successfully: $sessionId")
             } catch (e: Exception) {
                 Log.e(TAG, "Firebase write failed", e)
-                // Check if it's a permission error
+                // Sjekk om det er en tilgangsfeil
                 if (e.message?.contains("Permission denied", ignoreCase = true) == true) {
                     throw Exception("Firebase permission denied. Please update Realtime Database rules in Firebase Console.")
                 }
@@ -298,12 +298,12 @@ class MultiplayerRepository(private val context: Context) {
             val playersRef = sessionRef.child("players")
             playersRef.child(encodedEmail).removeValue().await()
 
-            // Check if this was the last player
+            // Sjekk om dette var siste spilleren
             val updatedSnapshot = playersRef.get().await()
             if (!updatedSnapshot.hasChildren()) {
                 sessionRef.removeValue().await()
             } else if (session.hostEmail == userEmail) {
-                // Assign new host - decode the key to get the email
+                // Tildel ny vert - dekod nøkkelen for å få e-posten
                 val newHostKey = updatedSnapshot.children.firstOrNull()?.key
                 if (newHostKey != null) {
                     val newHostEmail = decodeEmail(newHostKey)

@@ -29,7 +29,7 @@ class AdminRepository private constructor(private val context: Context) {
             val response = api.getAllUsers("Bearer $token")
 
             if (response.isSuccessful && response.body() != null) {
-                // Convert AdminUserDto list to UserDto list
+                // Konverter AdminUserDto-liste til UserDto-liste
                 val userDtos = response.body()!!.map { it.toUserDto() }
                 Result.success(userDtos)
             } else if (response.code() == 401) {

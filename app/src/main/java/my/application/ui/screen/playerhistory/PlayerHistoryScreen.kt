@@ -108,7 +108,7 @@ fun PlayerHistoryScreen(
                 is UiState.Success -> {
                     val stats = (uiState as UiState.Success).stats
 
-                    // Main statistics card
+                    // Hovedstatistikkort
                     ElevatedCard(
                         modifier = Modifier
                             .padding(bottom = 12.dp)

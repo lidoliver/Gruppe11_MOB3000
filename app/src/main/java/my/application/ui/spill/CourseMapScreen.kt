@@ -20,7 +20,7 @@ import com.google.maps.android.compose.*
 import my.application.ui.components.AppTopBar
 import my.application.data.repository.TrackRepository
 
-// Data class for hole information
+// Dataklasse for hullinformasjon
 data class HoleLocation(
     val holeNumber: Int,
     val teePosition: LatLng,
@@ -43,27 +43,27 @@ fun CourseMapScreen(
     var selectedHole by remember { mutableStateOf<Int?>(null) }
     var holes by remember { mutableStateOf<List<HoleLocation>>(emptyList()) }
 
-    // Default camera position (Oslo, Norway)
+    // Standard kameraposisjon (Oslo, Norge)
     val defaultPosition = LatLng(59.9139, 10.7522)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultPosition, 15f)
     }
 
-    // Load course data and hole coordinates from database
+    // Last banedata og hullkoordinater fra database
     LaunchedEffect(courseId) {
         loading = true
         error = null
 
         if (courseId != null) {
             try {
-                // Get course info with holes data from database
+                // Hent baneinformasjon med hulldata fra database
                 val trackResult = trackRepository.getTrackById(courseId)
                 trackResult.onSuccess { track ->
                     courseName = track.name
 
-                    // Check if track has holes data with GPS coordinates from database
+                    // Sjekk om banen har hulldata med GPS-koordinater fra database
                     if (track.holesData != null && track.holesData.isNotEmpty()) {
-                        // Convert holes data to HoleLocation objects - only valid coordinates
+                        // Konverter hulldata til HoleLocation-objekter - kun gyldige koordinater
                         val fetchedHoles = track.holesData.mapNotNull { holeData ->
                             if (holeData.teeLatitude != null && holeData.teeLongitude != null &&
                                 holeData.basketLatitude != null && holeData.basketLongitude != null) {
@@ -81,7 +81,7 @@ fun CourseMapScreen(
 
                         if (fetchedHoles.isNotEmpty()) {
                             holes = fetchedHoles
-                            // Center camera on first hole
+                            // Sentrer kamera på første hull
                             cameraPositionState.position = CameraPosition.fromLatLngZoom(
                                 fetchedHoles[0].teePosition,
                                 16f
@@ -206,7 +206,7 @@ fun CourseMapScreen(
                         }
                     }
 
-                    // Hole info card overlay
+                    // Hullinformasjonskort som overlegg
                     selectedHole?.let { holeNum ->
                         val hole = holes.find { it.holeNumber == holeNum }
                         hole?.let {

@@ -73,7 +73,7 @@ fun PlayDiscGolfScreen(
     val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
 
-    // Request location permission
+    // Be om plasseringstillatelse
     my.application.ui.components.RequestLocationPermission(
         onPermissionGranted = {
             locationPermissionGranted = true
@@ -85,31 +85,31 @@ fun PlayDiscGolfScreen(
         }
     )
 
-    // Load data - always fetch course data from database, then restore session progress
+    // Last inn data - hent alltid banedata fra database, deretter gjenopprett øktfremgang
     LaunchedEffect(courseId, sessionId) {
         loading = true
         error = null
 
         if (courseId != null) {
-            // Fetch course from backend database (always needed for GPS data)
+            // Hent bane fra backend-database (alltid nødvendig for GPS-data)
             try {
                 val result = trackRepository.getTrackById(courseId)
                 result.onSuccess { track ->
-                    // Load hole data with GPS coordinates
+                    // Last inn hulldata med GPS-koordinater
                     holesData = track.holesData ?: emptyList()
 
-                    // Try to restore saved session if it matches current course
+                    // Prøv å gjenopprette lagret økt hvis den matcher gjeldende bane
                     val savedSession = sessionManager.getGameSession()
                     if (savedSession != null &&
                         savedSession.courseId == courseId &&
                         savedSession.sessionId == sessionId) {
-                        // Restore saved session progress
+                        // Gjenopprett lagret øktfremgang
                         courseName = savedSession.courseName
                         currentHole = savedSession.currentHole
                         totalHoles = savedSession.totalHoles
                         holeScores = savedSession.holeScores
                     } else {
-                        // Start new game with data from database
+                        // Start nytt spill med data fra database
                         courseName = track.name
                         totalHoles = track.holes
                         holeScores = List(track.holes) { 0 }
@@ -118,7 +118,7 @@ fun PlayDiscGolfScreen(
                             courseName = "${track.name} - Multiplayer"
                         }
 
-                        // Save initial session
+                        // Lagre innledende økt
                         sessionManager.saveGameSession(
                             GameSession(
                                 courseId = courseId,
@@ -140,7 +140,7 @@ fun PlayDiscGolfScreen(
                 loading = false
             }
         } else {
-            // Fallback to demo data if no courseId
+            // Tilbakefall til demodata hvis ingen courseId
             totalHoles = 18
             holeScores = List(18) { 0 }
             courseName = "Demo Course"
@@ -164,10 +164,10 @@ fun PlayDiscGolfScreen(
         }
     }
 
-    // Clear session on unmount if game is finished
+    // Slett økt ved avmontering hvis spillet er ferdig
     DisposableEffect(Unit) {
         onDispose {
-            // Don't clear - keep the session saved for restoration
+            // Ikke slett - behold økten lagret for gjenoppretting
         }
     }
 
@@ -205,7 +205,7 @@ fun PlayDiscGolfScreen(
                 currentHole = currentHole,
                 totalHoles = totalHoles,
                 onMapClick = {
-                    // Navigate to course map screen
+                    // Naviger til banekartskjerm
                     courseId?.let {
                         navController.navigate("course_map/$it")
                     }
@@ -234,7 +234,7 @@ fun PlayDiscGolfScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             } else {
-                // Show placeholder when no GPS data with more detailed error message
+                // Vis plassholder når ingen GPS-data med mer detaljert feilmelding
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -298,16 +298,16 @@ fun PlayDiscGolfScreen(
                     val currentHolesData = holesData
                     val currentCourseId = courseId
 
-                    // Save scorecard to backend before finishing
+                    // Lagre spillkort til backend før avslutning
                     coroutineScope.launch(Dispatchers.IO) {
                         try {
                             val authManager = my.application.data.auth.AuthManager.getInstance(context)
                             val userRepository = my.application.data.repository.UserRepository.getInstance()
                             val userEmail = authManager.getUserEmail() ?: "unknown"
 
-                            // Build hole scores with hole IDs
+                            // Bygg hullresultater med hull-ID-er
                             val scoresToSave = if (currentHolesData.isNotEmpty()) {
-                                // Use hole data from database if available
+                                // Bruk hulldata fra database hvis tilgjengelig
                                 currentHolesData.mapIndexed { index, holeData ->
                                     my.application.data.remote.dto.HoleScore(
                                         hullId = holeData.holeId?.toString() ?: (index + 1).toString(),
@@ -315,7 +315,7 @@ fun PlayDiscGolfScreen(
                                     )
                                 }
                             } else {
-                                // Generate hole scores based on the number of holes played
+                                // Generer hullresultater basert på antall hull spilt
                                 currentHoleScores.mapIndexed { index, score ->
                                     my.application.data.remote.dto.HoleScore(
                                         hullId = (index + 1).toString(),
@@ -340,9 +340,9 @@ fun PlayDiscGolfScreen(
                             android.util.Log.e("PlayDiscGolfScreen", "Error saving scorecard", e)
                         } finally {
                             withContext(Dispatchers.Main) {
-                                // Clear saved session when game is finished
+                                // Slett lagret økt når spillet er ferdig
                                 sessionManager.clearGameSession()
-                                // Navigate back
+                                // Naviger tilbake
                                 navController.popBackStack()
                             }
                         }
@@ -366,10 +366,10 @@ fun PlayDiscGolfScreen(
             }
         }
 
-        // Note: Removed the blocking swipe detection box that was preventing button clicks
-        // Users can click the arrow indicator at the bottom to show/hide the bottom bar
+        // Merk: Fjernet den blokkerende sveipedeteksjonsboksen som forhindret knappetrykk
+        // Brukere kan klikke på pilindikatoren nederst for å vise/skjule bunnlinjen
 
-        // Animated arrow indicator at bottom - now clickable
+        // Animert pilindikator nederst - nå klikkbar
         val arrowRotation by animateFloatAsState(
             targetValue = if (isBottomBarVisible) 180f else 0f,
             animationSpec = tween(durationMillis = 300),
@@ -395,7 +395,7 @@ fun PlayDiscGolfScreen(
                 modifier = Modifier
                     .size(42.dp)
                     .clickable {
-                        // Toggle bottom bar visibility when arrow is clicked
+                        // Bytt synlighet av bunnlinje når pil klikkes
                         onBottomBarVisibilityChange?.invoke(!isBottomBarVisible)
                     }
                     .graphicsLayer {
@@ -658,14 +658,14 @@ fun ScoreSummary(
     currentHole: Int,
     onHoleClick: (Int) -> Unit
 ) {
-    // Calculate optimal columns based on number of holes
+    // Beregn optimalt antall kolonner basert på antall hull
     val totalHoles = holeScores.size
     val columnCount = when {
-        totalHoles <= 6 -> 3  // 6 holes or fewer: 3 columns (bigger cards)
-        totalHoles <= 9 -> 3  // 9 holes: 3 columns
-        totalHoles <= 12 -> 4 // 12 holes: 4 columns
-        totalHoles <= 15 -> 5 // 15 holes: 5 columns
-        else -> 6             // 18 holes: 6 columns (standard)
+        totalHoles <= 6 -> 3  // 6 hull eller færre: 3 kolonner (større kort)
+        totalHoles <= 9 -> 3  // 9 hull: 3 kolonner
+        totalHoles <= 12 -> 4 // 12 hull: 4 kolonner
+        totalHoles <= 15 -> 5 // 15 hull: 5 kolonner
+        else -> 6             // 18 hull: 6 kolonner (standard)
     }
 
     Card(
@@ -780,7 +780,7 @@ fun HoleMapCard(
         }
     }
 
-    // Calculate bounds to fit both tee and basket
+    // Beregn grenser for å passe både tee og kurv
     LaunchedEffect(teePosition, basketPosition) {
         val bounds = LatLngBounds.builder()
             .include(teePosition)
@@ -788,14 +788,14 @@ fun HoleMapCard(
             .build()
 
         try {
-            kotlinx.coroutines.delay(100) // Small delay to ensure map is ready
+            kotlinx.coroutines.delay(100) // Liten forsinkelse for å sikre at kartet er klart
             cameraPositionState.animate(
                 update = CameraUpdateFactory.newLatLngBounds(bounds, 150),
                 durationMs = 1000
             )
             isMapLoaded = true
         } catch (_: Exception) {
-            // Fallback to center position if bounds animation fails
+            // Tilbakefall til senterposisjon hvis bounds-animasjon feiler
             val center = LatLng(
                 (teePosition.latitude + basketPosition.latitude) / 2,
                 (teePosition.longitude + basketPosition.longitude) / 2

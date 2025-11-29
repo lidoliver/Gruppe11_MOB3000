@@ -20,7 +20,7 @@ data class AdminUserDto(
     @Json(name = "club_id") val clubId: Int?,
     @Json(name = "club_name") val clubName: String?
 ) {
-    // Convert to UserDto for compatibility
+    // Konverter til UserDto for kompatibilitet
     fun toUserDto(): UserDto = UserDto(
         email = email,
         username = username,

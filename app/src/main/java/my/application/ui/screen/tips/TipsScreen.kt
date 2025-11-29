@@ -169,7 +169,7 @@ fun TipsScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            // Hide top bar in landscape mode to save vertical space
+            // Skjul topplinje i landskapsmodus for å spare vertikal plass
             if (!isLandscapeMode) {
                 TopAppBar(
                     title = {
@@ -192,7 +192,7 @@ fun TipsScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Tab Row for categories
+            // Fane-rad for kategorier
             ScrollableTabRow(
                 selectedTabIndex = selectedTabIndex,
                 modifier = Modifier.fillMaxWidth(),
@@ -208,7 +208,7 @@ fun TipsScreen(navController: NavController) {
                 }
             }
 
-            // Content for selected category
+            // Innhold for valgt kategori
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()

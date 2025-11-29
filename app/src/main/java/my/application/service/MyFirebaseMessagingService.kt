@@ -25,9 +25,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         Log.d(TAG, "New FCM token: $token")
 
-        // TODO: Send this token to your backend server
-        // You can use your existing API to register the token
-        // e.g., api.registerFcmToken(token)
+        // TODO: Send dette tokenet til backend-serveren din
+        // Du kan bruke ditt eksisterende API for å registrere tokenet
+        // f.eks., api.registerFcmToken(token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -37,12 +37,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "Has data payload: ${message.data.isNotEmpty()}")
         Log.d(TAG, "Data contents: ${message.data}")
 
-        // Prioritize data payload for custom handling
+        // Prioriter data-innhold for tilpasset håndtering
         if (message.data.isNotEmpty()) {
             Log.d(TAG, "Processing data payload")
             handleDataPayload(message.data, message.notification)
         } else if (message.notification != null) {
-            // Fallback to notification payload if no data
+            // Tilbakefall til varselinnhold hvis ingen data
             Log.d(TAG, "Processing notification payload only")
             message.notification?.let { notification ->
                 showNotification(
@@ -62,7 +62,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         when (dataType) {
             "message" -> {
-                // Handle chat message
+                // Håndter chatmelding
                 val senderEmail = data["senderEmail"]
                 val senderName = data["senderName"]
                 val messageText = data["message"]
@@ -78,7 +78,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
             "friend_request" -> {
-                // Handle friend request
+                // Håndter venneforespørsel
                 val senderEmail = data["senderEmail"]
                 val senderName = data["senderName"]
 
@@ -93,7 +93,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
             "club_invite" -> {
-                // Handle club invitation
+                // Håndter klubbinvitasjon
                 val clubName = data["clubName"]
                 val inviterName = data["inviterName"]
 
@@ -108,7 +108,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
             }
             else -> {
-                // Generic notification or fallback to notification payload
+                // Generisk varsel eller tilbakefall til varselinnhold
                 Log.d(TAG, "Generic/unknown notification type: $dataType")
 
                 showNotification(
@@ -131,13 +131,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Check if notifications are enabled
+        // Sjekk om varsler er aktivert
         if (!notificationManager.areNotificationsEnabled()) {
             Log.e(TAG, "❌ Notifications are disabled for this app! User needs to enable in Settings.")
             return
         }
 
-        // Create notification channel for Android O and above
+        // Opprett varselkanal for Android O og nyere
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -152,10 +152,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Notification channel created/verified")
         }
 
-        // Create an intent to open the app when notification is tapped
+        // Opprett en intent for å åpne appen når varselet trykkes
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            // Add extra data to navigate to specific screen
+            // Legg til ekstra data for å navigere til spesifikk skjerm
             notificationType?.let { putExtra("notification_type", it) }
             targetId?.let { putExtra("target_id", it) }
             data["senderEmail"]?.let { putExtra("sender_email", it) }
@@ -169,11 +169,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Build the notification
+        // Bygg varselet
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(body)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // TODO: Replace with your app icon
+            .setSmallIcon(android.R.drawable.ic_dialog_info) // TODO: Erstatt med ditt app-ikon
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

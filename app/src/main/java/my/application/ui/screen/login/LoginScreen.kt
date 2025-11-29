@@ -38,18 +38,18 @@ fun LoginScreen(
     var isRegistering by remember { mutableStateOf(false) }
     var confirmPassword by remember { mutableStateOf("") }
 
-    // Reset state when screen is displayed
+    // Tilbakestill tilstand når skjermen vises
     LaunchedEffect(Unit) {
         viewModel.resetState()
     }
 
-    // Check if we can navigate back
+    // Sjekk om vi kan navigere tilbake
     val canNavigateBack = navController.previousBackStackEntry != null
 
-    // Navigate on success
+    // Naviger ved vellykket innlogging
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess && uiState.userEmail != null) {
-            // Navigate to main menu and clear back stack
+            // Naviger til hovedmeny og tøm back stack
             navController.navigate("main_menu") {
                 popUpTo(0) { inclusive = true }
             }
@@ -60,7 +60,7 @@ fun LoginScreen(
 
     Scaffold(
         topBar = {
-            // Hide top bar in landscape mode to save vertical space
+            // Skjul topplinje i landskapsmodus for å spare vertikal plass
             if (!isLandscapeMode) {
                 TopAppBar(
                     navigationIcon = {
@@ -68,7 +68,7 @@ fun LoginScreen(
                             if (canNavigateBack) {
                                 navController.popBackStack()
                             } else {
-                                // If nothing to go back to, go to main menu
+                                // Hvis ingenting å gå tilbake til, gå til hovedmeny
                                 navController.navigate("main_menu") {
                                     popUpTo(0) { inclusive = true }
                                 }
@@ -105,7 +105,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // App logo or title
+            // App-logo eller tittel
             Text(
                 text = "Disc Golf App",
                 style = MaterialTheme.typography.headlineLarge,
@@ -114,7 +114,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Email field
+            // E-postfelt
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -127,7 +127,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Password field
+            // Passordfelt
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -147,7 +147,7 @@ fun LoginScreen(
                 }
             )
 
-            // Confirm password field (only for registration)
+            // Bekreft passordfelt (kun for registrering)
             if (isRegistering) {
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
@@ -164,7 +164,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Error message
+            // Feilmelding
             if (uiState.error != null) {
                 Text(
                     text = uiState.error,
@@ -174,7 +174,7 @@ fun LoginScreen(
                 )
             }
 
-            // Login/Register button
+            // Innloggings-/Registreringsknapp
             Button(
                 onClick = {
                     if (isRegistering) {
@@ -200,7 +200,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Toggle between login and register
+            // Bytt mellom innlogging og registrering
             TextButton(
                 onClick = {
                     isRegistering = !isRegistering

@@ -73,16 +73,16 @@ import my.application.ui.spill.MultiplayerCourseSelectionScreen as MultiplayerCo
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        this.enableEdgeToEdge() // make call explicit
+        this.enableEdgeToEdge() // Eksplisitt kall
 
-        // Request notification permission for FCM
+        // Be om varslingstillatelse for FCM
         FcmTokenManager.requestNotificationPermission(this)
 
         setContent {
             MyApplicationTheme {
-                // Initialize auth on app start
+                // Initialiser autentisering ved oppstart
                 InitializeAuth()
-                // Pass intent to AppNavigation for notification handling
+                // Send intent til AppNavigation for varselhåndtering
                 AppNavigation(intent = intent)
             }
         }
@@ -102,7 +102,7 @@ fun InitializeAuth() {
         val authManager = AuthManager.getInstance(context)
         authManager.initializeAuth()
 
-        // Initialize HeartbeatManager - it will automatically manage heartbeats based on app lifecycle
+        // Initialiser HeartbeatManager - den vil automatisk håndtere heartbeats basert på app-livssyklus
         val application = context.applicationContext as android.app.Application
         HeartbeatManager.getInstance(application)
     }
@@ -114,11 +114,11 @@ fun AppNavigation(intent: Intent? = null) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Detect landscape orientation
+    // Detekter landskapsorientering
     val isLandscapeMode = isLandscape()
     val landscapeUiState = rememberLandscapeUiState()
 
-    // Handle notification intent and navigate to appropriate screen
+    // Håndter varslingsintent og naviger til riktig skjerm
     LaunchedEffect(intent) {
         intent?.let {
             val notificationType = it.getStringExtra("notification_type")
@@ -127,42 +127,42 @@ fun AppNavigation(intent: Intent? = null) {
 
             when (notificationType) {
                 "message" -> {
-                    // Navigate to conversation with sender
+                    // Naviger til samtale med avsender
                     if (!senderEmail.isNullOrBlank()) {
                         navController.navigate("conversation/$senderEmail/${senderName ?: "User"}")
                     }
                 }
                 "friend_request" -> {
-                    // Navigate to friend requests screen
+                    // Naviger til venneforespørsler
                     navController.navigate("friend_requests")
                 }
                 "club_invite" -> {
-                    // Navigate to club screen
+                    // Naviger til klubb-skjermen
                     navController.navigate("club")
                 }
             }
         }
     }
 
-    // State to control bottom bar visibility
+    // Tilstand for å kontrollere synlighet av bunnlinje
     var isBottomBarVisible by remember { mutableStateOf(true) }
 
-    // Check if we're on a play screen or login screen
+    // Sjekk om vi er på spillskjerm eller innloggingsskjerm
     val isPlayScreen = currentRoute?.startsWith("play_") == true
     val isLoginScreen = currentRoute == "login"
 
-    // Automatically hide bottom bar when entering play screen or login screen
-    // In landscape mode, hide bars by default unless user toggles them
+    // Skjul automatisk bunnlinje ved inngang til spillskjerm eller innloggingsskjerm
+    // I landskapsmodus, skjul linjer som standard med mindre bruker veksler dem
     LaunchedEffect(currentRoute, isLandscapeMode) {
         isBottomBarVisible = !isPlayScreen && !isLoginScreen
 
-        // In landscape mode, start with bars hidden
+        // I landskapsmodus, start med linjer skjult
         if (isLandscapeMode) {
             landscapeUiState.hide()
         }
     }
 
-    // Calculate actual visibility based on orientation and state
+    // Beregn faktisk synlighet basert på orientering og tilstand
     val actualBottomBarVisible = if (isLandscapeMode) {
         isBottomBarVisible && landscapeUiState.isBottomBarVisible
     } else {
@@ -186,7 +186,7 @@ fun AppNavigation(intent: Intent? = null) {
             }
         },
         floatingActionButton = {
-            // Show FAB only in landscape mode when not on play/login screens
+            // Vis FAB kun i landskapsmodus når ikke på spill/innloggingsskjermer
             if (isLandscapeMode && !isPlayScreen && !isLoginScreen) {
                 AnimatedVisibility(
                     visible = !actualBottomBarVisible,
@@ -298,7 +298,7 @@ fun AppNavigation(intent: Intent? = null) {
                         playerEmail = email
                     )
                 } ?: run {
-                    // Show loading or placeholder while fetching user email
+                    // Vis lasting eller plassholder mens bruker-epost hentes
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }

@@ -53,7 +53,7 @@ class MyProfileViewModel(
                     val scorecards = scorecardsResult.getOrNull() ?: emptyList()
                     val friends = friendsResult.getOrNull() ?: emptyList()
 
-                    // Load saved profile color from SharedPreferences, or generate new one
+                    // Last inn lagret profilfarge fra SharedPreferences, eller generer ny
                     val savedColor = sharedPreferences.getLong("profile_color_$email", -1L)
                     val profileColor = if (savedColor != -1L) {
                         savedColor
@@ -73,7 +73,7 @@ class MyProfileViewModel(
                     )
                 }
                 userResult.exceptionOrNull() is AuthException -> {
-                    // Authentication failed - clear auth data
+                    // Autentisering feilet - slett autentiseringsdata
                     authManager.clearAuth()
                     uiState.copy(
                         isLoading = false,
@@ -106,10 +106,10 @@ class MyProfileViewModel(
     }
 
     fun updateProfileColor(color: Long) {
-        // Update UI state
+        // Oppdater UI-tilstand
         uiState = uiState.copy(profileColor = color)
 
-        // Save to SharedPreferences for persistence
+        // Lagre til SharedPreferences for persistens
         uiState.user?.email?.let { email ->
             sharedPreferences.edit().putLong("profile_color_$email", color).apply()
             Log.d("MyProfileViewModel", "Profile color saved: $color for user: $email")
@@ -186,7 +186,7 @@ class MyProfileViewModel(
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
 
-            // First check if username is available
+            // Sjekk først om brukernavnet er tilgjengelig
             val availabilityResult = userRepository.checkUsernameAvailability(newUsername)
 
             if (availabilityResult.isFailure || availabilityResult.getOrNull() == false) {
@@ -195,7 +195,7 @@ class MyProfileViewModel(
                 return@launch
             }
 
-            // Update the user with new username
+            // Oppdater brukeren med nytt brukernavn
             val currentUser = uiState.user ?: run {
                 uiState = uiState.copy(isLoading = false)
                 onError("User data not loaded")

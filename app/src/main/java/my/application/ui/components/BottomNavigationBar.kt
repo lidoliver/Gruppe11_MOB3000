@@ -118,11 +118,11 @@ fun BottomNavigationBar(navController: NavController) {
                 label = { Text(item.label) },
                 selected = isSelected,
                 onClick = {
-                    // Special handling for Play button - check for active game
+                    // Spesiell håndtering for Spill-knapp - sjekk for aktivt spill
                     if (item == BottomNavItem.Play) {
                         val activeSession = sessionManager.getGameSession()
                         if (activeSession != null) {
-                            // Navigate to the active game
+                            // Naviger til det aktive spillet
                             val route = if (activeSession.sessionId != null) {
                                 "play_session/${activeSession.courseId}/${activeSession.sessionId}"
                             } else {

@@ -50,7 +50,7 @@ fun MyProfileScreen(
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showEditUsernameDialog by remember { mutableStateOf(false) }
 
-    // Handle authentication errors by navigating to login
+    // Håndter autentiseringsfeil ved å navigere til innlogging
     LaunchedEffect(uiState.authError) {
         if (uiState.authError) {
             navController.navigate("login") {
@@ -59,7 +59,7 @@ fun MyProfileScreen(
         }
     }
 
-    // Reload profile data whenever this screen is navigated to
+    // Last inn profildata på nytt når denne skjermen navigeres til
     val currentBackStackEntry = navController.currentBackStackEntry
     LaunchedEffect(userEmail, currentBackStackEntry) {
         userEmail?.let { email ->
@@ -171,7 +171,7 @@ fun MyProfileScreen(
                                     .padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // Avatar with edit button
+                                // Avatar med redigeringsknapp
                                 Box {
                                     Box(
                                         modifier = Modifier
@@ -242,7 +242,7 @@ fun MyProfileScreen(
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                 )
 
-                                // Club info
+                                // Klubbinformasjon
                                 if (uiState.user.clubName != null) {
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -254,7 +254,7 @@ fun MyProfileScreen(
                             }
                         }
 
-                        // Quick Actions
+                        // Hurtighandlinger
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -398,7 +398,7 @@ fun MyProfileScreen(
                             }
                         }
 
-                        // Additional Info Card
+                        // Ekstra informasjonskort
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -503,7 +503,7 @@ fun MyProfileScreen(
         }
     }
 
-    // Change Password Dialog
+    // Dialog for endring av passord
     if (showChangePasswordDialog) {
         ChangePasswordDialog(
             onDismiss = { showChangePasswordDialog = false },
@@ -514,13 +514,13 @@ fun MyProfileScreen(
                     onSuccess = {
                         showChangePasswordDialog = false
                     },
-                    onError = { /* Error handled in dialog */ }
+                    onError = { /* Feil håndteres i dialog */ }
                 )
             }
         )
     }
 
-    // Edit Profile Dialog (merged: profile picture, username, first name, last name)
+    // Dialog for redigering av profil (sammenslått: profilbilde, brukernavn, fornavn, etternavn)
     if (showEditProfileDialog) {
         EditProfileDialog(
             user = uiState.user,
@@ -528,11 +528,11 @@ fun MyProfileScreen(
             onDismiss = { showEditProfileDialog = false },
             onSave = { updatedUser, newColor ->
                 userEmail?.let { email ->
-                    // Update profile color
+                    // Oppdater profilfarge
                     if (newColor != uiState.profileColor) {
                         viewModel.updateProfileColor(newColor)
                     }
-                    // Update user profile
+                    // Oppdater brukerprofil
                     viewModel.updateProfile(email, updatedUser)
                     showEditProfileDialog = false
                 }
@@ -541,7 +541,7 @@ fun MyProfileScreen(
         )
     }
 
-    // Edit Username Dialog
+    // Dialog for redigering av brukernavn
     if (showEditUsernameDialog) {
         EditUsernameDialog(
             currentUsername = uiState.user?.username,
@@ -896,7 +896,7 @@ fun EditProfileDialog(
                             errorMessage = "Brukernavnet kan bare inneholde bokstaver, tall og understreker"
                         }
                         username != user?.username -> {
-                            // Check if username is available
+                            // Sjekk om brukernavnet er tilgjengelig
                             isCheckingUsername = true
                             coroutineScope.launch {
                                 val result = viewModel.checkUsernameAvailability(username)
@@ -1068,7 +1068,7 @@ fun ProfilePictureDialog(
                                         .clickable { onColorSelected(colorValue) },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    // Show checkmark if this is the current color
+                                    // Vis avkryssingsmerke hvis dette er gjeldende farge
                                     if (colorValue == currentColor) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
@@ -1093,7 +1093,7 @@ fun ProfilePictureDialog(
                                 )
                             }
                         }
-                        // Fill remaining spaces if row has less than 3 items
+                        // Fyll ut resterende plasser hvis raden har mindre enn 3 elementer
                         repeat(3 - rowColors.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
@@ -1123,7 +1123,7 @@ fun EditUsernameDialog(
     var isAvailable by remember { mutableStateOf<Boolean?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Validate username in real-time
+    // Valider brukernavn i sanntid
     LaunchedEffect(username) {
         if (username.isEmpty() || username == currentUsername) {
             isAvailable = null
@@ -1131,7 +1131,7 @@ fun EditUsernameDialog(
             return@LaunchedEffect
         }
 
-        // Validate format
+        // Valider format
         if (username.contains("@")) {
             errorMessage = "Brukernavn kan ikke inneholde '@'"
             isAvailable = false
@@ -1156,10 +1156,10 @@ fun EditUsernameDialog(
             return@LaunchedEffect
         }
 
-        // Check availability
+        // Sjekk tilgjengelighet
         isChecking = true
         errorMessage = ""
-        kotlinx.coroutines.delay(500) // Debounce
+        kotlinx.coroutines.delay(500) // Forsinkelse for å unngå for mange forespørsler
 
         coroutineScope.launch {
             val result = viewModel.checkUsernameAvailability(username)

@@ -45,14 +45,14 @@ fun BanevelgingAleneScreen(
     )
 
     val scrollState = rememberScrollState()
+    )
 
-
-    // Replace the old state variables with ViewModel state
+    // Erstatt de gamle tilstandsvariablene med ViewModel-tilstand
     val trackDtos by viewModel.courses.collectAsState(initial = emptyList<TrackDto>())
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val error by viewModel.error.collectAsState(initial = null)
 
-    // Convert TrackDto to Course for UI display
+    // Konverter TrackDto til Course for UI-visning
     val courses = trackDtos.map { track ->
         Course(
             id = track.baneId.toString(),
@@ -64,7 +64,7 @@ fun BanevelgingAleneScreen(
 
 
 
-    // Load courses from ViewModel
+    // Last inn baner fra ViewModel
     LaunchedEffect(Unit) {
         viewModel.loadCourses()
     }

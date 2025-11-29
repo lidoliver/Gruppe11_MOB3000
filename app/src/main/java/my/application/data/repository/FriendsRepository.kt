@@ -195,7 +195,7 @@ class FriendsRepository private constructor() {
      * Map DTO to Friend domain model
      */
     private fun mapDtoToFriend(dto: FriendDto): Friend {
-        // Build full name from first and last name, fall back to username if not available
+        // Bygg fullt navn fra fornavn og etternavn, tilbakefall til brukernavn hvis ikke tilgjengelig
         val fullName = when {
             !dto.friendFirstName.isNullOrBlank() && !dto.friendLastName.isNullOrBlank() ->
                 "${dto.friendFirstName} ${dto.friendLastName}"
@@ -203,10 +203,10 @@ class FriendsRepository private constructor() {
             else -> dto.friendUsername
         }
 
-        // Format last played date
+        // Formater sist spilt-dato
         val lastPlayedText = dto.lastPlayed?.let { formatLastPlayed(it) }
 
-        // Map online status from backend
+        // Map online-status fra backend
         val onlineStatus = when (dto.onlineStatus?.lowercase()) {
             "online" -> FriendStatus.ONLINE
             "in_game" -> FriendStatus.IN_GAME

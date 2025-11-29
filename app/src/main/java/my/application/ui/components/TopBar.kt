@@ -18,7 +18,7 @@ fun AppTopBar(
     canNavigateBack: Boolean,
     navController: NavController
 ) {
-    // Hide top bar in landscape mode to save vertical space
+    // Skjul topplinje i landskapsmodus for å spare vertikal plass
     val isLandscapeMode = isLandscape()
 
     if (!isLandscapeMode) {

@@ -127,7 +127,7 @@ fun FriendProfileScreen(
                                         )
                                     }
 
-                                    // Status indicator
+                                    // Statusindikator
                                     Box(
                                         modifier = Modifier
                                             .size(24.dp)

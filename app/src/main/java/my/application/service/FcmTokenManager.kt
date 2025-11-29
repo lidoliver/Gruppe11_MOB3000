@@ -59,7 +59,7 @@ object FcmTokenManager {
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
         } else {
-            true // Permission not required for Android 12 and below
+            true // Tillatelse ikke nødvendig for Android 12 og eldre
         }
     }
 

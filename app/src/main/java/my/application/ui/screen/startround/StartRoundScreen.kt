@@ -27,7 +27,7 @@ import androidx.compose.foundation.verticalScroll
 fun StartRoundScreen(navController: NavController) {
     Scaffold(
         topBar = {
-            // Pass the title and back navigation info to our AppTopBar
+            // Send tittel og tilbakenavigeringsinformasjon til vår AppTopBar
             AppTopBar(
                 title = "Start Runde",
                 canNavigateBack = true,
@@ -48,16 +48,16 @@ fun StartRoundScreen(navController: NavController) {
                 text = "Hvordan vil du spille?",
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 48.dp) // Add space below the title
+                modifier = Modifier.padding(bottom = 48.dp) // Legg til plass under tittelen
             )
 
-            // "Play Alone" option
+            // "Spill alene" alternativ
             GameModeCard(
                 icon = Icons.Filled.Person,
                 title = "Spill alene",
                 description = "Start en runde kun for deg selv.",
                 onClick = {
-                    // Navigate to course selection screen
+                    // Naviger til banevelgingsskjerm
                     navController.navigate("course_selection_alone")
                 }
             )
@@ -88,7 +88,7 @@ fun GameModeCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick), // Make the whole card clickable
+            .clickable(onClick = onClick), // Gjør hele kortet klikkbart
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -100,7 +100,7 @@ fun GameModeCard(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null, // The text describes the icon's purpose
+                contentDescription = null, // Teksten beskriver ikonets formål
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.primary
             )

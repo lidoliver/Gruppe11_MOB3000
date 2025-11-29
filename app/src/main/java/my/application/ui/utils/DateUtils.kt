@@ -30,16 +30,16 @@ object DateUtils {
         Log.d(TAG, "Current time now: ${java.time.LocalDateTime.now()}")
 
         return try {
-            // Backend sends timestamps like "2024-11-28T14:30:00" (no timezone info)
-            // These are already in Europe/Oslo timezone, so parse as LocalDateTime
+            // Backend sender tidsstempler som "2024-11-28T14:30:00" (ingen tidssoneinformasjon)
+            // Disse er allerede i Europe/Oslo tidssone, så parse som LocalDateTime
             val cleanedTimestamp = isoTimestamp.substringBefore("+").substringBefore("Z")
             Log.d(TAG, "Cleaned timestamp: '$cleanedTimestamp'")
 
             val dateTime = if (isoTimestamp.contains("T")) {
-                // ISO format with T separator
+                // ISO-format med T-separator
                 java.time.LocalDateTime.parse(cleanedTimestamp)
             } else {
-                // Format with space separator
+                // Format med mellomrom som separator
                 java.time.LocalDateTime.parse(isoTimestamp.replace(" ", "T"))
             }
 
@@ -67,7 +67,7 @@ object DateUtils {
             result
         } catch (e: Exception) {
             Log.e(TAG, "Error formatting timestamp: $isoTimestamp", e)
-            // Try parsing with ZonedDateTime as fallback
+            // Prøv å parse med ZonedDateTime som reserveløsning
             try {
                 Log.d(TAG, "Trying ZonedDateTime fallback...")
                 val zonedDateTime = ZonedDateTime.parse(isoTimestamp)

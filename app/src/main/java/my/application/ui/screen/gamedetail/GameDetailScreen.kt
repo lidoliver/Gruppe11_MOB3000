@@ -75,7 +75,7 @@ fun GameDetailContent(
             Spacer(modifier = Modifier.height(4.dp))
         }
 
-        // Score summary card
+        // Resultatsammendragskort
         item {
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -266,7 +266,7 @@ fun HoleDetailCard(
                 }
             }
 
-            // Performance indicators
+            // Prestasjonsindikatorer
             if (averageScore != null || bestScore != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()

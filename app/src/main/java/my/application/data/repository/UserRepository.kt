@@ -68,7 +68,7 @@ class UserRepository {
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                // Check for authentication errors
+                // Sjekk for autentiseringsfeil
                 if (response.code() == 401 || response.code() == 403) {
                     Result.failure(AuthException("Authentication failed"))
                 } else {
@@ -108,7 +108,7 @@ class UserRepository {
                 Result.success(scorecards)
             } else {
                 Log.e("UserRepository", "Failed to get scorecards: ${response.code()} - ${response.message()}")
-                // Check for authentication errors
+                // Sjekk for autentiseringsfeil
                 if (response.code() == 401 || response.code() == 403) {
                     Result.failure(AuthException("Authentication failed"))
                 } else {

@@ -67,7 +67,7 @@ class FriendRequestsViewModel(application: Application) : AndroidViewModel(appli
             friendsRepository.acceptFriendRequest(requestId)
                 .onSuccess {
                     Log.d("FriendRequestsViewModel", "Successfully accepted request $requestId")
-                    loadFriendRequests() // Reload the list
+                    loadFriendRequests() // Last inn listen på nytt
                     onSuccess()
                 }
                 .onFailure { exception ->

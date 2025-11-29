@@ -153,7 +153,7 @@ fun ConversationScreen(
                 }
             }
 
-            // Message input bar
+            // Meldingsinntastingslinje
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 tonalElevation = 3.dp

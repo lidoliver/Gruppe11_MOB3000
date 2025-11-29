@@ -245,8 +245,8 @@ fun FriendsScreen(
                                 navController.navigate("conversation/${friend.email}/${friend.name}")
                             },
                             onInviteClick = {
-                                // TODO: Implement invite to play functionality
-                                // This will be connected to the backend later
+                                // TODO: Implementer inviter-til-spill-funksjonalitet
+                                // Dette vil bli koblet til backend senere
                             },
                             onHistoryClick = {
                                 navController.navigate("friend_history/${friend.email}/${friend.name}")

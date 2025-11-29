@@ -52,7 +52,7 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
 
     Log.d(TAG, "Initial state - isLoading: $isLoading, courses: ${trackDtos.size}, error: $error")
 
-    // Debug logging
+    // Debug-logging
     LaunchedEffect(isLoading, error, trackDtos.size) {
         Log.d(TAG, "UI State changed - isLoading: $isLoading, error: $error, courses: ${trackDtos.size}")
     }

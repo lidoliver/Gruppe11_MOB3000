@@ -38,13 +38,13 @@ fun MainMenuScreen(navController: NavController) {
     var savedSession by remember { mutableStateOf<my.application.data.GameSession?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Check for active session on composition
+    // Sjekker om det er et aktivt spill ved oppstart
     LaunchedEffect(Unit) {
         hasActiveSession = sessionManager.hasActiveSession()
         savedSession = sessionManager.getGameSession()
     }
 
-    // Define menu items
+    // Definerer menyelementene
     val menuItems = listOf(
         MenuItem(
             title = "Start Ny Runde",
@@ -84,7 +84,7 @@ fun MainMenuScreen(navController: NavController) {
         )
     )
 
-    // dialog for sletting av spill
+    // Dialog for sletting av spill
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -142,7 +142,7 @@ fun MainMenuScreen(navController: NavController) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Welcome Text
+            // Velkomsttekst
             Text(
                 text = "Velkommen",
                 style = MaterialTheme.typography.headlineMedium,
@@ -151,7 +151,7 @@ fun MainMenuScreen(navController: NavController) {
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
-            // Resume Game Card (only shown if there's an active session)
+            // Kort for å fortsette spill (vises kun når det er et aktivt spill lagret)
             if (hasActiveSession && savedSession != null) {
                 ElevatedCard(
                     onClick = {
@@ -213,7 +213,7 @@ fun MainMenuScreen(navController: NavController) {
                 }
             }
 
-            // Menu Items Grid
+            // Rutenett med menyelementer
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
