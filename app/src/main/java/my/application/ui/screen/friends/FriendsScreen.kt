@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,21 +41,28 @@ fun FriendsScreen(
     val friends by viewModel.friends.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
 
     // Reload friends and friend request count when screen is displayed or resumed
     // Also poll periodically (every 30 seconds) to update automatically
-    LaunchedEffect(Unit) {
-        viewModel.loadFriends() // Initial load with loading indicator
-        viewModel.loadFriendRequestsCount()
+    LaunchedEffect(isAuthenticated) {
+        viewModel.refreshAuthenticationState() // Check auth status
 
-        // Poll every 30 seconds for updates while on this screen
-        // Use showLoading=false to avoid jarring UI resets
-        while (true) {
-            kotlinx.coroutines.delay(30_000) // 30 seconds
-            viewModel.loadFriends(showLoading = false) // Silent refresh
+        if (isAuthenticated) {
+            viewModel.loadFriends() // Initial load with loading indicator
             viewModel.loadFriendRequestsCount()
+
+            // Poll every 30 seconds for updates while on this screen
+            // Use showLoading=false to avoid jarring UI resets
+            while (isAuthenticated) {
+                kotlinx.coroutines.delay(30_000) // 30 seconds
+                if (isAuthenticated) {
+                    viewModel.loadFriends(showLoading = false) // Silent refresh
+                    viewModel.loadFriendRequestsCount()
+                }
+            }
         }
     }
 
@@ -64,8 +72,11 @@ fun FriendsScreen(
             if (destination.route == "friends") {
                 // Reload the count when returning to friends screen
                 // Use silent refresh to avoid jarring UI reset
-                viewModel.loadFriendRequestsCount()
-                viewModel.loadFriends(showLoading = false) // Silent refresh when returning
+                viewModel.refreshAuthenticationState() // Re-check auth status
+                if (isAuthenticated) {
+                    viewModel.loadFriendRequestsCount()
+                    viewModel.loadFriends(showLoading = false) // Silent refresh when returning
+                }
             }
         }
         navController.addOnDestinationChangedListener(callback)
@@ -104,15 +115,18 @@ fun FriendsScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("friend_search") },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PersonAdd,
-                    contentDescription = "Søk etter venner",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
+            // Only show add friend button when authenticated
+            if (isAuthenticated) {
+                FloatingActionButton(
+                    onClick = { navController.navigate("friend_search") },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PersonAdd,
+                        contentDescription = "Søk etter venner",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -121,29 +135,32 @@ fun FriendsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Search bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Søk etter venner...") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Søk"
+            // Only show search bar when authenticated
+            if (isAuthenticated) {
+                // Search bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    placeholder = { Text("Søk etter venner...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Søk"
+                        )
+                    },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
-                },
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
-            )
+            }
 
-            // Friend Requests Card
-            if (friendRequestsCount > 0) {
+            // Friend Requests Card - only show when authenticated
+            if (isAuthenticated && friendRequestsCount > 0) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -199,6 +216,43 @@ fun FriendsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
+                }
+            }
+            // Not authenticated state - show login prompt
+            else if (!isAuthenticated) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Logg inn for å se venner",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Du må logge inn for å se vennelisten og legge til venner",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { navController.navigate("login") },
+                        modifier = Modifier.fillMaxWidth(0.6f)
+                    ) {
+                        Text("Logg inn")
+                    }
                 }
             }
             // Empty state

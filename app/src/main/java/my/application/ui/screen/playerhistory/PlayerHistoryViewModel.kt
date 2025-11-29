@@ -7,12 +7,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import my.application.data.remote.api.PlayerApi
 import my.application.data.remote.dto.PlayerStats
+import my.application.data.repository.UserRepository
 import android.util.Log
 
 sealed class UiState {
     object Loading : UiState()
     data class Success(val stats: PlayerStats) : UiState()
     data class Error(val message: String) : UiState()
+    object NotAuthenticated : UiState()
 }
 
 class PlayerHistoryViewModel(
@@ -22,8 +24,25 @@ class PlayerHistoryViewModel(
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState
 
+    private val userRepository = UserRepository.getInstance()
+
+    /**
+     * Check if user is authenticated
+     */
+    fun isAuthenticated(): Boolean {
+        return userRepository.getAuthToken() != null
+    }
+
     fun load(email: String) {
         Log.d("PlayerHistoryVM", "Laster inn statistikk for email: $email")
+
+        // Check authentication first
+        if (!isAuthenticated()) {
+            Log.d("PlayerHistoryVM", "User not authenticated")
+            _uiState.value = UiState.NotAuthenticated
+            return
+        }
+
         _uiState.value = UiState.Loading
         viewModelScope.launch {
             try {

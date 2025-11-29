@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import my.application.data.friends.Friend
 import my.application.data.repository.FriendsRepository
+import my.application.data.repository.UserRepository
 
 /**
  * ViewModel for Friends Screen
@@ -18,6 +19,7 @@ import my.application.data.repository.FriendsRepository
 class FriendsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val friendsRepository = FriendsRepository.getInstance()
+    private val userRepository = UserRepository.getInstance()
 
     private val _friends = MutableStateFlow<List<Friend>>(emptyList())
     val friends: StateFlow<List<Friend>> = _friends.asStateFlow()
@@ -31,9 +33,36 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _isAuthenticated = MutableStateFlow(false)
+    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
+
     init {
-        loadFriends()
-        loadFriendRequestsCount()
+        checkAuthentication()
+        if (_isAuthenticated.value) {
+            loadFriends()
+            loadFriendRequestsCount()
+        }
+    }
+
+    /**
+     * Check if user is authenticated
+     */
+    private fun checkAuthentication() {
+        _isAuthenticated.value = userRepository.getAuthToken() != null
+    }
+
+    /**
+     * Refresh authentication state (call this when returning to the screen)
+     */
+    fun refreshAuthenticationState() {
+        val wasAuthenticated = _isAuthenticated.value
+        checkAuthentication()
+
+        // If user just logged in, load friends
+        if (!wasAuthenticated && _isAuthenticated.value) {
+            loadFriends()
+            loadFriendRequestsCount()
+        }
     }
 
     /**
@@ -42,6 +71,13 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
      */
     fun loadFriends(showLoading: Boolean = true) {
         Log.d("FriendsViewModel", "loadFriends() called with showLoading=$showLoading")
+
+        // Check authentication before loading
+        if (!_isAuthenticated.value) {
+            Log.d("FriendsViewModel", "User not authenticated, skipping loadFriends")
+            return
+        }
+
         viewModelScope.launch {
             if (showLoading) {
                 Log.d("FriendsViewModel", "Setting loading state to true")

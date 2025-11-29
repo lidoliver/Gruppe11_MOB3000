@@ -97,6 +97,43 @@ fun PlayerHistoryScreen(
                 is UiState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.padding(24.dp))
                 }
+                is UiState.NotAuthenticated -> {
+                    // Not authenticated - show login prompt
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Logg inn for å se historikk",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Du må logge inn for å se spillerhistorikk",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.fillMaxWidth(0.6f)
+                        ) {
+                            Text("Logg inn")
+                        }
+                    }
+                }
                 is UiState.Error -> {
                     Text(
                         text = (uiState as UiState.Error).message,

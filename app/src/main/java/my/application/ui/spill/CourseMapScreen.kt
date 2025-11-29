@@ -151,7 +151,7 @@ fun CourseMapScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(onClick = { navController.popBackStack() }) {
-                                Text("Go Back")
+                                Text("Gå tilbake")
                             }
                         }
                     }

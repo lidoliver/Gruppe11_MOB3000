@@ -51,6 +51,7 @@ fun BanevelgingAleneScreen(
     val trackDtos by viewModel.courses.collectAsState(initial = emptyList<TrackDto>())
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val error by viewModel.error.collectAsState(initial = null)
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState(initial = false)
 
     // Konverter TrackDto til Course for UI-visning
     val courses = trackDtos.map { track ->
@@ -66,6 +67,7 @@ fun BanevelgingAleneScreen(
 
     // Last inn baner fra ViewModel
     LaunchedEffect(Unit) {
+        viewModel.refreshAuthenticationState()
         viewModel.loadCourses()
     }
 
@@ -87,6 +89,44 @@ fun BanevelgingAleneScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
+                }
+            }
+            !isAuthenticated -> {
+                // Not authenticated - show login prompt
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Logg inn for å spille",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Du må logge inn for å kunne spille baner",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { navController.navigate("login") },
+                        modifier = Modifier.fillMaxWidth(0.6f)
+                    ) {
+                        Text("Logg inn")
+                    }
                 }
             }
             error != null -> {
