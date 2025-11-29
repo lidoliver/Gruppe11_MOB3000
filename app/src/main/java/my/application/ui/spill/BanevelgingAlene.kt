@@ -45,7 +45,6 @@ fun BanevelgingAleneScreen(
     )
 
     val scrollState = rememberScrollState()
-    )
 
     // Erstatt de gamle tilstandsvariablene med ViewModel-tilstand
     val trackDtos by viewModel.courses.collectAsState(initial = emptyList<TrackDto>())
