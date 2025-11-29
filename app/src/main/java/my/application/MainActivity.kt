@@ -280,10 +280,12 @@ fun AppNavigation(intent: Intent? = null) {
                 val authManager = AuthManager.getInstance(context)
                 val scope = rememberCoroutineScope()
                 var userEmail by remember { mutableStateOf<String?>(null) }
+                var isLoading by remember { mutableStateOf(true) }
 
                 LaunchedEffect(Unit) {
                     scope.launch {
                         userEmail = authManager.getUserEmail()
+                        isLoading = false
                     }
                 }
 
@@ -291,17 +293,18 @@ fun AppNavigation(intent: Intent? = null) {
                     PlayerHistoryViewModel(RetrofitProvider.playerApi)
                 }
 
-                userEmail?.let { email ->
-                    PlayerHistoryScreen(
-                        navController = navController,
-                        viewModel = viewModel,
-                        playerEmail = email
-                    )
-                } ?: run {
-                    // Show loading or placeholder while fetching user email
+                if (isLoading) {
+                    // Show loading while checking authentication
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
+                } else {
+                    // Always show the screen, let it handle authentication
+                    PlayerHistoryScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        playerEmail = userEmail ?: "not_authenticated"
+                    )
                 }
             }
             composable("multiplayer_lobby/{sessionId}") { backStackEntry ->

@@ -85,6 +85,42 @@ fun ClubScreen(navController: NavController) {
                     ) {
                         CircularProgressIndicator()
                     }
+                } else if (!uiState.isAuthenticated) {
+                    // Not authenticated - show login prompt
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Logg inn for å se klubb",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Du må logge inn for å se klubbinformasjon",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.fillMaxWidth(0.6f)
+                        ) {
+                            Text("Logg inn")
+                        }
+                    }
                 } else if (uiState.isMember && uiState.clubName != null) {
                     // User is a member - show club info with button to club page
                     ElevatedCard(

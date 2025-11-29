@@ -177,7 +177,10 @@ fun PlayDiscGolfScreen(
     }
 
     if (error != null) {
-        ErrorScreen(error = error!!, onBack = { navController.popBackStack() })
+        ErrorScreen(
+            error = error!!,
+            navController = navController
+        )
         return
     }
 
@@ -422,7 +425,12 @@ fun LoadingScreen() {
 }
 
 @Composable
-fun ErrorScreen(error: String, onBack: () -> Unit) {
+fun ErrorScreen(error: String, navController: NavController) {
+    // Check if error is related to authentication
+    val isAuthError = error.contains("authentication", ignoreCase = true) ||
+                      error.contains("not authenticated", ignoreCase = true) ||
+                      error.contains("token", ignoreCase = true)
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -431,15 +439,39 @@ fun ErrorScreen(error: String, onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = error,
-                color = Color(0xFFE74C3C),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
+            if (isAuthError) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Logg inn for å spille",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+            } else {
+                Text(
+                    text = error,
+                    color = Color(0xFFE74C3C),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onBack) {
-                Text("Go Back")
+            Button(
+                onClick = {
+                    if (isAuthError) {
+                        navController.navigate("login")
+                    } else {
+                        navController.popBackStack()
+                    }
+                }
+            ) {
+                Text(if (isAuthError) "Logg inn" else "Gå tilbake")
             }
         }
     }

@@ -49,8 +49,9 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
     val trackDtos by viewModel.courses.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
 
-    Log.d(TAG, "Initial state - isLoading: $isLoading, courses: ${trackDtos.size}, error: $error")
+    Log.d(TAG, "Initial state - isLoading: $isLoading, courses: ${trackDtos.size}, error: $error, isAuthenticated: $isAuthenticated")
 
     // Debug logging
     LaunchedEffect(isLoading, error, trackDtos.size) {
@@ -61,7 +62,8 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
     var createError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        Log.d(TAG, "LaunchedEffect triggered - loading courses")
+        Log.d(TAG, "LaunchedEffect triggered - refreshing auth and loading courses")
+        viewModel.refreshAuthenticationState()
         viewModel.loadCourses()
     }
 
@@ -85,6 +87,44 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
+                }
+                !isAuthenticated -> {
+                    Log.d(TAG, "Rendering: Not authenticated state")
+                    // Not authenticated - show login prompt
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Logg inn for å spille",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Du må logge inn for å spille multiplayer",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { navController.navigate("login") },
+                            modifier = Modifier.fillMaxWidth(0.6f)
+                        ) {
+                            Text("Logg inn")
+                        }
+                    }
                 }
                 error != null -> {
                     Log.d(TAG, "Rendering: Error state - $error")

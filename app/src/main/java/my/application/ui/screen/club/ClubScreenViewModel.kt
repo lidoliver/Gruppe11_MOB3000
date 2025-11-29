@@ -36,10 +36,13 @@ class ClubScreenViewModel(
             if (userEmail == null) {
                 uiState = uiState.copy(
                     isLoading = false,
+                    isAuthenticated = false,
                     error = "Not authenticated"
                 )
                 return@launch
             }
+
+            uiState = uiState.copy(isAuthenticated = true)
 
             val result = userRepository.getUser(userEmail)
 
@@ -68,6 +71,7 @@ class ClubScreenViewModel(
 
 data class ClubScreenUiState(
     val isLoading: Boolean = false,
+    val isAuthenticated: Boolean = true, // Assume authenticated by default for backward compatibility
     val clubId: Int? = null,
     val clubName: String? = null,
     val isMember: Boolean = false,
