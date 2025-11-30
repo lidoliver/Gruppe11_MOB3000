@@ -299,8 +299,8 @@ fun FriendsScreen(
                                 navController.navigate("conversation/${friend.email}/${friend.name}")
                             },
                             onInviteClick = {
-                                // TODO: Implementer inviter-til-spill-funksjonalitet
-                                // Dette vil bli koblet til backend senere
+                                // Navigate to create multiplayer game
+                                navController.navigate("course_selection_multiplayer")
                             },
                             onHistoryClick = {
                                 navController.navigate("friend_history/${friend.email}/${friend.name}")
