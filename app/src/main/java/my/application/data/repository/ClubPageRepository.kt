@@ -22,7 +22,7 @@ class ClubPageRepository private constructor() {
 
     // Retrofit-instans for API-kall
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:5000/")
+        .baseUrl("https://gruppe11-discgolf-app-e20a44954943.herokuapp.com/")
         .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 

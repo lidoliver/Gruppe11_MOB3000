@@ -13,7 +13,8 @@ import java.util.concurrent.TimeUnit
 object RetrofitProvider {
     // For Android Emulator use: http://10.0.2.2:5000/
     // For Physical Device use: http://YOUR_COMPUTER_IP:5000/
-    private const val BASE_URL = "http:/localhost:5000/"
+    //lokal testing: private const val BASE_URL = "http:/localhost:5000/"
+    private const val BASE_URL = "https://gruppe11-discgolf-app-e20a44954943.herokuapp.com/"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
