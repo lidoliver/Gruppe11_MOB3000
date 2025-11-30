@@ -83,7 +83,6 @@ fun CourseMapScreen(
                                     par = holeData.par
                                 )
                             } else {
-                                println("Skipping hole ${holeData.holeNumber} - missing GPS coordinates")
                                 null
                             }
                         }
@@ -95,26 +94,21 @@ fun CourseMapScreen(
                                 fetchedHoles[0].teePosition,
                                 16f
                             )
-                            println("✅ Loaded ${fetchedHoles.size} holes with GPS coordinates from database")
                         } else {
                             error = "No holes with GPS coordinates found in database for this course"
-                            println("❌ Course has ${track.holesData.size} holes but none have GPS coordinates")
                         }
                     } else {
                         error = "No holes data found in database for this course"
-                        println("❌ Course '${track.name}' has no holes in database")
                     }
 
                     loading = false
                 }.onFailure { exception ->
                     error = "Failed to load course: ${exception.message}"
                     loading = false
-                    println("❌ Error loading course: ${exception.message}")
                 }
             } catch (e: Exception) {
                 error = "Error loading course data: ${e.message}"
                 loading = false
-                println("❌ Exception loading course: ${e.message}")
             }
         } else {
             error = "No course ID provided"
