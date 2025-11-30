@@ -1469,15 +1469,51 @@ async function getPendingClubRequests() {
 /*
 * Denne funksjonen godkjenner en klubbforespørsel.
 * Den tar inn ID-en til forespørselen som parameter.
+* Gjør også forespørselens innsender til klubbadmin for den nye klubben.
 */
 async function approveClubRequest(requestId) {
-    const result = await sql`
-        UPDATE mydb.klubb
-        SET status = 'approved'
-        WHERE id_klubb = ${requestId}
-        RETURNING id_klubb, klubbnavn, sted, klubbeskrivelse, status;
-    `;
-    return result[0];
+    try {
+        // Start en transaksjon for å sikre atomicity
+        const result = await sql.begin(async (sql) => {
+            // Først, hent informasjon om klubbforespørselen før vi oppdaterer den
+            const clubInfo = await sql`
+                SELECT id_klubb, kontakt_email, klubbnavn, sted, klubbeskrivelse
+                FROM mydb.klubb
+                WHERE id_klubb = ${requestId} AND status = 'pending';
+            `;
+
+            if (clubInfo.length === 0) {
+                throw new Error('Club request not found or already processed');
+            }
+
+            const club = clubInfo[0];
+            const requesterEmail = club.kontakt_email;
+
+            // Oppdater klubbstatus til godkjent
+            const approvedClub = await sql`
+                UPDATE mydb.klubb
+                SET status = 'approved'
+                WHERE id_klubb = ${requestId}
+                RETURNING id_klubb, klubbnavn, sted, klubbeskrivelse, status, kontakt_email;
+            `;
+
+            // Gjør forespørselens innsender til klubbadmin og knytt dem til klubben
+            await sql`
+                UPDATE mydb.bruker
+                SET role = 'klubbadmin', klubb_id_klubb = ${requestId}
+                WHERE epost = ${requesterEmail};
+            `;
+
+            console.log(`Club request ${requestId} approved. User ${requesterEmail} is now klubbadmin for club "${club.klubbnavn}"`);
+
+            return approvedClub[0];
+        });
+
+        return result;
+    } catch (error) {
+        console.error('Error approving club request:', error);
+        throw error;
+    }
 }
 
 /*
