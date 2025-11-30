@@ -3,6 +3,7 @@ package my.application
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -72,6 +73,9 @@ import my.application.ui.spill.JoinMultiplayerSessionScreen
 
 
 class MainActivity : ComponentActivity() {
+    private val currentIntent = mutableStateOf<Intent?>(null)
+    private val intentTrigger = mutableStateOf(0L)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.enableEdgeToEdge() // Eksplisitt kall
@@ -79,19 +83,28 @@ class MainActivity : ComponentActivity() {
         // Be om varslingstillatelse for FCM
         FcmTokenManager.requestNotificationPermission(this)
 
+        // Set initial intent
+        currentIntent.value = intent
+        intentTrigger.value = System.currentTimeMillis()
+        Log.d("MainActivity", "onCreate - intent extras: ${intent.extras?.keySet()?.joinToString()}")
+
         setContent {
             MyApplicationTheme {
                 // Initialiser autentisering ved oppstart
                 InitializeAuth()
                 // Send intent til AppNavigation for varselhåndtering
-                AppNavigation(intent = intent)
+                AppNavigation(intentState = currentIntent, intentTrigger = intentTrigger)
             }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Log.d("MainActivity", "onNewIntent called - extras: ${intent.extras?.keySet()?.joinToString()}")
         setIntent(intent)
+        // Update the state to trigger recomposition
+        currentIntent.value = intent
+        intentTrigger.value = System.currentTimeMillis()
     }
 }
 
@@ -110,7 +123,7 @@ fun InitializeAuth() {
 }
 
 @Composable
-fun AppNavigation(intent: Intent? = null) {
+fun AppNavigation(intentState: State<Intent?>, intentTrigger: State<Long>) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -119,27 +132,47 @@ fun AppNavigation(intent: Intent? = null) {
     val isLandscapeMode = isLandscape()
     val landscapeUiState = rememberLandscapeUiState()
 
+    // Observe the intent state
+    val intent by intentState
+    val trigger by intentTrigger
+
     // Håndter varslingsintent og naviger til riktig skjerm
-    LaunchedEffect(intent) {
+    LaunchedEffect(trigger) {
         intent?.let {
-            val notificationType = it.getStringExtra("notification_type")
-            val senderEmail = it.getStringExtra("sender_email")
-            val senderName = it.getStringExtra("sender_name")
+            // Try both key formats
+            val notificationType = it.getStringExtra("notification_type") ?: it.getStringExtra("type")
+            val senderEmail = it.getStringExtra("sender_email") ?: it.getStringExtra("senderEmail")
+            val senderName = it.getStringExtra("sender_name") ?: it.getStringExtra("senderName")
+
+            Log.d("AppNavigation", "Processing notification - type: $notificationType, sender: $senderEmail, name: $senderName")
+            Log.d("AppNavigation", "All intent extras: ${it.extras?.keySet()?.joinToString()}")
 
             when (notificationType) {
                 "message" -> {
                     // Naviger til samtale med avsender
                     if (!senderEmail.isNullOrBlank()) {
-                        navController.navigate("conversation/$senderEmail/${senderName ?: "User"}")
+                        val route = "conversation/$senderEmail/${senderName ?: "User"}"
+                        Log.d("AppNavigation", "Navigating to: $route")
+                        navController.navigate(route)
+                    } else {
+                        Log.w("AppNavigation", "Cannot navigate - senderEmail is null or blank")
                     }
                 }
                 "friend_request" -> {
                     // Naviger til venneforespørsler
+                    Log.d("AppNavigation", "Navigating to friend_requests")
                     navController.navigate("friend_requests")
                 }
                 "club_invite" -> {
                     // Naviger til klubb-skjermen
+                    Log.d("AppNavigation", "Navigating to club")
                     navController.navigate("club")
+                }
+                null -> {
+                    Log.d("AppNavigation", "No notification type found in intent")
+                }
+                else -> {
+                    Log.d("AppNavigation", "Unknown notification type: $notificationType")
                 }
             }
         }

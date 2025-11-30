@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.data.messaging.ChatMessage
+import my.application.service.CurrentConversationTracker
 import kotlin.collections.forEachIndexed
 
 @Composable
@@ -58,6 +59,17 @@ fun ConversationScreen(
             focusRequester.requestFocus()
             // Do NOT call keyboardController?.hide()
             // Do NOT call clearFocus()
+        }
+    }
+
+    // Track when user enters/leaves this conversation
+    DisposableEffect(contactEmail) {
+        Log.d("ConversationScreen", "Entering conversation with $contactEmail")
+        CurrentConversationTracker.setCurrentConversation(contactEmail)
+        
+        onDispose {
+            Log.d("ConversationScreen", "Leaving conversation with $contactEmail")
+            CurrentConversationTracker.clearCurrentConversation()
         }
     }
 
