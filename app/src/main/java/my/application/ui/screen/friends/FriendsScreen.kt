@@ -308,59 +308,27 @@ fun FriendsScreen(
                                 navController.navigate("conversation/${friend.email}/${friend.name}")
                             },
                             onInviteClick = {
-                                // Create lobby and send invite code
-                                coroutineScope.launch {
-                                    try {
-                                        // Create a multiplayer session with default course
+                                // Check for active session first
+                                val activeSessionManager = my.application.data.ActiveSessionManager.getInstance(context)
+                                val activeSessionId = activeSessionManager.getActiveSessionId()
+
+                                if (activeSessionId != null) {
+                                    // Clear old session first before creating new one
+                                    coroutineScope.launch {
                                         val multiplayerRepo = MultiplayerRepository.getInstance(context)
-                                        val result = multiplayerRepo.createSession(
-                                            courseId = "default",
-                                            courseName = "Multiplayer Session",
-                                            totalHoles = 18
-                                        )
-                                        
-                                        result.onSuccess { sessionId ->
-                                            // Send the session code as a message
-                                            val userRepo = UserRepository.getInstance()
-                                            val messagesRepo = MessagesRepository()
-                                            val token = userRepo.getAuthToken()
-                                            
-                                            if (token != null) {
-                                                // Remove "Bearer " prefix if present (MessagesRepository adds it)
-                                                val cleanToken = token.removePrefix("Bearer ")
-                                                
-                                                val inviteMessage = "Bli med i mitt disc golf-spill! Klikk på koden for å bli med: $sessionId"
-                                                messagesRepo.sendMessage(
-                                                    receiverEmail = friend.email,
-                                                    content = inviteMessage,
-                                                    token = cleanToken
-                                                ).onSuccess {
-                                                    // Navigate to the lobby
-                                                    navController.navigate("multiplayer_lobby/$sessionId")
-                                                }.onFailure { error ->
-                                                    snackbarHostState.showSnackbar(
-                                                        message = "Kunne ikke sende invitasjon: ${error.message}",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                }
-                                            } else {
-                                                snackbarHostState.showSnackbar(
-                                                    message = "Ikke autentisert",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                            }
-                                        }.onFailure { error ->
-                                            snackbarHostState.showSnackbar(
-                                                message = "Kunne ikke opprette spill: ${error.message}",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
-                                    } catch (e: Exception) {
+                                        multiplayerRepo.leaveSession(activeSessionId)
+                                        activeSessionManager.clearActiveSession()
+
+                                        // Show message and navigate
                                         snackbarHostState.showSnackbar(
-                                            message = "Feil: ${e.message}",
+                                            message = "Forlot gammel lobby for å invitere venn",
                                             duration = SnackbarDuration.Short
                                         )
+                                        navController.navigate("course_selection_multiplayer")
                                     }
+                                } else {
+                                    // No active session, navigate to course selection
+                                    navController.navigate("course_selection_multiplayer")
                                 }
                             },
                             onHistoryClick = {

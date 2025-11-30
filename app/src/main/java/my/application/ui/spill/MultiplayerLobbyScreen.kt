@@ -131,10 +131,23 @@ fun MultiplayerLobbyScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "${session?.players?.size ?: 0} spillere i lobby",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    val playerCount = session?.players?.size ?: 0
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$playerCount spillere i lobby",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        if (playerCount < 2) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "(min. 2 trengs)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 }
             }
 
@@ -197,6 +210,13 @@ fun MultiplayerLobbyScreen(
                 Button(
                     onClick = {
                         coroutineScope.launch {
+                            // Check if we have at least 2 players
+                            val playerCount = session?.players?.size ?: 0
+                            if (playerCount < 2) {
+                                error = "Trenger minst 2 spillere for å starte"
+                                return@launch
+                            }
+
                             val result = repository.startSession(sessionId)
                             result.onFailure {
                                 error = it.message
@@ -204,12 +224,22 @@ fun MultiplayerLobbyScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = session?.players?.values?.all { it.ready } == true,
+                    enabled = session?.let {
+                        it.players.size >= 2 && it.players.values.all { player -> player.ready }
+                    } == true,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) {
                     Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Start Game")
+                    Text(
+                        if (session?.players?.size ?: 0 < 2) {
+                            "Venter på flere spillere..."
+                        } else if (session?.players?.values?.all { it.ready } == true) {
+                            "Start Game"
+                        } else {
+                            "Venter på spillere..."
+                        }
+                    )
                 }
             }
 
