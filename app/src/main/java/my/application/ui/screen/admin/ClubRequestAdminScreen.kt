@@ -6,15 +6,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import my.application.data.remote.dto.ClubRequestDto
 import my.application.ui.components.AppTopBar
 
@@ -37,12 +42,16 @@ fun ClubRequestAdminScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var selectedRequest by remember { mutableStateOf<ClubRequestDto?>(null) }
     var actionType by remember { mutableStateOf("") }
-    var actionMessage by remember { mutableStateOf("") }
-    var showSnackbar by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Handle auth errors
     LaunchedEffect(uiState.authError) {
         if (uiState.authError) {
+            snackbarHostState.showSnackbar(
+                message = "Autentiseringsfeil. Vennligst logg inn på nytt.",
+                duration = SnackbarDuration.Long
+            )
             navController.navigate("login") {
                 popUpTo("home") { inclusive = false }
             }
@@ -58,18 +67,7 @@ fun ClubRequestAdminScreen(
             )
         },
         snackbarHost = {
-            if (showSnackbar) {
-                Snackbar(
-                    modifier = Modifier.padding(16.dp),
-                    action = {
-                        TextButton(onClick = { showSnackbar = false }) {
-                            Text("Dismiss")
-                        }
-                    }
-                ) {
-                    Text(actionMessage)
-                }
-            }
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
         Column(
@@ -84,7 +82,17 @@ fun ClubRequestAdminScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Laster klubbforespørsler...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
                 uiState.error != null -> {
@@ -93,12 +101,37 @@ fun ClubRequestAdminScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            text = "Error: ${uiState.error}",
-                            color = MaterialTheme.colorScheme.error
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(64.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadClubRequests() }) {
+                        Text(
+                            text = "En feil oppstod",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uiState.error ?: "Ukjent feil",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { viewModel.loadClubRequests() }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text("Prøv på nytt")
                         }
                     }
@@ -108,10 +141,41 @@ fun ClubRequestAdminScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Ingen klubb forespørsler",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Inbox,
+                                contentDescription = "No requests",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Ingen klubbforespørsler",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Det er ingen ventende forespørsler om opprettelse av klubber",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 32.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TextButton(onClick = { viewModel.loadClubRequests() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Oppdater")
+                            }
+                        }
                     }
                 }
                 else -> {
@@ -146,15 +210,15 @@ fun ClubRequestAdminScreen(
             onDismissRequest = { showConfirmDialog = false },
             title = {
                 Text(
-                    if (actionType == "approve") "Godta Klubbforespørsel" else "Avvis Klubbforespørsel"
+                    if (actionType == "Godkjenn") "Godta Klubbforespørsel" else "Avvis Klubbforespørsel"
                 )
             },
             text = {
                 Text(
-                    if (actionType == "approve")
+                    if (actionType == "Godkjenn")
                         "Er du sikker på at du vil godkjenne forespørselen for \"${selectedRequest?.clubName}\"? Brukeren vil bli tildelt klubbadmin."
                     else
-                        "Are you sure you want to reject the club request for \"${selectedRequest?.clubName}\"?"
+                        "Er du sikker på at du vil avvise klubbforespørselen for \"${selectedRequest?.clubName}\"?"
                 )
             },
             confirmButton = {
@@ -162,35 +226,51 @@ fun ClubRequestAdminScreen(
                     onClick = {
                         showConfirmDialog = false
                         selectedRequest?.let { request ->
-                            if (actionType == "approve") {
+                            if (actionType == "Godkjenn") {
                                 viewModel.approveClubRequest(
                                     request.id,
                                     onSuccess = {
-                                        actionMessage = "Klubb godkjent"
-                                        showSnackbar = true
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "Klubb godkjent vellykket",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
                                     },
                                     onError = { error ->
-                                        actionMessage = error
-                                        showSnackbar = true
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "Feil ved godkjenning: $error",
+                                                duration = SnackbarDuration.Long
+                                            )
+                                        }
                                     }
                                 )
                             } else {
                                 viewModel.rejectClubRequest(
                                     request.id,
                                     onSuccess = {
-                                        actionMessage = "Klubb avvist"
-                                        showSnackbar = true
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "Klubb avvist",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
                                     },
                                     onError = { error ->
-                                        actionMessage = error
-                                        showSnackbar = true
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "Feil ved avvisning: $error",
+                                                duration = SnackbarDuration.Long
+                                            )
+                                        }
                                     }
                                 )
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (actionType == "approve")
+                        containerColor = if (actionType == "Godkjenn")
                             MaterialTheme.colorScheme.primary
                         else
                             MaterialTheme.colorScheme.error

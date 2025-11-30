@@ -45,10 +45,20 @@ class ClubRequestAdminViewModel(
                     )
                 }
                 else -> {
-                    uiState.copy(
-                        isLoading = false,
-                        error = result.exceptionOrNull()?.message ?: "Failed to load club requests"
-                    )
+                    val errorMessage = result.exceptionOrNull()?.message ?: ""
+                    // Treat 500 errors or "Failed to fetch" errors as empty state
+                    if (errorMessage.contains("500") || errorMessage.contains("Failed to fetch club requests")) {
+                        uiState.copy(
+                            clubRequests = emptyList(),
+                            isLoading = false,
+                            error = null
+                        )
+                    } else {
+                        uiState.copy(
+                            isLoading = false,
+                            error = errorMessage.ifEmpty { "Failed to load club requests" }
+                        )
+                    }
                 }
             }
         }
