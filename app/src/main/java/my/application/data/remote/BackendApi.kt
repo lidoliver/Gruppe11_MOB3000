@@ -18,7 +18,10 @@ object BackendApi {
     // Bruk 10.0.2.2 for Android Emulator (mapper til vertens localhost)
     // Bruk 10.38.11.46 for fysisk enhet (din datamaskins nåværende WiFi-IP)
     //private const val BASE_URL = "http://192.168.11.11:5000/"
-    private const val BASE_URL = "http://10.0.2.2:5000/"
+    //private const val BASE_URL = "http://10.0.2.2:5000/"
+
+    //heroku base url
+    private const val BASE_URL = "https://gruppe11-discgolf-app-e20a44954943.herokuapp.com/"
 
     // Bygg Moshi-objektet for JSON-parsing
     private val moshi = Moshi.Builder()
