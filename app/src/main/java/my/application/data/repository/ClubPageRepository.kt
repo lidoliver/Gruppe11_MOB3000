@@ -9,11 +9,18 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
+/**
+ * Repository for klubbside-operasjoner
+ * Håndterer kunngjøringer, arrangementer og deltakelse for klubber
+ * Bruker Retrofit og Moshi for nettverkskommunikasjon
+ */
 class ClubPageRepository private constructor() {
+    // Moshi JSON-konverterer for parsing av data
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
 
+    // Retrofit-instans for API-kall
     private val retrofit = Retrofit.Builder()
         .baseUrl("http://10.0.2.2:5000/")
         .addConverterFactory(MoshiConverterFactory.create(moshi))
@@ -22,10 +29,17 @@ class ClubPageRepository private constructor() {
     private val api = retrofit.create(BackendApiService::class.java)
     private var authToken: String? = null
 
+    /** Setter autentiseringstoken for API-kall */
+    /** Setter autentiseringstoken for API-kall */
     fun setAuthToken(token: String?) {
         this.authToken = token
     }
 
+    /**
+     * Henter klubbsiden med all informasjon
+     * @param clubId ID til klubben som skal hentes
+     * @return Result med ClubPageDto inkl. kunngjøringer og arrangementer
+     */
     suspend fun getClubPage(clubId: Int): Result<ClubPageDto> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -44,6 +58,12 @@ class ClubPageRepository private constructor() {
         }
     }
 
+    /**
+     * Oppretter en ny kunngjøring for en klubb
+     * @param clubId ID til klubben
+     * @param content Innholdet i kunngjøringen
+     * @return Result med opprettet ClubAnnouncementDto
+     */
     suspend fun createAnnouncement(clubId: Int, content: String): Result<ClubAnnouncementDto> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -63,6 +83,12 @@ class ClubPageRepository private constructor() {
         }
     }
 
+    /**
+     * Sletter en kunngjøring
+     * @param clubId ID til klubben
+     * @param announcementId ID til kunngjøringen som skal slettes
+     * @return Result med Unit ved suksess
+     */
     suspend fun deleteAnnouncement(clubId: Int, announcementId: Int): Result<Unit> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -79,6 +105,14 @@ class ClubPageRepository private constructor() {
         }
     }
 
+    /**
+     * Oppretter et nytt arrangement for en klubb
+     * @param clubId ID til klubben
+     * @param title Tittelen på arrangementet
+     * @param description Beskrivelse av arrangementet (valgfritt)
+     * @param eventDate Dato for arrangementet
+     * @return Result med opprettet ClubEventDto
+     */
     suspend fun createEvent(clubId: Int, title: String, description: String?, eventDate: String): Result<ClubEventDto> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -98,6 +132,12 @@ class ClubPageRepository private constructor() {
         }
     }
 
+    /**
+     * Sletter et arrangement
+     * @param clubId ID til klubben
+     * @param eventId ID til arrangementet som skal slettes
+     * @return Result med Unit ved suksess
+     */
     suspend fun deleteEvent(clubId: Int, eventId: Int): Result<Unit> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -114,6 +154,12 @@ class ClubPageRepository private constructor() {
         }
     }
 
+    /**
+     * Melder på en bruker til et arrangement
+     * @param clubId ID til klubben
+     * @param eventId ID til arrangementet brukeren skal melde seg på
+     * @return Result med Unit ved suksess
+     */
     suspend fun joinEvent(clubId: Int, eventId: Int): Result<Unit> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -132,6 +178,12 @@ class ClubPageRepository private constructor() {
         }
     }
 
+    /**
+     * Melder av en bruker fra et arrangement
+     * @param clubId ID til klubben
+     * @param eventId ID til arrangementet brukeren skal melde seg av
+     * @return Result med Unit ved suksess
+     */
     suspend fun leaveEvent(clubId: Int, eventId: Int): Result<Unit> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -148,6 +200,12 @@ class ClubPageRepository private constructor() {
         }
     }
 
+    /**
+     * Henter alle deltakere i et arrangement
+     * @param clubId ID til klubben
+     * @param eventId ID til arrangementet
+     * @return Result med liste over EventParticipantDto
+     */
     suspend fun getEventParticipants(clubId: Int, eventId: Int): Result<List<EventParticipantDto>> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -168,6 +226,7 @@ class ClubPageRepository private constructor() {
         @Volatile
         private var INSTANCE: ClubPageRepository? = null
 
+        /** Henter singleton-instansen av ClubPageRepository */
         fun getInstance(): ClubPageRepository {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: ClubPageRepository().also { INSTANCE = it }

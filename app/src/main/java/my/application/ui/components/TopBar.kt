@@ -49,6 +49,9 @@ fun AppTopBar(
     }
 }
 
+/**
+ * Forhåndsvisning av AppTopBar for utviklingsformål
+ */
 @Preview
 @Composable
 fun AppTopBarPreview() {

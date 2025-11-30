@@ -70,7 +70,9 @@ class LocationManager(private val context: Context) {
     }
 
     /**
-     * Get last known location
+     * Henter sist kjente posisjon
+     * Raskere enn sanntidsoppdateringer, men kan være utdatert
+     * @return LatLng med sist kjente posisjon, eller null hvis ikke tilgjengelig
      */
     @SuppressLint("MissingPermission")
     suspend fun getLastLocation(): LatLng? {

@@ -6,9 +6,19 @@ import my.application.data.remote.dto.ConversationDto
 import my.application.data.remote.dto.MessageDto
 import my.application.data.remote.dto.SendMessageRequest
 
+/**
+ * Repository for meldings-relaterte operasjoner
+ * Håndterer samtaler og meldinger mellom brukere
+ * Brukes av meldingsfunksjonen i appen
+ */
 class MessagesRepository {
     private val api = BackendApi.service
 
+    /**
+     * Henter alle samtaler for innlogget bruker
+     * @param token Autentiseringstoken (JWT)
+     * @return Result med liste over ConversationDto ved suksess
+     */
     suspend fun getConversations(token: String): Result<List<ConversationDto>> {
         return try {
             val response = api.getConversations("Bearer $token")
@@ -23,6 +33,13 @@ class MessagesRepository {
         }
     }
 
+    /**
+     * Henter alle meldinger i en spesifikk samtale
+     * Logger detaljert informasjon om meldinger for debugging
+     * @param contactEmail E-postadressen til kontakten
+     * @param token Autentiseringstoken (JWT)
+     * @return Result med liste over MessageDto ved suksess
+     */
     suspend fun getMessages(contactEmail: String, token: String): Result<List<MessageDto>> {
         return try {
             Log.d("MessagesRepository", "Fetching messages for: $contactEmail")
@@ -46,6 +63,13 @@ class MessagesRepository {
         }
     }
 
+    /**
+     * Sender en melding til en annen bruker
+     * @param receiverEmail E-postadressen til mottakeren
+     * @param content Meldingsteksten
+     * @param token Autentiseringstoken (JWT)
+     * @return Result med Unit ved vellykket sending
+     */
     suspend fun sendMessage(receiverEmail: String, content: String, token: String): Result<Unit> {
         return try {
             val response = api.sendMessage(

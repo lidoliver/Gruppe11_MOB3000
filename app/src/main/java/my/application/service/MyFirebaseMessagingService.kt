@@ -56,6 +56,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    /**
+     * Håndterer data-payload basert på meldingstype
+     * Støtter: message, friend_request, club_invite
+     */
     private fun handleDataPayload(data: Map<String, String>, notification: RemoteMessage.Notification? = null) {
         val dataType = data["type"]
         Log.d(TAG, "Handling data payload with type: $dataType")
@@ -120,6 +124,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    /**
+     * Viser et lokalt varsel til brukeren
+     * @param title Tittelen på varselet
+     * @param body Hovedteksten i varselet
+     * @param data Ekstra data fra meldingen
+     * @param notificationType Type varsel (message, friend_request, club_invite)
+     * @param targetId ID til målet (e-post, klubbnavn etc.)
+     */
     private fun showNotification(
         title: String,
         body: String,

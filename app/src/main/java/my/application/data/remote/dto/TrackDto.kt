@@ -111,7 +111,8 @@ data class HoleData(
 )
 
 /**
- * Request body for bulk updating holes
+ * Request body for bulk-oppdatering av flere hull samtidig
+ * Brukes for å oppdatere GPS-data for flere hull i én operasjon
  */
 @JsonClass(generateAdapter = true)
 data class BulkHolesRequest(
@@ -120,7 +121,8 @@ data class BulkHolesRequest(
 )
 
 /**
- * Response for hole update operations
+ * Response fra hull-oppdatering
+ * Bekrefter at hullet ble oppdatert og viser hvilket hull
  */
 @JsonClass(generateAdapter = true)
 data class HoleUpdateResponse(
@@ -131,7 +133,8 @@ data class HoleUpdateResponse(
 )
 
 /**
- * Response for bulk hole operations
+ * Response fra bulk-oppdatering av hull
+ * Viser hvor mange hull som ble oppdatert
  */
 @JsonClass(generateAdapter = true)
 data class BulkHolesResponse(

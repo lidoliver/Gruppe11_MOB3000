@@ -5,12 +5,19 @@ import my.application.data.auth.AuthManager
 import my.application.data.remote.BackendApi
 import my.application.data.remote.dto.TrackDto
 
+/**
+ * Repository for bane/track-relaterte operasjoner
+ * Håndterer henting av disc golf-baner fra backend
+ * Inneholder også GPS-data for hull på hver bane
+ */
 class TrackRepository(private val context: Context) {
     private val api = BackendApi.service
     private val authManager = AuthManager(context)
 
     /**
-     * Fetch all tracks/courses from the backend
+     * Henter alle baner/tracks fra backend
+     * Offentlig tilgjengelig uten autentisering
+     * @return Result med liste over TrackDto ved suksess
      */
     suspend fun getAllTracks(): Result<List<TrackDto>> {
         return try {
@@ -26,7 +33,10 @@ class TrackRepository(private val context: Context) {
     }
 
     /**
-     * Fetch a specific track by ID
+     * Henter en spesifikk bane basert på ID
+     * Krever autentisering for å få tilgang til detaljert informasjon inkl. GPS-data
+     * @param baneId ID til banen som skal hentes
+     * @return Result med TrackDto inkl. hulldata ved suksess
      */
     suspend fun getTrackById(baneId: String): Result<TrackDto> {
         return try {

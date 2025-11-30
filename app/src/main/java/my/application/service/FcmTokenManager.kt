@@ -11,6 +11,10 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Håndterer Firebase Cloud Messaging (FCM) tokens
+ * Administrerer lagring, henting og abonnement på push-varsler
+ */
 object FcmTokenManager {
     private const val TAG = "FcmTokenManager"
     private const val PREFS_NAME = "fcm_prefs"
@@ -18,7 +22,8 @@ object FcmTokenManager {
     const val PERMISSION_REQUEST_CODE = 1001
 
     /**
-     * Get the current FCM token
+     * Henter gjeldende FCM-token fra Firebase
+     * @return FCM-token som String, eller null ved feil
      */
     suspend fun getToken(): String? {
         return try {
@@ -32,7 +37,9 @@ object FcmTokenManager {
     }
 
     /**
-     * Save FCM token to SharedPreferences
+     * Lagrer FCM-token til SharedPreferences
+     * @param context Applikasjonskontekst
+     * @param token FCM-tokenet som skal lagres
      */
     fun saveToken(context: Context, token: String) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -42,7 +49,9 @@ object FcmTokenManager {
     }
 
     /**
-     * Get saved FCM token from SharedPreferences
+     * Henter lagret FCM-token fra SharedPreferences
+     * @param context Applikasjonskontekst
+     * @return Lagret FCM-token, eller null hvis ikke funnet
      */
     fun getSavedToken(context: Context): String? {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -50,7 +59,9 @@ object FcmTokenManager {
     }
 
     /**
-     * Check if notification permission is granted
+     * Sjekker om varslingstillatelse er gitt
+     * @param context Applikasjonskontekst
+     * @return true hvis tillatelse er gitt, false ellers
      */
     fun isNotificationPermissionGranted(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -64,7 +75,8 @@ object FcmTokenManager {
     }
 
     /**
-     * Request notification permission (Android 13+)
+     * Be om varslingstillatelse (Android 13+)
+     * @param activity Activity-konteksten for tillatelsesdialogen
      */
     fun requestNotificationPermission(activity: Activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -79,7 +91,9 @@ object FcmTokenManager {
     }
 
     /**
-     * Subscribe to a topic
+     * Abonnerer på et FCM-emne
+     * @param topic Emnenavn
+     * @return true ved suksess, false ved feil
      */
     suspend fun subscribeToTopic(topic: String): Boolean {
         return try {
@@ -93,7 +107,9 @@ object FcmTokenManager {
     }
 
     /**
-     * Unsubscribe from a topic
+     * Avslutter abonnement på et FCM-emne
+     * @param topic Emnenavn
+     * @return true ved suksess, false ved feil
      */
     suspend fun unsubscribeFromTopic(topic: String): Boolean {
         return try {

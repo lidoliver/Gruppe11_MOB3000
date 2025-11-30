@@ -16,17 +16,26 @@ import my.application.data.model.MultiplayerSession
 import my.application.data.model.Player
 import java.util.UUID
 import kotlin.toString
+
+/**
+ * Repository for flerspiller-operasjoner
+ * Håndterer opprettelse, tilkobling og administrering av flerspiller-spillsesjoner
+ * Bruker Firebase Realtime Database for sanntids-synkronisering
+ */
 class MultiplayerRepository(private val context: Context) {
     private val database: DatabaseReference = FirebaseDatabase.getInstance(
         "https://mob3000-81751-default-rtdb.europe-west1.firebasedatabase.app"
     ).reference
     private val authManager = AuthManager.getInstance(context)
     private val firebaseAuthManager = FirebaseAuthManager.getInstance()
+
     companion object {
         private const val TAG = "MultiplayerRepository"
         private const val SESSIONS_PATH = "game_sessions"
         @Volatile
         private var instance: MultiplayerRepository? = null
+
+        /** Henter singleton-instansen av MultiplayerRepository */
         fun getInstance(context: Context): MultiplayerRepository {
             return instance ?: synchronized(this) {
                 instance ?: MultiplayerRepository(context.applicationContext).also {
@@ -34,18 +43,30 @@ class MultiplayerRepository(private val context: Context) {
                 }
             }
         }
-        // Helper function to encode email for Firebase key
-        // Firebase keys cannot contain: . $ # [ ] /
+
+        /**
+         * Hjelpefunksjon for å kode e-post for Firebase-nøkkel
+         * Firebase-nøkler kan ikke inneholde: . $ # [ ] /
+         */
         fun encodeEmail(email: String): String {
             return email.replace(".", ",")
                 .replace("@", "_at_")
         }
-        // Helper function to decode Firebase key back to email
+
+        /** Hjelpefunksjon for å dekode Firebase-nøkkel tilbake til e-post */
         fun decodeEmail(key: String): String {
             return key.replace(",", ".")
                 .replace("_at_", "@")
         }
     }
+
+    /**
+     * Oppretter en ny flerspiller-økt
+     * @param courseId ID til banen som skal spilles
+     * @param courseName Navnet på banen
+     * @param totalHoles Totalt antall hull på banen
+     * @return Result med økt-ID ved suksess
+     */
     suspend fun createSession(
         courseId: String,
         courseName: String,
@@ -62,7 +83,7 @@ class MultiplayerRepository(private val context: Context) {
                 return Result.failure(Exception("User not authenticated"))
             }
 
-            // Ensure signed in to Firebase Auth for database access
+            // Sørg for at bruker er logget inn i Firebase Auth for databasetilgang
             Log.d(TAG, "Ensuring Firebase Auth sign-in...")
             firebaseAuthManager.ensureFirebaseSignedIn(userEmail).onFailure { error ->
                 Log.e(TAG, "Failed to sign in to Firebase: ${error.message}")
@@ -74,7 +95,7 @@ class MultiplayerRepository(private val context: Context) {
             val encodedEmail = encodeEmail(userEmail)
             Log.d(TAG, "Session ID generated: $sessionId, Encoded email: $encodedEmail")
 
-            // Match the backend structure exactly
+            // Match backend-strukturen nøyaktig
             val sessionData = mapOf(
                 "sessionId" to sessionId,
                 "baneId" to courseId,
@@ -116,6 +137,12 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Kobler til en eksisterende flerspiller-økt
+     * @param sessionId ID til økten som skal kobles til
+     * @return Result med Unit ved suksess
+     */
     suspend fun joinSession(sessionId: String): Result<Unit> {
         return try {
             val userEmail = authManager.getUserEmail() ?: return Result.failure(
@@ -158,6 +185,13 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Setter spillerens klar-status
+     * @param sessionId ID til økten
+     * @param isReady Om spilleren er klar til å starte
+     * @return Result med Unit ved suksess
+     */
     suspend fun setPlayerReady(sessionId: String, isReady: Boolean): Result<Unit> {
         return try {
             val userEmail = authManager.getUserEmail() ?: return Result.failure(
@@ -180,6 +214,13 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Starter en flerspiller-økt
+     * Kun verten kan starte økten
+     * @param sessionId ID til økten som skal startes
+     * @return Result med Unit ved suksess
+     */
     suspend fun startSession(sessionId: String): Result<Unit> {
         return try {
             val userEmail = authManager.getUserEmail() ?: return Result.failure(
@@ -206,6 +247,14 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Oppdaterer poengsum for en spiller på et spesifikt hull
+     * @param sessionId ID til økten
+     * @param holeNumber Hullnummer
+     * @param score Poengsummen som skal lagres
+     * @return Result med Unit ved suksess
+     */
     suspend fun updatePlayerScore(
         sessionId: String,
         holeNumber: Int,
@@ -237,6 +286,14 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Oppdaterer nåværende hull i økten
+     * Kun verten kan endre hull
+     * @param sessionId ID til økten
+     * @param holeNumber Nytt hullnummer
+     * @return Result med Unit ved suksess
+     */
     suspend fun updateCurrentHole(sessionId: String, holeNumber: Int): Result<Unit> {
         return try {
             val userEmail = authManager.getUserEmail() ?: return Result.failure(
@@ -266,6 +323,12 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Avslutter en flerspiller-økt
+     * @param sessionId ID til økten som skal avsluttes
+     * @return Result med Unit ved suksess
+     */
     suspend fun finishSession(sessionId: String): Result<Unit> {
         return try {
             val sessionRef = database.child("games").child(sessionId)
@@ -278,6 +341,14 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Forlater en flerspiller-økt
+     * Hvis verten forlater, tildeles en ny vert
+     * Hvis siste spiller forlater, slettes økten
+     * @param sessionId ID til økten som skal forlates
+     * @return Result med Unit ved suksess
+     */
     suspend fun leaveSession(sessionId: String): Result<Unit> {
         return try {
             val userEmail = authManager.getUserEmail() ?: return Result.failure(
@@ -317,6 +388,13 @@ class MultiplayerRepository(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * Observerer en økt i sanntid
+     * Returnerer en Flow som sender oppdateringer når økten endres
+     * @param sessionId ID til økten som skal observeres
+     * @return Flow med MultiplayerSession-oppdateringer
+     */
     fun observeSession(sessionId: String): Flow<MultiplayerSession?> = callbackFlow {
         val sessionRef = database.child("games").child(sessionId)
 
@@ -339,6 +417,11 @@ class MultiplayerRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Henter alle aktive økter for en spesifikk bane
+     * @param courseId ID til banen
+     * @return Result med liste over aktive MultiplayerSession
+     */
     suspend fun getActiveSessions(courseId: String): Result<List<MultiplayerSession>> {
         return try {
             val snapshot = database.child("games")

@@ -9,23 +9,41 @@ import my.application.data.remote.dto.RegisterResponse
 import my.application.data.remote.dto.ScorecardDto
 import my.application.data.remote.dto.UserDto
 
+/**
+ * Repository for bruker-relaterte operasjoner
+ * Håndterer autentisering, brukerprofil og spillkort
+ * Singleton-mønster for å sikre én felles instans i hele appen
+ */
 class UserRepository {
     private val api = BackendApi.service
     private var authToken: String? = null
     private var userEmail: String? = null
 
+    /**
+     * Setter autentiseringstoken
+     * Legger automatisk til "Bearer " prefix hvis det ikke finnes
+     */
     fun setAuthToken(token: String) {
         authToken = "Bearer $token"
     }
 
+    /** Henter lagret autentiseringstoken */
     fun getAuthToken(): String? = authToken
 
+    /** Setter brukerens e-postadresse */
     fun setUserEmail(email: String) {
         userEmail = email
     }
 
+    /** Henter brukerens e-postadresse */
     fun getUserEmail(): String? = userEmail
 
+    /**
+     * Registrerer ny bruker
+     * @param email Brukerens e-postadresse
+     * @param password Passordet til brukeren
+     * @return Result med RegisterResponse ved suksess
+     */
     suspend fun register(email: String, password: String): Result<RegisterResponse> {
         return try {
             val response = api.register(RegisterRequest(email, password))
@@ -44,6 +62,13 @@ class UserRepository {
         }
     }
 
+    /**
+     * Logger inn eksisterende bruker
+     * Lagrer token og e-post automatisk ved vellykket innlogging
+     * @param email Brukerens e-postadresse
+     * @param password Passordet til brukeren
+     * @return Result med LoginResponse som inneholder JWT-token
+     */
     suspend fun login(email: String, password: String): Result<LoginResponse> {
         return try {
             val response = api.login(LoginRequest(email, password))
@@ -61,6 +86,11 @@ class UserRepository {
         }
     }
 
+    /**
+     * Henter brukerdata fra backend
+     * @param email E-postadressen til brukeren som skal hentes
+     * @return Result med UserDto ved suksess
+     */
     suspend fun getUser(email: String): Result<UserDto> {
         return try {
             val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
@@ -81,6 +111,12 @@ class UserRepository {
         }
     }
 
+    /**
+     * Oppdaterer brukerdata på backend
+     * @param email E-postadressen til brukeren som skal oppdateres
+     * @param user UserDto med oppdatert informasjon
+     * @return Result med oppdatert UserDto ved suksess
+     */
     suspend fun updateUser(email: String, user: UserDto): Result<UserDto> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -96,6 +132,11 @@ class UserRepository {
         }
     }
 
+    /**
+     * Henter alle spillkort for en bruker
+     * @param email E-postadressen til brukeren
+     * @return Result med liste over ScorecardDto ved suksess
+     */
     suspend fun getScorecards(email: String): Result<List<ScorecardDto>> {
         return try {
             Log.d("UserRepository", "Fetching scorecards for email: $email")
@@ -121,6 +162,10 @@ class UserRepository {
         }
     }
 
+    /**
+     * Henter alle registrerte spillere
+     * @return Result med liste over UserDto ved suksess
+     */
     suspend fun getAllPlayers(): Result<List<UserDto>> {
         return try {
             val response = api.getAllPlayers()
@@ -135,6 +180,12 @@ class UserRepository {
         }
     }
 
+    /**
+     * Endrer brukerens passord
+     * @param currentPassword Nåværende passord
+     * @param newPassword Nytt passord
+     * @return Result med suksessmelding ved vellykket endring
+     */
     suspend fun changePassword(currentPassword: String, newPassword: String): Result<String> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -156,6 +207,11 @@ class UserRepository {
         }
     }
 
+    /**
+     * Sjekker om et brukernavn er tilgjengelig
+     * @param username Brukernavnet som skal sjekkes
+     * @return Result med true hvis tilgjengelig, false hvis opptatt
+     */
     suspend fun checkUsernameAvailability(username: String): Result<Boolean> {
         return try {
             val token = authToken ?: return Result.failure(Exception("Not authenticated"))
@@ -171,6 +227,10 @@ class UserRepository {
         }
     }
 
+    /**
+     * Henter liste over venner for innlogget bruker
+     * @return Result med liste over FriendDto ved suksess
+     */
     suspend fun getFriends(): Result<List<my.application.data.remote.dto.FriendDto>> {
         return try {
             val token = authToken ?: return Result.failure(AuthException("Not authenticated"))
@@ -190,6 +250,13 @@ class UserRepository {
         }
     }
 
+    /**
+     * Oppretter et nytt spillkort etter fullført runde
+     * @param baneId ID til banen som ble spilt
+     * @param spillerNavn Navnet/e-posten til spilleren
+     * @param hullPoeng Liste med poengsum for hvert hull
+     * @return Result med opprettet ScorecardDto ved suksess
+     */
     suspend fun createScorecard(
         baneId: String,
         spillerNavn: String,
@@ -219,8 +286,8 @@ class UserRepository {
     }
 
     /**
-     * Send heartbeat to backend to update last active status
-     * This should be called periodically to keep online status updated
+     * Sender heartbeat til backend for å oppdatere aktiv status
+     * Bør kalles periodisk for å holde online-status oppdatert
      */
     suspend fun updateHeartbeat(): Result<Unit> {
         return try {
@@ -229,11 +296,11 @@ class UserRepository {
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                // Don't log heartbeat failures as errors since they're routine
+                // Ikke logg heartbeat-feil som errors siden de er rutinemessige
                 Result.failure(Exception("Heartbeat failed"))
             }
         } catch (e: Exception) {
-            // Don't log heartbeat failures as errors
+            // Ikke logg heartbeat-feil som errors
             Result.failure(e)
         }
     }
@@ -242,6 +309,7 @@ class UserRepository {
         @Volatile
         private var instance: UserRepository? = null
 
+        /** Henter singleton-instansen av UserRepository */
         fun getInstance(): UserRepository {
             return instance ?: synchronized(this) {
                 instance ?: UserRepository().also { instance = it }
@@ -250,6 +318,6 @@ class UserRepository {
     }
 }
 
-// Custom exception for authentication errors
+/** Egendefinert exception for autentiseringsfeil */
 class AuthException(message: String) : Exception(message)
 

@@ -129,7 +129,9 @@ class FriendsRepository private constructor() {
     }
 
     /**
-     * Accept a friend request
+     * Godtar en venneforespørsel
+     * @param requestId ID til forespørselen som skal godkjennes
+     * @return Result med suksessmelding ved vellykket godkjenning
      */
     suspend fun acceptFriendRequest(requestId: Int): Result<String> {
         return try {
@@ -283,6 +285,7 @@ class FriendsRepository private constructor() {
         @Volatile
         private var instance: FriendsRepository? = null
 
+        /** Henter singleton-instansen av FriendsRepository */
         fun getInstance(): FriendsRepository {
             return instance ?: synchronized(this) {
                 instance ?: FriendsRepository().also { instance = it }

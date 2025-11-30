@@ -7,6 +7,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import my.application.service.LocationManager
 
+/**
+ * Composable som håndterer forespørsel om posisjonstillatelse
+ * Sjekker først om tillatelse allerede er gitt, ellers ber om tillatelse
+ * @param onPermissionGranted Callback når tillatelse er gitt
+ * @param onPermissionDenied Callback når tillatelse er avslått
+ */
 @Composable
 fun RequestLocationPermission(
     onPermissionGranted: () -> Unit,
@@ -15,6 +21,7 @@ fun RequestLocationPermission(
     val context = LocalContext.current
     val locationManager = remember { LocationManager(context) }
 
+    // Launcher for tillatelsesforespørsel
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -31,6 +38,7 @@ fun RequestLocationPermission(
         }
     }
 
+    // Sjekk tillatelse ved oppstart
     LaunchedEffect(Unit) {
         if (locationManager.hasLocationPermission()) {
             onPermissionGranted()

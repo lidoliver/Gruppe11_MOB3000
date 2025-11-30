@@ -158,17 +158,17 @@ fun BottomNavigationBar(navController: NavController) {
                         }
                     } else if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            // Pop up to the start destination to avoid building up a large stack
+                            // Pop opp til startdestinasjon for å unngå å bygge opp en stor stack
                             popUpTo("main_menu") {
                                 saveState = true
                             }
-                            // Avoid multiple copies of the same destination
+                            // Unngå flere kopier av samme destinasjon
                             launchSingleTop = true
-                            // Restore state when reselecting a previously selected item
+                            // Gjenopprett tilstand når man velger et tidligere valgt element
                             restoreState = true
                         }
 
-                        // Refresh friend requests count when navigating to friends screen
+                        // Oppdater antall venneforespørsler når man navigerer til venner-skjermen
                         if (item == BottomNavItem.Friends) {
                             friendsViewModel.loadFriendRequestsCount()
                         }
