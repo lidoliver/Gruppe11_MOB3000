@@ -45,6 +45,16 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.maps.android.compose.*
 import my.application.data.remote.dto.HoleData
 
+/**
+ * Hovedskjerm for å spille disc golf
+ * Håndterer både solo-spill og multiplayer-økter
+ * Viser kartvisning av nåværende hull, poenginntasting og navigasjon mellom hull
+ * @param navController Navigasjonskontroller for å navigere mellom skjermer
+ * @param courseId ID-en til banen som spilles
+ * @param sessionId Økts-ID for multiplayer (null for solo-spill)
+ * @param isBottomBarVisible Om bunnlinjen er synlig
+ * @param onBottomBarVisibilityChange Callback for å endre synlighet av bunnlinjen
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayDiscGolfScreen(
@@ -73,7 +83,7 @@ fun PlayDiscGolfScreen(
     val scrollState = rememberScrollState()
     val isSessionPlay = sessionId != null
 
-    // Be om plasseringstillatelse
+    // Be om plasseringstillatelse for GPS-sporing
     my.application.ui.components.RequestLocationPermission(
         onPermissionGranted = {
             locationPermissionGranted = true
@@ -148,7 +158,7 @@ fun PlayDiscGolfScreen(
         }
     }
 
-    // Auto-save when state changes
+    // Automatisk lagring når tilstand endres (hull eller poeng)
     LaunchedEffect(currentHole, holeScores) {
         if (!loading && courseId != null) {
             sessionManager.saveGameSession(
@@ -194,7 +204,7 @@ fun PlayDiscGolfScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            // Main content with scroll
+            // Hovedinnhold med scrolling
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -203,7 +213,7 @@ fun PlayDiscGolfScreen(
                     .padding(16.dp)
                     .background(MaterialTheme.colorScheme.background)
             ) {
-            // Progress Section with Map and Score Toggle Icons
+            // Fremdriftsseksjon med kart- og poengoversikt-ikoner
             GameProgress(
                 currentHole = currentHole,
                 totalHoles = totalHoles,
@@ -219,7 +229,7 @@ fun PlayDiscGolfScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Map showing current hole
+            // Kartvisning av nåværende hull
             val currentHoleData = holesData.find { it.holeNumber == currentHole }
 
 
@@ -237,7 +247,7 @@ fun PlayDiscGolfScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             } else {
-                // Vis plassholder når ingen GPS-data med mer detaljert feilmelding
+                // Vis plassholder når ingen GPS-data med detaljert feilmelding
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -277,7 +287,7 @@ fun PlayDiscGolfScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Current Hole Score Input
+            // Poenginntasting for nåværende hull
             CurrentHoleCard(
                 score = holeScores[currentHole - 1],
                 onScoreChange = { newScore ->
@@ -289,14 +299,14 @@ fun PlayDiscGolfScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Navigation Buttons
+            // Navigasjonsknapper (Forrige/Neste/Fullfør)
             NavigationButtons(
                 currentHole = currentHole,
                 totalHoles = totalHoles,
                 onPrevious = { if (currentHole > 1) currentHole-- },
                 onNext = { if (currentHole < totalHoles) currentHole++ },
                 onFinish = {
-                    // Capture current state before launching coroutine
+                    // Fang opp nåværende tilstand før oppstart av coroutine
                     val currentHoleScores = holeScores
                     val currentHolesData = holesData
                     val currentCourseId = courseId
@@ -355,7 +365,7 @@ fun PlayDiscGolfScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Score Summary
+            // Poengoversikt (vises/skjules ved klikk)
             AnimatedVisibility(
                 visible = showScores,
                 enter = fadeIn() + expandVertically(),
@@ -372,7 +382,7 @@ fun PlayDiscGolfScreen(
         // Merk: Fjernet den blokkerende sveipedeteksjonsboksen som forhindret knappetrykk
         // Brukere kan klikke på pilindikatoren nederst for å vise/skjule bunnlinjen
 
-        // Animert pilindikator nederst - nå klikkbar
+        // Animert pilindikator nederst - nå klikkbar for å vise/skjule navigasjon
         val arrowRotation by animateFloatAsState(
             targetValue = if (isBottomBarVisible) 180f else 0f,
             animationSpec = tween(durationMillis = 300),
@@ -410,6 +420,9 @@ fun PlayDiscGolfScreen(
     }
 }
 
+/**
+ * Lasteskjerm som vises mens banedata hentes
+ */
 @Composable
 fun LoadingScreen() {
     Box(
@@ -424,9 +437,13 @@ fun LoadingScreen() {
     }
 }
 
+/**
+ * Feilskjerm som vises når noe går galt
+ * Håndterer spesielt autentiseringsfeil og viser passende melding
+ */
 @Composable
 fun ErrorScreen(error: String, navController: NavController) {
-    // Check if error is related to authentication
+    // Sjekk om feilen er relatert til autentisering
     val isAuthError = error.contains("authentication", ignoreCase = true) ||
                       error.contains("not authenticated", ignoreCase = true) ||
                       error.contains("token", ignoreCase = true)
@@ -477,6 +494,10 @@ fun ErrorScreen(error: String, navController: NavController) {
     }
 }
 
+/**
+ * Komponent som viser spillfremdriften
+ * Inkluderer hull-informasjon, fremdriftslinje, og knapper for kart og poengoversikt
+ */
 @Composable
 fun GameProgress(
     currentHole: Int,
@@ -538,6 +559,11 @@ fun GameProgress(
     }
 }
 
+/**
+ * Kort som viser og håndterer poenginntasting for nåværende hull
+ * @param score Gjeldende poengsum
+ * @param onScoreChange Callback når poengsummen endres
+ */
 @Composable
 fun CurrentHoleCard(
     score: Int,
@@ -566,6 +592,10 @@ fun CurrentHoleCard(
     }
 }
 
+/**
+ * Kontroller for å øke/minske poengsummen
+ * Viser minus-knapp, poengsum, og pluss-knapp
+ */
 @Composable
 fun ScoreControls(
     score: Int,
@@ -627,6 +657,10 @@ fun ScoreControls(
     }
 }
 
+/**
+ * Navigasjonsknapper for å flytte mellom hull eller fullføre runden
+ * Viser Forrige/Neste eller Fullfør basert på gjeldende hull
+ */
 @Composable
 fun NavigationButtons(
     currentHole: Int,
@@ -684,6 +718,13 @@ fun NavigationButtons(
     }
 }
 
+/**
+ * Oversikt over alle hull og deres poengsummer
+ * Vises/skjules ved klikk på poengoversikt-knappen
+ * @param holeScores Liste over poengsummer for hvert hull
+ * @param currentHole Nåværende hull (markeres i oversikten)
+ * @param onHoleClick Callback når bruker klikker på et hull
+ */
 @Composable
 fun ScoreSummary(
     holeScores: List<Int>,
@@ -750,6 +791,13 @@ fun ScoreSummary(
     }
 }
 
+/**
+ * Enkelt element i poengoversikten som viser hullnummer og poengsum
+ * @param holeNumber Hullnummer
+ * @param score Poengsum for hullet
+ * @param isCurrent Om dette er nåværende hull (markeres spesielt)
+ * @param onClick Callback når hullet klikkes
+ */
 @Composable
 fun HoleSummaryItem(
     holeNumber: Int,
@@ -789,6 +837,15 @@ fun HoleSummaryItem(
     }
 }
 
+/**
+ * Kartkort som viser nåværende hull med tee, kurv og brukerens posisjon
+ * Inkluderer Google Maps med markører og linje mellom tee og kurv
+ * @param holeNumber Hullnummer
+ * @param teePosition GPS-koordinater for tee
+ * @param basketPosition GPS-koordinater for kurv
+ * @param par Par for hullet
+ * @param hasLocationPermission Om appen har tillatelse til å vise brukerens posisjon
+ */
 @Composable
 fun HoleMapCard(
     holeNumber: Int,
@@ -803,7 +860,7 @@ fun HoleMapCard(
     var isMapLoaded by remember { mutableStateOf(false) }
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
 
-    // Collect location updates - now reactive to permission changes
+    // Hent posisjonsoppdateringer - reagerer på tillatelses endringer
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
             locationManager.getLocationUpdates(intervalMillis = 3000).collect { location ->
@@ -812,7 +869,7 @@ fun HoleMapCard(
         }
     }
 
-    // Beregn grenser for å passe både tee og kurv
+    // Beregn grenser for å passe både tee og kurv i kartvisningen
     LaunchedEffect(teePosition, basketPosition) {
         val bounds = LatLngBounds.builder()
             .include(teePosition)
@@ -827,7 +884,7 @@ fun HoleMapCard(
             )
             isMapLoaded = true
         } catch (_: Exception) {
-            // Tilbakefall til senterposisjon hvis bounds-animasjon feiler
+            // Fallback til senterposisjon hvis bounds-animasjon feiler
             val center = LatLng(
                 (teePosition.latitude + basketPosition.latitude) / 2,
                 (teePosition.longitude + basketPosition.longitude) / 2
@@ -887,7 +944,7 @@ fun HoleMapCard(
                         isMyLocationEnabled = hasLocationPermission
                     )
                 ) {
-                    // Tee marker (green)
+                    // Tee-markør (grønn)
                     Marker(
                         state = MarkerState(position = teePosition),
                         title = "Tee",
@@ -895,7 +952,7 @@ fun HoleMapCard(
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                     )
 
-                    // Basket marker (red)
+                    // Kurvmarkør (rød)
                     Marker(
                         state = MarkerState(position = basketPosition),
                         title = "Basket",
@@ -903,7 +960,7 @@ fun HoleMapCard(
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
 
-                    // User location marker (blue) - custom marker for visibility
+                    // Brukerposisjons-markør (blå) - tilpasset markør for synlighet
                     userLocation?.let { location ->
                         Marker(
                             state = MarkerState(position = location),
@@ -913,7 +970,7 @@ fun HoleMapCard(
                         )
                     }
 
-                    // Line connecting tee to basket
+                    // Linje som forbinder tee med kurv
                     Polyline(
                         points = listOf(teePosition, basketPosition),
                         color = Color(0xFF4A90E2),
@@ -921,7 +978,7 @@ fun HoleMapCard(
                     )
                 }
 
-                // Legend overlay
+                // Forklarings-overlegg (legend)
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomStart)

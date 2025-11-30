@@ -7,8 +7,9 @@ import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.tasks.await
 
 /**
- * Handles Firebase Authentication for Realtime Database access
- * Works alongside the existing JWT authentication system
+ * Håndterer Firebase-autentisering for tilgang til Realtime Database
+ * Fungerer sammen med det eksisterende JWT-autentiseringssystemet
+ * Bruker anonym innlogging for å gi tilgang til Firebase-tjenester
  */
 class FirebaseAuthManager private constructor() {
 
@@ -28,19 +29,21 @@ class FirebaseAuthManager private constructor() {
     }
 
     /**
-     * Sign in to Firebase Auth anonymously or with custom token
-     * This is needed for Realtime Database to recognize the user
+     * Logger inn på Firebase Auth anonymt
+     * Dette er nødvendig for at Realtime Database skal gjenkjenne brukeren
+     * @param userEmail Brukerens e-postadresse (for logging)
+     * @return Result med FirebaseUser ved suksess
      */
     suspend fun ensureFirebaseSignedIn(userEmail: String): Result<FirebaseUser> {
         return try {
-            // Check if already signed in
+            // Sjekk om allerede innlogget
             val currentUser = firebaseAuth.currentUser
             if (currentUser != null) {
                 Log.d(TAG, "Already signed in to Firebase: ${currentUser.uid}")
                 return Result.success(currentUser)
             }
 
-            // Sign in anonymously (simplest approach)
+            // Logg inn anonymt (enkleste tilnærming)
             Log.d(TAG, "Signing in to Firebase anonymously for user: $userEmail")
             val authResult = firebaseAuth.signInAnonymously().await()
             val user = authResult.user
@@ -59,21 +62,23 @@ class FirebaseAuthManager private constructor() {
     }
 
     /**
-     * Get current Firebase user
+     * Henter nåværende Firebase-bruker
+     * @return FirebaseUser eller null hvis ikke innlogget
      */
     fun getCurrentUser(): FirebaseUser? {
         return firebaseAuth.currentUser
     }
 
     /**
-     * Check if signed in to Firebase
+     * Sjekker om bruker er innlogget på Firebase
+     * @return true hvis innlogget
      */
     fun isSignedIn(): Boolean {
         return firebaseAuth.currentUser != null
     }
 
     /**
-     * Sign out from Firebase
+     * Logger ut fra Firebase
      */
     fun signOut() {
         firebaseAuth.signOut()

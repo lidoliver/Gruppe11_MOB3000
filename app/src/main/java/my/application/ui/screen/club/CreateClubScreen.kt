@@ -16,6 +16,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 
+/**
+ * Skjerm for å opprette en ny klubb
+ * Viser skjema for klubbnavn og søknadsbrev
+ * Sender forespørsel til admin for godkjenning
+ */
 @Composable
 fun CreateClubScreen(
     navController: NavController
@@ -31,10 +36,10 @@ fun CreateClubScreen(
     )
     val uiState by viewModel.uiState.collectAsState()
 
-    // Show success dialog and navigate back when submitted
+    // Vis suksessdialog og naviger tilbake når søknaden er sendt
     LaunchedEffect(uiState.isSubmitted) {
         if (uiState.isSubmitted) {
-            // Wait a bit to show success message, then navigate back
+            // Vent litt for å vise suksessmelding, deretter naviger tilbake
             kotlinx.coroutines.delay(2000)
             navController.popBackStack()
         }

@@ -3,7 +3,8 @@ package my.application.data.remote.dto
 import com.squareup.moshi.Json
 
 /**
- * Data transfer object for conversation data from backend
+ * Data transfer object for samtaledata fra backend
+ * Representerer en samtale i meldingslisten med forhåndsvisning
  */
 data class ConversationDto(
     @Json(name = "contact_email")
@@ -23,7 +24,8 @@ data class ConversationDto(
 )
 
 /**
- * Data transfer object for message data from backend
+ * Data transfer object for meldingsdata fra backend
+ * Representerer en enkelt melding i en samtale
  */
 data class MessageDto(
     @Json(name = "message_id")
@@ -49,7 +51,7 @@ data class MessageDto(
 )
 
 /**
- * Request body for sending a message
+ * Request body for sending av melding
  */
 data class SendMessageRequest(
     @Json(name = "receiverEmail")
@@ -60,7 +62,7 @@ data class SendMessageRequest(
 )
 
 /**
- * Response for sending a message
+ * Response fra sending av melding
  */
 data class SendMessageResponse(
     @Json(name = "message_id")

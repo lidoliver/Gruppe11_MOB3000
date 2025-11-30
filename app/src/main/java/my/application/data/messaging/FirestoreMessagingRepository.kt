@@ -10,8 +10,9 @@ import my.application.data.repository.MessagesRepository
 import my.application.data.repository.UserRepository
 
 /**
- * Firebase Firestore-based messaging repository with real-time updates
- * Uses Firestore for READING (real-time listeners) and Backend API for WRITING (notifications)
+ * Firebase Firestore-basert meldingsrepository med sanntidsoppdateringer
+ * Bruker Firestore for LESING (sanntids-lyttere) og Backend API for SKRIVING (notifikasjoner)
+ * Gir automatisk synkronisering av meldinger mellom enheter
  */
 class FirestoreMessagingRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
@@ -21,7 +22,9 @@ class FirestoreMessagingRepository(
     private val TAG = "FirestoreMessaging"
 
     /**
-     * Get all conversations for the current user with real-time updates
+     * Henter alle samtaler for nåværende bruker med sanntidsoppdateringer
+     * Lytter til endringer i Firestore og oppdaterer automatisk
+     * @return Flow med liste over samtaler som oppdateres i sanntid
      */
     fun getConversations(): Flow<List<Conversation>> = callbackFlow {
         val currentUserEmail = userRepository.getUserEmail()
@@ -88,7 +91,10 @@ class FirestoreMessagingRepository(
     }
 
     /**
-     * Get messages for a specific conversation with real-time updates
+     * Henter meldinger for en spesifikk samtale med sanntidsoppdateringer
+     * Lytter til endringer og oppdaterer meldingslisten automatisk
+     * @param contactEmail E-postadressen til kontakten
+     * @return Flow med liste over meldinger som oppdateres i sanntid
      */
     fun getMessages(contactEmail: String): Flow<List<ChatMessage>> = callbackFlow {
         val currentUserEmail = userRepository.getUserEmail()

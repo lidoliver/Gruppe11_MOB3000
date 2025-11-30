@@ -65,7 +65,7 @@ data class TrackDto(
     @Json(name = "holes")
     val holesData: List<HoleData>? = null
 ) {
-    // Helper properties to get the correct value regardless of which field is populated
+    // Hjelpere-properties for å hente riktig verdi uavhengig av hvilket felt som er populert
     val name: String
         get() = trackName ?: navn ?: "Unknown Course"
 
@@ -83,7 +83,8 @@ data class TrackDto(
 }
 
 /**
- * Data class for individual hole information within a track
+ * Data class for individuell hullinformasjon i en bane
+ * Inneholder GPS-koordinater, par og distanse for hvert hull
  */
 @JsonClass(generateAdapter = true)
 data class HoleData(

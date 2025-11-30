@@ -4,7 +4,8 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
- * Detaljert spillerhistorikk for en spesifikk bane for en spiller
+ * Detaljert spillhistorikk for en spesifikk bane for en spiller
+ * Inneholder alle spill og statistikk per hull
  */
 @JsonClass(generateAdapter = true)
 data class CourseGameHistory(
@@ -16,7 +17,8 @@ data class CourseGameHistory(
 )
 
 /**
- * Individuelle spill detaljer
+ * Individuelle spilldetaljer
+ * Representerer ett enkelt spill med alle hullresultater
  */
 @JsonClass(generateAdapter = true)
 data class GameDetail(
@@ -29,7 +31,7 @@ data class GameDetail(
 )
 
 /**
- * Score for et spesifit hull i spill
+ * Poengsum for et spesifikt hull i et spill
  */
 @JsonClass(generateAdapter = true)
 data class GameHoleScore(
@@ -38,7 +40,8 @@ data class GameHoleScore(
 )
 
 /**
- * Aggregate statistics for a specific hole across multiple games
+ * Aggregert statistikk for et spesifikt hull på tvers av flere spill
+ * Viser gjennomsnitt, beste og verste score for hullet
  */
 @JsonClass(generateAdapter = true)
 data class HoleStatistic(

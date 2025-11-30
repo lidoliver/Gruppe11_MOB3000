@@ -10,6 +10,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import my.application.data.repository.ClubRepository
 
+/**
+ * ViewModel for opprettelse av nye klubber
+ * Håndterer validering og innsending av klubbforespørsler til admin
+ */
 class CreateClubViewModel(
     application: Application
 ) : AndroidViewModel(application) {
@@ -18,6 +22,10 @@ class CreateClubViewModel(
     private val _uiState = MutableStateFlow(CreateClubUiState())
     val uiState: StateFlow<CreateClubUiState> = _uiState.asStateFlow()
 
+    /**
+     * Oppdaterer klubbnavnet i UI-tilstanden
+     * Fjerner eventuelle feilmeldinger når bruker skriver
+     */
     fun onClubNameChange(name: String) {
         _uiState.value = _uiState.value.copy(
             clubName = name,
@@ -25,6 +33,10 @@ class CreateClubViewModel(
         )
     }
 
+    /**
+     * Oppdaterer beskrivelsen/søknadsbrevet i UI-tilstanden
+     * Fjerner eventuelle feilmeldinger når bruker skriver
+     */
     fun onDescriptionChange(description: String) {
         _uiState.value = _uiState.value.copy(
             description = description,
@@ -32,10 +44,14 @@ class CreateClubViewModel(
         )
     }
 
+    /**
+     * Sender inn klubbforespørselen til backend for godkjenning av admin
+     * Validerer input før innsending
+     */
     fun submitClubRequest() {
         val currentState = _uiState.value
 
-        // Validation
+        // Validering av input
         var hasError = false
 
         if (currentState.clubName.isBlank()) {
@@ -59,7 +75,7 @@ class CreateClubViewModel(
 
         if (hasError) return
 
-        // Submit request
+        // Send forespørsel til backend
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
@@ -88,6 +104,9 @@ class CreateClubViewModel(
         }
     }
 
+    /**
+     * Tømmer feil- og suksessmeldinger fra UI-tilstanden
+     */
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(
             errorMessage = null,
@@ -96,6 +115,17 @@ class CreateClubViewModel(
     }
 }
 
+/**
+ * UI-tilstand for klubbopprettelse-skjermen
+ * @param clubName Navnet på klubben som skal opprettes
+ * @param description Beskrivelse/søknadsbrev for klubben
+ * @param clubNameError Feilmelding for klubbnavn-feltet
+ * @param descriptionError Feilmelding for beskrivelse-feltet
+ * @param isLoading Indikerer om forespørselen er under behandling
+ * @param isSubmitted Indikerer om forespørselen er sendt inn
+ * @param errorMessage Generell feilmelding
+ * @param successMessage Suksessmelding
+ */
 data class CreateClubUiState(
     val clubName: String = "",
     val description: String = "",

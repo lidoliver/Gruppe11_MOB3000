@@ -3,6 +3,10 @@ package my.application.data.remote.dto
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
+/**
+ * Data transfer object for klubbkunngjøring
+ * Brukes på klubbsiden for å vise viktige meldinger til medlemmer
+ */
 @JsonClass(generateAdapter = true)
 data class ClubAnnouncementDto(
     @Json(name = "id") val id: Int,
@@ -13,6 +17,10 @@ data class ClubAnnouncementDto(
     @Json(name = "created_at") val createdAt: String
 )
 
+/**
+ * Data transfer object for klubbarrangement
+ * Representerer et arrangement som klubben arrangerer
+ */
 @JsonClass(generateAdapter = true)
 data class ClubEventDto(
     @Json(name = "id") val id: Int,
@@ -27,6 +35,10 @@ data class ClubEventDto(
     @Json(name = "is_participating") val isParticipating: Boolean = false
 )
 
+/**
+ * Data transfer object for komplett klubbside
+ * Inneholder klubbinfo, kunngjøringer og arrangementer
+ */
 @JsonClass(generateAdapter = true)
 data class ClubPageDto(
     @Json(name = "club") val club: ClubDto,
@@ -35,6 +47,10 @@ data class ClubPageDto(
     @Json(name = "isAdmin") val isAdmin: Boolean
 )
 
+/**
+ * Data transfer object for arrangementsdeltaker
+ * Brukes for å vise hvem som deltar i et arrangement
+ */
 @JsonClass(generateAdapter = true)
 data class EventParticipantDto(
     @Json(name = "event_id") val eventId: Int,
@@ -45,6 +61,9 @@ data class EventParticipantDto(
     @Json(name = "enavn") val lastName: String?
 )
 
+/**
+ * Request body for opprettelse av kunngjøring
+ */
 @JsonClass(generateAdapter = true)
 data class CreateAnnouncementRequest(
     @Json(name = "content") val content: String

@@ -7,6 +7,10 @@ import my.application.data.remote.dto.AdminResponseDto
 import my.application.data.remote.dto.ClubRequestDto
 import my.application.data.remote.dto.UserDto
 
+/**
+ * Repository for admin-funksjoner
+ * Håndterer brukerstyring og klubbforespørsler for administratorer
+ */
 class AdminRepository private constructor(private val context: Context) {
     private val api = RetrofitProvider.backendApiService
     private val authManager = AuthManager.getInstance(context)
@@ -22,7 +26,11 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
-    // User management methods
+    // Brukerstyring-metoder
+    /**
+     * Henter alle brukere fra backend
+     * Krever admin-autentisering
+     */
     suspend fun getAllUsers(): Result<List<UserDto>> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))
@@ -42,6 +50,10 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Søker etter brukere basert på søkeord
+     * @param query Søkeord (e-post eller navn)
+     */
     suspend fun searchUsers(query: String): Result<List<UserDto>> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))
@@ -59,6 +71,10 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Utestenger en bruker
+     * @param email E-postadressen til brukeren som skal utestenges
+     */
     suspend fun banUser(email: String): Result<AdminResponseDto> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))
@@ -76,6 +92,10 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Fjerner utestengelse av en bruker
+     * @param email E-postadressen til brukeren som skal få tilbake tilgang
+     */
     suspend fun unbanUser(email: String): Result<AdminResponseDto> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))
@@ -93,6 +113,10 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Sletter en bruker permanent
+     * @param email E-postadressen til brukeren som skal slettes
+     */
     suspend fun deleteUser(email: String): Result<AdminResponseDto> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))
@@ -110,7 +134,11 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
-    // Club request management methods
+    // Klubbforespørsels-styringsmetoder
+    /**
+     * Henter alle ventende klubbforespørsler
+     * Brukes av admin for å se og behandle forespørsler om opprettelse av klubber
+     */
     suspend fun getClubRequests(): Result<List<ClubRequestDto>> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))
@@ -128,6 +156,11 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Godkjenner en klubbforespørsel
+     * Oppretter klubben og tildeler personen som sendte forespørselen som klubbadmin
+     * @param id ID-en til klubbforespørselen som skal godkjennes
+     */
     suspend fun approveClubRequest(id: Int): Result<AdminResponseDto> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))
@@ -145,6 +178,11 @@ class AdminRepository private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Avviser en klubbforespørsel
+     * Sletter forespørselen fra databasen
+     * @param id ID-en til klubbforespørselen som skal avvises
+     */
     suspend fun rejectClubRequest(id: Int): Result<AdminResponseDto> {
         return try {
             val token = authManager.getAuthToken() ?: return Result.failure(AuthException("No token available"))

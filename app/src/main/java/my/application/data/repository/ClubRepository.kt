@@ -7,14 +7,15 @@ import my.application.data.remote.dto.SubmitClubRequestDto
 import my.application.data.remote.dto.SubmitClubJoinRequestDto
 
 /**
- * Repository for managing club-related operations
+ * Repository for håndtering av klubb-relaterte operasjoner
+ * Inkluderer henting av klubber, innsending av klubbforespørsler, og administrering av medlemskap
  */
 class ClubRepository private constructor() {
     private val api = BackendApi.service
     private val userRepository = UserRepository.getInstance()
 
     /**
-     * Get all clubs
+     * Henter alle klubber fra backend
      */
     suspend fun getAllClubs(): Result<List<ClubDto>> {
         return try {
@@ -46,7 +47,9 @@ class ClubRepository private constructor() {
     }
 
     /**
-     * Submit a club join request
+     * Sender inn en forespørsel om å bli medlem i en klubb
+     * @param clubId ID-en til klubben bruker ønsker å bli med i
+     * @param message Valgfri melding til klubbadmin
      */
     suspend fun submitClubJoinRequest(clubId: Int, message: String?): Result<String> {
         return try {
@@ -83,7 +86,9 @@ class ClubRepository private constructor() {
     }
 
     /**
-     * Get club join requests for a specific club (for klubbadmin)
+     * Henter medlemsforespørsler for en spesifikk klubb
+     * Brukes av klubbadmin for å se og behandle medlemsforespørsler
+     * @param clubId ID-en til klubben
      */
     suspend fun getClubJoinRequests(clubId: Int): Result<List<my.application.data.remote.dto.ClubJoinRequestDto>> {
         return try {
@@ -115,7 +120,9 @@ class ClubRepository private constructor() {
     }
 
     /**
-     * Approve a club join request
+     * Godkjenner en medlemsforespørsel
+     * Legger til brukeren som medlem av klubben
+     * @param requestId ID-en til medlemsforespørselen som skal godkjennes
      */
     suspend fun approveJoinRequest(requestId: Int): Result<String> {
         return try {
@@ -147,7 +154,9 @@ class ClubRepository private constructor() {
     }
 
     /**
-     * Reject a club join request
+     * Avviser en medlemsforespørsel
+     * Sletter forespørselen fra databasen
+     * @param requestId ID-en til medlemsforespørselen som skal avvises
      */
     suspend fun rejectJoinRequest(requestId: Int): Result<String> {
         return try {
@@ -179,7 +188,10 @@ class ClubRepository private constructor() {
     }
 
     /**
-     * Submit a club creation request
+     * Sender inn en forespørsel om å opprette en ny klubb
+     * Forespørselen sendes til admin for godkjenning
+     * @param clubName Navnet på klubben som skal opprettes
+     * @param description Beskrivelse/søknadsbrev for klubben
      */
     suspend fun submitClubRequest(clubName: String, description: String): Result<String> {
         return try {

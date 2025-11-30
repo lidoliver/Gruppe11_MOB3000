@@ -7,18 +7,22 @@ import kotlinx.coroutines.flow.flow
 import my.application.data.repository.MessagesRepository
 import my.application.data.repository.UserRepository
 /**
- * Simple polling-based messaging repository
- * Automatically refreshes messages every few seconds
+ * Enkel polling-basert meldingsrepository
+ * Oppdaterer meldinger automatisk hvert andre sekund
+ * Brukes som fallback når Firestore ikke er tilgjengelig
  */
 class PollingMessagingRepository(
     private val messagesRepository: MessagesRepository = MessagesRepository(),
     private val userRepository: UserRepository = UserRepository.getInstance()
 ) {
     private val TAG = "PollingMessagingRepo"
-    private val POLL_INTERVAL_MS = 2000L // Poll every 2 seconds
+    private val POLL_INTERVAL_MS = 2000L // Poll hvert 2. sekund
 
     /**
-     * Get messages with automatic polling
+     * Henter meldinger med automatisk polling
+     * Oppdaterer meldingslisten kontinuerlig ved å spørre backend regelmessig
+     * @param contactEmail E-postadressen til kontakten
+     * @return Flow med liste over meldinger som oppdateres automatisk
      */
     fun getMessages(contactEmail: String): Flow<List<ChatMessage>> = flow {
         val currentUserEmail = userRepository.getUserEmail()
@@ -66,7 +70,10 @@ class PollingMessagingRepository(
     }
 
     /**
-     * Send a message
+     * Sender en melding til en kontakt
+     * @param contactEmail E-postadressen til mottakeren
+     * @param text Meldingsteksten
+     * @return Result med ChatMessage ved suksess
      */
     suspend fun sendMessage(contactEmail: String, text: String): Result<ChatMessage> {
         val token = userRepository.getAuthToken()
