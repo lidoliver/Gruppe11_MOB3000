@@ -1453,14 +1453,15 @@ async function createClubRequest(email, klubbnavn, sted, beskrivelse) {
 }
 
 /*
-* Denne funksjonen henter alle ventende klubbforespørslene for en bruker.
-* Den tar inn brukerens e-postadresse som parameter og returnerer en liste med forespørslene.
+* Denne funksjonen henter alle ventende klubbforespørslene.
+* Brukes av admin til å se alle forespørsler som venter på godkjenning.
 */
-async function getPendingClubRequests(email) {
+async function getPendingClubRequests() {
     const result = await sql`
-        SELECT id_klubb, klubbnavn, sted, klubbeskrivelse, status, opprettet_dato
+        SELECT id_klubb, klubbnavn, sted, klubbeskrivelse, kontakt_email, status, opprettet_dato
         FROM mydb.klubb
-        WHERE kontakt_email = ${email} AND status = 'pending';
+        WHERE status = 'pending'
+        ORDER BY opprettet_dato DESC;
     `;
     return result;
 }

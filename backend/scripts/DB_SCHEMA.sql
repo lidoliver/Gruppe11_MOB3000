@@ -26,7 +26,9 @@ CREATE TABLE mydb.klubb (
     klubbeskrivelse TEXT,
     kontakt_email VARCHAR(254),
     kontakt_telefon VARCHAR(50),
-    klubb_bilde TEXT
+    klubb_bilde TEXT,
+    status VARCHAR(50) DEFAULT 'approved',
+    opprettet_dato TIMESTAMP DEFAULT NOW()
 );
 
 ALTER SEQUENCE mydb.klubb_id_klubb_seq RESTART WITH 1;
