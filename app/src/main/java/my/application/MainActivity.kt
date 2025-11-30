@@ -260,6 +260,9 @@ fun AppNavigation(intent: Intent? = null) {
             composable("course_selection_multiplayer") {
                 MultiplayerCourseSelection(navController = navController)
             }
+            composable("join_multiplayer_session") {
+                JoinMultiplayerSessionScreen(navController = navController)
+            }
             composable(
                 route = "friend_profile/{friendEmail}/{friendName}",
                 arguments = listOf(
