@@ -353,10 +353,25 @@ fun PlayDiscGolfScreen(
                             android.util.Log.e("PlayDiscGolfScreen", "Error saving scorecard", e)
                         } finally {
                             withContext(Dispatchers.Main) {
+                                // Store game results for post-game screen
+                                val authManager = my.application.data.auth.AuthManager.getInstance(context)
+                                val userEmail = authManager.getUserEmail() ?: "Ukjent spiller"
+                                val gameResults = my.application.data.GameResults(
+                                    courseName = courseName,
+                                    totalHoles = totalHoles,
+                                    playerScores = mapOf(userEmail to holeScores),
+                                    isSinglePlayer = sessionId == null
+                                )
+                                my.application.data.GameResultsManager.setGameResults(gameResults)
+
                                 // Slett lagret økt når spillet er ferdig
                                 sessionManager.clearGameSession()
-                                // Naviger tilbake
-                                navController.popBackStack()
+
+                                // Navigate to post-game screen
+                                val encodedCourseName = java.net.URLEncoder.encode(courseName, "UTF-8")
+                                navController.navigate("post_game/$encodedCourseName/$totalHoles/${sessionId == null}") {
+                                    popUpTo("mainmenu") { inclusive = false }
+                                }
                             }
                         }
                     }
