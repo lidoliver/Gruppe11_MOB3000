@@ -193,9 +193,9 @@ class ClubRepository private constructor() {
      * @param clubName Navnet på klubben som skal opprettes
      * @param description Beskrivelse/søknadsbrev for klubben
      */
-    suspend fun submitClubRequest(clubName: String, description: String): Result<String> {
+    suspend fun submitClubRequest(clubName: String, description: String, location: String? = null): Result<String> {
         return try {
-            Log.d("ClubRepository", "Submitting club request: clubName='$clubName', description length=${description.length}")
+            Log.d("ClubRepository", "Submitting club request: clubName='$clubName', location='$location', description length=${description.length}")
 
             val token = userRepository.getAuthToken()
             if (token == null) {
@@ -205,6 +205,7 @@ class ClubRepository private constructor() {
 
             val request = SubmitClubRequestDto(
                 clubName = clubName,
+                location = location,
                 description = description
             )
 

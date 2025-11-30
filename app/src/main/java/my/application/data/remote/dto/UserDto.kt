@@ -99,18 +99,19 @@ data class UsernameAvailabilityResponse(
  * Brukes i admin-panelet for godkjenning/avvisning av nye klubber
  */
 data class ClubRequestDto(
-    @Json(name = "id") val id: Int,
-    @Json(name = "requested_by") val requestedBy: String,
+    @Json(name = "id_klubb") val id: Int,
+    @Json(name = "kontakt_email") val requestedBy: String,
     @Json(name = "klubbnavn") val clubName: String,
     @Json(name = "sted") val location: String?,
-    @Json(name = "beskrivelse") val description: String?,
+    @Json(name = "klubbeskrivelse") val description: String?,
     @Json(name = "status") val status: String,
-    @Json(name = "request_date") val createdAt: String
+    @Json(name = "opprettet_dato") val createdAt: String
 )
 
 /** Request body for innsending av klubbforespørsel */
 data class SubmitClubRequestDto(
     @Json(name = "klubbnavn") val clubName: String,
+    @Json(name = "sted") val location: String? = null,
     @Json(name = "beskrivelse") val description: String
 )
 
