@@ -67,6 +67,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import my.application.ui.spill.MultiplayerLobbyScreen
+import my.application.ui.spill.PostGameScreen
 import my.application.ui.spill.MultiplayerCourseSelectionScreen as MultiplayerCourseSelection
 import my.application.ui.spill.JoinMultiplayerSessionScreen
 
@@ -363,6 +364,32 @@ fun AppNavigation(intentState: State<Intent?>, intentTrigger: State<Long>) {
                     navController = navController,
                     sessionId = sessionId
                 )
+            }
+            composable(
+                route = "post_game/{courseName}/{totalHoles}/{isSinglePlayer}",
+                arguments = listOf(
+                    navArgument("courseName") { type = NavType.StringType },
+                    navArgument("totalHoles") { type = NavType.IntType },
+                    navArgument("isSinglePlayer") { type = NavType.BoolType }
+                )
+            ) { backStackEntry ->
+                // Retrieve game results from manager
+                val gameResults = my.application.data.GameResultsManager.getGameResults()
+
+                PostGameScreen(
+                    navController = navController,
+                    courseName = gameResults?.courseName ?: "",
+                    totalHoles = gameResults?.totalHoles ?: 0,
+                    playerScores = gameResults?.playerScores ?: emptyMap(),
+                    isSinglePlayer = gameResults?.isSinglePlayer ?: true
+                )
+
+                // Clear results after displaying
+                DisposableEffect(Unit) {
+                    onDispose {
+                        my.application.data.GameResultsManager.clearGameResults()
+                    }
+                }
             }
             composable(
                 route = "friend_history/{friendEmail}/{friendName}",
