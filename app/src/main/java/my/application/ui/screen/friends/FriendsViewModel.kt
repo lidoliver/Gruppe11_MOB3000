@@ -21,18 +21,23 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
     private val friendsRepository = FriendsRepository.getInstance()
     private val userRepository = UserRepository.getInstance()
 
+    // Liste over venner
     private val _friends = MutableStateFlow<List<Friend>>(emptyList())
     val friends: StateFlow<List<Friend>> = _friends.asStateFlow()
 
+    // Antall ventende venneforespørsler
     private val _friendRequestsCount = MutableStateFlow(0)
     val friendRequestsCount: StateFlow<Int> = _friendRequestsCount.asStateFlow()
 
+    // Lastestatus
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Feilmelding
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Autentiseringsstatus
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
@@ -45,7 +50,7 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Check if user is authenticated
+     * Sjekk om brukeren er autentisert
      */
     private fun checkAuthentication() {
         _isAuthenticated.value = userRepository.getAuthToken() != null
@@ -140,13 +145,13 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Remove a friend
+     * Fjern en venn
      */
     fun removeFriend(friendEmail: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             friendsRepository.removeFriend(friendEmail)
                 .onSuccess {
-                    loadFriends() // Reload friends list
+                    loadFriends() // Last inn vennelisten på nytt
                     onSuccess()
                 }
                 .onFailure { exception ->
@@ -156,7 +161,7 @@ class FriendsViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Clear error message
+     * Nullstill feilmelding
      */
     fun clearError() {
         _error.value = null

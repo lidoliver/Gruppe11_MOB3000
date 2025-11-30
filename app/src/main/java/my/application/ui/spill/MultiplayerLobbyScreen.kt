@@ -197,6 +197,9 @@ fun MultiplayerLobbyScreen(
     }
 }
 
+/**
+ * Kort som viser en spiller i lobbyen med status
+ */
 @Composable
 fun PlayerCard(player: Player, isHost: Boolean) {
     Card(

@@ -1,3 +1,6 @@
+/**
+ * Hovedmeny-skjerm med navigasjon til ulike deler av appen
+ */
 // In app/src/main/java/My/Application/ui/screen/mainmenu/MainMenuScreen.kt
 package my.application.ui.screen.mainmenu
 

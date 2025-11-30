@@ -34,12 +34,12 @@ fun MessagesScreen(
 
     var searchQuery by remember { mutableStateOf("") }
 
-    // Reload conversations when screen is displayed
+    // Last inn samtaler på nytt når skjermen vises
     LaunchedEffect(Unit) {
         viewModel.loadConversations()
     }
 
-    // Filter conversations based on search query
+    // Filtrer samtaler basert på søkestreng
     val filteredConversations = remember(searchQuery, conversations) {
         if (searchQuery.isBlank()) {
             conversations

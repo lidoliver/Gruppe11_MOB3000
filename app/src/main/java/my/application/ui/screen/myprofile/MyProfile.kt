@@ -1,3 +1,6 @@
+/**
+ * Min profil-skjerm som viser brukerens profilinformasjon og statistikk
+ */
 package my.application.ui.screen.myprofile
 
 import my.application.ui.components.AppTopBar

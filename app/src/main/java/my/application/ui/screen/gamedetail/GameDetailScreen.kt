@@ -244,7 +244,7 @@ fun HoleDetailCard(
                     }
                 }
 
-                // Score badge
+                // Score-merke
                 Surface(
                     shape = MaterialTheme.shapes.medium,
                     color = when {

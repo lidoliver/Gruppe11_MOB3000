@@ -227,6 +227,9 @@ fun TipsScreen(navController: NavController) {
     }
 }
 
+/**
+ * Kort som viser et enkelt tips med utvidbar beskrivelse
+ */
 @Composable
 fun TipCard(
     tip: Tip,

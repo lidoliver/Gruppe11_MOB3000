@@ -1,3 +1,7 @@
+/**
+ * ViewModel for håndtering av baner/courses
+ * Håndterer lasting av baner fra repository og autentiseringstilstand
+ */
 package my.application.ui.viewmodel
 
 import android.app.Application
@@ -15,15 +19,19 @@ class CoursesViewModel(application: Application) : AndroidViewModel(application)
     private val repository = TrackRepository(application.applicationContext)
     private val userRepository = UserRepository.getInstance()
 
+    // Liste over baner
     private val _courses = MutableStateFlow<List<TrackDto>>(emptyList())
     val courses: StateFlow<List<TrackDto>> = _courses
 
+    // Lastestatus
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    // Feilmelding
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    // Autentiseringsstatus
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated
 
@@ -36,14 +44,14 @@ class CoursesViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Check if user is authenticated
+     * Sjekk om bruker er autentisert
      */
     private fun checkAuthentication() {
         _isAuthenticated.value = userRepository.getAuthToken() != null
     }
 
     /**
-     * Refresh authentication state (call this when returning to the screen)
+     * Oppdater autentiseringstilstand (kall denne når du kommer tilbake til skjermen)
      */
     fun refreshAuthenticationState() {
         checkAuthentication()

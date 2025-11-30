@@ -27,7 +27,7 @@ class PlayerHistoryViewModel(
     private val userRepository = UserRepository.getInstance()
 
     /**
-     * Check if user is authenticated
+     * Sjekk om bruker er autentisert
      */
     fun isAuthenticated(): Boolean {
         return userRepository.getAuthToken() != null
@@ -36,7 +36,7 @@ class PlayerHistoryViewModel(
     fun load(email: String) {
         Log.d("PlayerHistoryVM", "Laster inn statistikk for email: $email")
 
-        // Check authentication first
+        // Sjekk autentisering først
         if (!isAuthenticated()) {
             Log.d("PlayerHistoryVM", "User not authenticated")
             _uiState.value = UiState.NotAuthenticated

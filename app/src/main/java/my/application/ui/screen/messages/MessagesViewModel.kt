@@ -1,3 +1,6 @@
+/**
+ * ViewModel for meldinger-skjermen som viser liste over samtaler
+ */
 package my.application.ui.screen.messages
 
 import android.app.Application

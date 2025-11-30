@@ -1,3 +1,6 @@
+/**
+ * ViewModel for samtale-skjermen (chat med én person)
+ */
 package my.application.ui.screen.messages
 
 import android.util.Log

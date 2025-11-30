@@ -1,3 +1,6 @@
+/**
+ * Innloggings- og registreringsskjerm
+ */
 package my.application.ui.screen.login
 
 import androidx.compose.foundation.layout.*

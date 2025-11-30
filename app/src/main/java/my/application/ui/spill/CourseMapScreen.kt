@@ -284,7 +284,7 @@ fun CourseMapScreen(
                         }
                     }
 
-                    // Legend overlay
+                    // Forklarings-overlegg (legend)
                     if (selectedHole == null) {
                         Box(
                             modifier = Modifier

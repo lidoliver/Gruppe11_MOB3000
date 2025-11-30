@@ -492,7 +492,7 @@ fun FriendItem(
                         )
                     }
 
-                    // View history button
+                    // Vis historikk-knapp
                     OutlinedButton(
                         onClick = onHistoryClick,
                         modifier = Modifier.weight(1f),

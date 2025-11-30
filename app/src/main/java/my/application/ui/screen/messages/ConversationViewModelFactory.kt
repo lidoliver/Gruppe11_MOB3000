@@ -1,3 +1,6 @@
+/**
+ * Factory for å lage ConversationViewModel med kontakt-e-post som parameter
+ */
 package my.application.ui.screen.messages
 
 import androidx.lifecycle.ViewModel

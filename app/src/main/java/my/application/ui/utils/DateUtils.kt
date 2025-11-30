@@ -102,7 +102,7 @@ object DateUtils {
     }
 
     /**
-     * Format a timestamp in milliseconds to a user-friendly display format
+     * Formater et tidsstempel i millisekunder til et brukervennlig visningsformat
      */
     fun formatTimestampMillis(timestampMillis: Long): String {
         return try {

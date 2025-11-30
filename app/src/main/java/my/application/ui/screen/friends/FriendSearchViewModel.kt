@@ -12,30 +12,35 @@ import my.application.data.remote.dto.UserDto
 import my.application.data.repository.FriendsRepository
 
 /**
- * ViewModel for Friend Search Screen
- * Manages user search and friend request operations
+ * ViewModel for vennesøk-skjermen
+ * Håndterer brukersøk og venneforespørsler
  */
 class FriendSearchViewModel(application: Application) : AndroidViewModel(application) {
 
     private val friendsRepository = FriendsRepository.getInstance()
 
+    // Søkestreng
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    // Søkeresultater
     private val _searchResults = MutableStateFlow<List<UserDto>>(emptyList())
     val searchResults: StateFlow<List<UserDto>> = _searchResults.asStateFlow()
 
+    // Lastestatus
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 
+    // Feilmelding
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Sett med e-postadresser forespørsler er sendt til
     private val _requestSentTo = MutableStateFlow<Set<String>>(emptySet())
     val requestSentTo: StateFlow<Set<String>> = _requestSentTo.asStateFlow()
 
     /**
-     * Update search query
+     * Oppdater søkestrengen
      */
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
@@ -91,7 +96,7 @@ class FriendSearchViewModel(application: Application) : AndroidViewModel(applica
     }
 
     /**
-     * Clear error message
+     * Nullstill feilmelding
      */
     fun clearError() {
         _error.value = null

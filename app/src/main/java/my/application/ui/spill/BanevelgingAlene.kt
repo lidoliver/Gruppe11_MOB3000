@@ -173,8 +173,9 @@ fun BanevelgingAleneScreen(
     }
 }
 
-// You can now delete the loadDemoCourses() function entirely
-
+/**
+ * Kort som viser en bane med navn, beskrivelse og antall hull
+ */
 @Composable
 fun CourseCard(
     course: Course,

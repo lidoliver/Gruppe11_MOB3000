@@ -59,7 +59,7 @@ class FriendRequestsViewModel(application: Application) : AndroidViewModel(appli
     }
 
     /**
-     * Accept a friend request
+     * Godta en venneforespørsel
      */
     fun acceptFriendRequest(requestId: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
         Log.d("FriendRequestsViewModel", "acceptFriendRequest() called for request $requestId")
@@ -78,7 +78,7 @@ class FriendRequestsViewModel(application: Application) : AndroidViewModel(appli
     }
 
     /**
-     * Decline a friend request
+     * Avslå en venneforespørsel
      */
     fun declineFriendRequest(requestId: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
         Log.d("FriendRequestsViewModel", "declineFriendRequest() called for request $requestId")
@@ -86,7 +86,7 @@ class FriendRequestsViewModel(application: Application) : AndroidViewModel(appli
             friendsRepository.declineFriendRequest(requestId)
                 .onSuccess {
                     Log.d("FriendRequestsViewModel", "Successfully declined request $requestId")
-                    loadFriendRequests() // Reload the list
+                    loadFriendRequests() // Last inn listen på nytt
                     onSuccess()
                 }
                 .onFailure { exception ->
@@ -97,7 +97,7 @@ class FriendRequestsViewModel(application: Application) : AndroidViewModel(appli
     }
 
     /**
-     * Clear error message
+     * Nullstill feilmelding
      */
     fun clearError() {
         _error.value = null
