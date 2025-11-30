@@ -61,10 +61,22 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
     var creating by remember { mutableStateOf(false) }
     var createError by remember { mutableStateOf<String?>(null) }
 
+    val activeSessionManager = remember { my.application.data.ActiveSessionManager.getInstance(context) }
+
+    // Check for active session on screen load
     LaunchedEffect(Unit) {
         Log.d(TAG, "LaunchedEffect triggered - refreshing auth and loading courses")
         viewModel.refreshAuthenticationState()
         viewModel.loadCourses()
+
+        // Check if there's already an active session
+        val activeSessionId = activeSessionManager.getActiveSessionId()
+        if (activeSessionId != null) {
+            Log.d(TAG, "Active session found: $activeSessionId, redirecting to lobby")
+            navController.navigate("multiplayer_lobby/$activeSessionId") {
+                popUpTo("course_selection_multiplayer") { inclusive = true }
+            }
+        }
     }
 
     Scaffold(
@@ -210,6 +222,8 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                                             )
                                             result.onSuccess { sessionId ->
                                                 Log.d(TAG, "Session created successfully, navigating to lobby: $sessionId")
+                                                // Save as active session (user is host)
+                                                activeSessionManager.setActiveSession(sessionId, isHost = true)
                                                 navController.navigate("multiplayer_lobby/$sessionId")
                                                 creating = false
                                             }.onFailure { exception ->

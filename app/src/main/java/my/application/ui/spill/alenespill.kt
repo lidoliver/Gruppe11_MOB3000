@@ -367,6 +367,12 @@ fun PlayDiscGolfScreen(
                                 // Slett lagret økt når spillet er ferdig
                                 sessionManager.clearGameSession()
 
+                                // Clear active multiplayer session if this was a multiplayer game
+                                if (sessionId != null) {
+                                    val activeSessionManager = my.application.data.ActiveSessionManager.getInstance(context)
+                                    activeSessionManager.clearActiveSession()
+                                }
+
                                 // Navigate to post-game screen
                                 val encodedCourseName = java.net.URLEncoder.encode(courseName, "UTF-8")
                                 navController.navigate("post_game/$encodedCourseName/$totalHoles/${sessionId == null}") {

@@ -219,6 +219,9 @@ fun MultiplayerLobbyScreen(
                 onClick = {
                     coroutineScope.launch {
                         repository.leaveSession(sessionId)
+                        // Clear active session
+                        val activeSessionManager = my.application.data.ActiveSessionManager.getInstance(context)
+                        activeSessionManager.clearActiveSession()
                         navController.popBackStack()
                     }
                 },

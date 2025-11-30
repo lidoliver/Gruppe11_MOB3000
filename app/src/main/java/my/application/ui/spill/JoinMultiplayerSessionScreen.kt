@@ -163,6 +163,9 @@ fun JoinMultiplayerSessionScreen(navController: NavController) {
                             coroutineScope.launch {
                                 val result = repository.joinSession(sessionCode)
                                 result.onSuccess {
+                                    // Save as active session (user is not host)
+                                    val activeSessionManager = my.application.data.ActiveSessionManager.getInstance(context)
+                                    activeSessionManager.setActiveSession(sessionCode, isHost = false)
                                     // Successfully joined, navigate to lobby
                                     navController.navigate("multiplayer_lobby/$sessionCode") {
                                         popUpTo("join_multiplayer_session") { inclusive = true }
