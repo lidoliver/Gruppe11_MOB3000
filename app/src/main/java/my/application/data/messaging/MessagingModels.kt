@@ -15,12 +15,20 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Data models for messaging feature
- * Populated from the database via backend API
+ * Datamodeller for meldingsfunksjonen
+ * Populeres fra databasen via backend API
  */
 
 /**
- * Represents a conversation/contact in the message list
+ * Representerer en samtale/kontakt i meldingslisten
+ * @param id Unik identifikator for samtalen
+ * @param contactId ID til kontaktpersonen
+ * @param contactEmail E-postadresse til kontaktpersonen
+ * @param contactName Visningsnavn for kontaktpersonen
+ * @param lastMessagePreview Forhåndsvisning av siste melding
+ * @param timestamp Tidspunkt for siste melding
+ * @param isRead Om samtalen har uleste meldinger
+ * @param avatarColor Farge for avataren (genereres fra e-post)
  */
 data class Conversation(
     val id: Int,
@@ -34,7 +42,14 @@ data class Conversation(
 )
 
 /**
- * Represents an individual message in a conversation
+ * Representerer en individuell melding i en samtale
+ * @param id Unik identifikator for meldingen
+ * @param conversationId ID til samtalen meldingen tilhører
+ * @param senderId ID til avsenderen
+ * @param text Meldingsteksten
+ * @param timestamp Tidspunkt når meldingen ble sendt
+ * @param isFromMe Om meldingen er sendt av innlogget bruker
+ * @param isRead Om meldingen er lest
  */
 data class ChatMessage(
     val id: Int,
@@ -47,18 +62,20 @@ data class ChatMessage(
 )
 
 /**
- * Repository for messaging with database integration
+ * Repository for meldingshåndtering med database-integrasjon
+ * Håndterer henting og sending av meldinger via backend API
  */
 class MessagingRepository(
     private val messagesRepository: MessagesRepository = MessagesRepository(),
     private val userRepository: UserRepository = UserRepository.getInstance()
 ) {
 
-    // Simple encryption key - In production, use Android Keystore
-    private val ENCRYPTION_KEY = "MySecureKey12345" // 16 chars for AES-128
+    // Enkel krypteringsnøkkel - I produksjon, bruk Android Keystore
+    private val ENCRYPTION_KEY = "MySecureKey12345" // 16 tegn for AES-128
 
     /**
-     * Get all conversations for the current user
+     * Henter alle samtaler for nåværende bruker
+     * @return Flow med liste over samtaler
      */
     fun getConversations(): Flow<List<Conversation>> = flow {
         val token = userRepository.getAuthToken()
@@ -80,7 +97,9 @@ class MessagingRepository(
     }
 
     /**
-     * Get all messages for a specific conversation by contact email
+     * Henter alle meldinger for en spesifikk samtale basert på kontaktens e-post
+     * @param contactEmail E-postadressen til kontakten
+     * @return Flow med liste over meldinger
      */
     fun getMessages(contactEmail: String): Flow<List<ChatMessage>> = flow {
         val token = userRepository.getAuthToken()
@@ -110,7 +129,10 @@ class MessagingRepository(
     }
 
     /**
-     * Send a message to a contact
+     * Sender en melding til en kontakt
+     * @param contactEmail E-postadressen til mottakeren
+     * @param text Meldingsteksten
+     * @return Result med ChatMessage ved suksess
      */
     suspend fun sendMessage(contactEmail: String, text: String): Result<ChatMessage> {
         val token = userRepository.getAuthToken()
@@ -123,9 +145,9 @@ class MessagingRepository(
         val cleanToken = token.removePrefix("Bearer ")
         return messagesRepository.sendMessage(contactEmail, text, cleanToken)
             .map {
-                // Note: Backend doesn't return full message, so we create a temporary one
+                // Merk: Backend returnerer ikke full melding, så vi oppretter en midlertidig
                 ChatMessage(
-                    id = 0, // Will be replaced on refresh
+                    id = 0, // Vil bli erstattet ved oppdatering
                     conversationId = contactEmail.hashCode(),
                     senderId = currentUserEmail.hashCode(),
                     text = text,
@@ -137,7 +159,9 @@ class MessagingRepository(
     }
 
     /**
-     * Mark messages as read (handled automatically by backend when fetching messages)
+     * Markerer meldinger som lest
+     * Håndteres automatisk av backend ved henting av meldinger
+     * @param contactEmail E-postadressen til kontakten
      */
     suspend fun markMessagesAsRead(contactEmail: String): Result<Unit> {
         val token = userRepository.getAuthToken()
@@ -151,8 +175,10 @@ class MessagingRepository(
     }
 
     /**
-     * Encrypt a message (placeholder for future end-to-end encryption)
-     * Currently returns plain text as backend doesn't support encryption yet
+     * Krypterer en melding (plassholder for fremtidig ende-til-ende kryptering)
+     * Returnerer for øyeblikket klartekst siden backend ikke støtter kryptering ennå
+     * @param text Meldingsteksten som skal krypteres
+     * @return Kryptert tekst eller klartekst ved feil
      */
     fun encryptMessage(text: String): String {
         return try {
@@ -163,13 +189,15 @@ class MessagingRepository(
             Base64.getEncoder().encodeToString(encrypted)
         } catch (e: Exception) {
             Log.e("MessagingRepository", "Encryption error, returning plain text", e)
-            text // Fallback to plain text
+            text // Fallback til klartekst
         }
     }
 
     /**
-     * Decrypt a message (placeholder for future end-to-end encryption)
-     * Currently returns plain text as backend doesn't support encryption yet
+     * Dekrypterer en melding (plassholder for fremtidig ende-til-ende kryptering)
+     * Returnerer for øyeblikket klartekst siden backend ikke støtter kryptering ennå
+     * @param encryptedText Kryptert meldingstekst
+     * @return Dekryptert tekst eller original tekst ved feil
      */
     fun decryptMessage(encryptedText: String): String {
         return try {
@@ -181,11 +209,11 @@ class MessagingRepository(
             String(decrypted)
         } catch (e: Exception) {
             Log.e("MessagingRepository", "Decryption error, returning as-is", e)
-            encryptedText // Fallback to returning as-is
+            encryptedText // Fallback til å returnere som den er
         }
     }
 
-    // Conversion functions
+    // Konverteringsfunksjoner
 
     private fun ConversationDto.toConversation(): Conversation {
         return Conversation(

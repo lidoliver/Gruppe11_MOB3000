@@ -3,6 +3,10 @@ package my.application.data.remote.dto
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
+/**
+ * Data transfer object for spillerstatistikk
+ * Inneholder aggregert statistikk for en spillers prestasjoner
+ */
 @JsonClass(generateAdapter = true)
 data class PlayerStats(
     @Json(name = "email") val email: String,

@@ -3,7 +3,8 @@ package my.application.data.remote.dto
 import com.squareup.moshi.Json
 
 /**
- * Data transfer object for friend data from backend
+ * Data transfer object for vennedata fra backend
+ * Inneholder informasjon om vennskap, inkludert online-status og spillstatistikk
  */
 data class FriendDto(
     @Json(name = "id")
@@ -44,7 +45,8 @@ data class FriendDto(
 )
 
 /**
- * Data transfer object for friend request data from backend
+ * Data transfer object for venneforespørsel fra backend
+ * Brukes for å vise ventende venneforespørsler
  */
 data class FriendRequestDto(
     @Json(name = "id")
@@ -64,7 +66,7 @@ data class FriendRequestDto(
 )
 
 /**
- * Request body for sending a friend request
+ * Request body for sending av venneforespørsel
  */
 data class SendFriendRequestDto(
     @Json(name = "friendEmail")
@@ -72,7 +74,7 @@ data class SendFriendRequestDto(
 )
 
 /**
- * Response for friend request operations
+ * Response for venneforespørsel-operasjoner
  */
 data class FriendRequestResponseDto(
     @Json(name = "message")

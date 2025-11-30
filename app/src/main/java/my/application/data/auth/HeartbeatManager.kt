@@ -9,8 +9,9 @@ import kotlinx.coroutines.*
 import my.application.data.repository.UserRepository
 
 /**
- * Manages periodic heartbeat updates to backend for tracking online status
- * Automatically starts when app is in foreground and stops when in background
+ * Håndterer periodiske heartbeat-oppdateringer til backend for å spore online-status
+ * Starter automatisk når appen er i forgrunnen og stopper når den er i bakgrunnen
+ * Sender oppdateringer hvert minutt for å holde online-status oppdatert
  */
 class HeartbeatManager private constructor(private val application: Application) {
 
@@ -18,11 +19,11 @@ class HeartbeatManager private constructor(private val application: Application)
     private var heartbeatJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    // Heartbeat interval in milliseconds (1 minute for faster status updates)
+    // Heartbeat-intervall i millisekunder (1 minutt for rask statusoppdatering)
     private val HEARTBEAT_INTERVAL_MS = 1 * 60 * 1000L
 
     init {
-        // Register lifecycle observer to start/stop heartbeat based on app state
+        // Registrer lifecycle observer for å starte/stoppe heartbeat basert på app-tilstand
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 Log.d(TAG, "App moved to foreground - starting heartbeat")
@@ -37,7 +38,8 @@ class HeartbeatManager private constructor(private val application: Application)
     }
 
     /**
-     * Start sending periodic heartbeats to backend
+     * Start sending av periodiske heartbeats til backend
+     * Sender umiddelbart første heartbeat, deretter hvert minutt
      */
     fun startHeartbeat() {
         if (heartbeatJob?.isActive == true) {
@@ -48,7 +50,7 @@ class HeartbeatManager private constructor(private val application: Application)
         heartbeatJob = scope.launch {
             while (isActive) {
                 try {
-                    // Only send heartbeat if user is logged in
+                    // Send kun heartbeat hvis bruker er innlogget
                     if (userRepository.getAuthToken() != null) {
                         // Send heartbeat
                         userRepository.updateHeartbeat()
@@ -57,11 +59,11 @@ class HeartbeatManager private constructor(private val application: Application)
                         Log.d(TAG, "Skipping heartbeat - user not logged in")
                     }
                 } catch (e: Exception) {
-                    // Don't log as error since heartbeat failures are expected when offline
+                    // Ikke logg som feil siden heartbeat-feil forventes når offline
                     Log.d(TAG, "Heartbeat failed (this is normal if offline): ${e.message}")
                 }
 
-                // Wait for next heartbeat interval (moved AFTER sending, not before)
+                // Vent til neste heartbeat-intervall
                 delay(HEARTBEAT_INTERVAL_MS)
             }
         }
@@ -70,7 +72,7 @@ class HeartbeatManager private constructor(private val application: Application)
     }
 
     /**
-     * Stop sending heartbeats
+     * Stopper sending av heartbeats
      */
     fun stopHeartbeat() {
         heartbeatJob?.cancel()
@@ -79,7 +81,8 @@ class HeartbeatManager private constructor(private val application: Application)
     }
 
     /**
-     * Send an immediate heartbeat (useful after login or important actions)
+     * Send et umiddelbart heartbeat
+     * Nyttig etter innlogging eller viktige handlinger
      */
     suspend fun sendImmediateHeartbeat() {
         try {
@@ -91,7 +94,7 @@ class HeartbeatManager private constructor(private val application: Application)
     }
 
     /**
-     * Cleanup resources
+     * Rydder opp ressurser
      */
     fun cleanup() {
         stopHeartbeat()
