@@ -14,6 +14,7 @@ import my.application.data.auth.AuthManager
 import my.application.data.auth.FirebaseAuthManager
 import my.application.data.model.MultiplayerSession
 import my.application.data.model.Player
+import my.application.data.model.ScoreEntry
 import java.util.UUID
 import kotlin.toString
 
@@ -110,6 +111,7 @@ class MultiplayerRepository(private val context: Context) {
                         "isHost" to true,
                         "joinedAt" to System.currentTimeMillis(),
                         "ready" to false,
+                        "finished" to false,
                         "scores" to emptyMap<String, Any>()
                     )
                 )
@@ -177,17 +179,20 @@ class MultiplayerRepository(private val context: Context) {
             }
 
             Log.d(TAG, "Session exists, parsing data...")
-            val session = snapshot.getValue(MultiplayerSession::class.java)
-                ?: return Result.failure(Exception("Invalid session data"))
+            // Manual parsing to avoid deserialization issues
+            val status = snapshot.child("status").getValue(String::class.java) ?: "waiting"
+            val hostEmail = snapshot.child("hostEmail").getValue(String::class.java) ?: ""
 
-            Log.d(TAG, "Session status: ${session.status}, Host: ${session.hostEmail}")
+            Log.d(TAG, "Session status: $status, Host: $hostEmail")
 
-            if (session.status != "waiting") {
+            if (status != "waiting") {
                 Log.e(TAG, "Session already started")
                 return Result.failure(Exception("Session already started"))
             }
 
-            if (session.players.containsKey(encodedEmail)) {
+            // Check if player already exists
+            val playerExists = snapshot.child("players").child(encodedEmail).exists()
+            if (playerExists) {
                 Log.d(TAG, "Player already in session")
                 return Result.success(Unit)
             }
@@ -358,6 +363,36 @@ class MultiplayerRepository(private val context: Context) {
     }
 
     /**
+     * Markerer spilleren som ferdig med alle hull
+     * @param sessionId ID til økten
+     * @param isFinished Om spilleren er ferdig
+     * @return Result med Unit ved suksess
+     */
+    suspend fun setPlayerFinished(sessionId: String, isFinished: Boolean): Result<Unit> {
+        return try {
+            val userEmail = authManager.getUserEmail() ?: return Result.failure(
+                Exception("User not authenticated")
+            )
+
+            val encodedEmail = encodeEmail(userEmail)
+
+            database.child("games")
+                .child(sessionId)
+                .child("players")
+                .child(encodedEmail)
+                .child("finished")
+                .setValue(isFinished)
+                .await()
+
+            Log.d(TAG, "Player finished status updated: $isFinished")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting finished status", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Avslutter en flerspiller-økt
      * @param sessionId ID til økten som skal avsluttes
      * @return Result med Unit ved suksess
@@ -396,8 +431,8 @@ class MultiplayerRepository(private val context: Context) {
                 return Result.success(Unit)
             }
 
-            val session = snapshot.getValue(MultiplayerSession::class.java)
-                ?: return Result.failure(Exception("Invalid session data"))
+            // Manual parsing to avoid deserialization issues
+            val hostEmail = snapshot.child("hostEmail").getValue(String::class.java) ?: ""
 
             val playersRef = sessionRef.child("players")
             playersRef.child(encodedEmail).removeValue().await()
@@ -406,7 +441,7 @@ class MultiplayerRepository(private val context: Context) {
             val updatedSnapshot = playersRef.get().await()
             if (!updatedSnapshot.hasChildren()) {
                 sessionRef.removeValue().await()
-            } else if (session.hostEmail == userEmail) {
+            } else if (hostEmail == userEmail) {
                 // Tildel ny vert - dekod nøkkelen for å få e-posten
                 val newHostKey = updatedSnapshot.children.firstOrNull()?.key
                 if (newHostKey != null) {
@@ -433,8 +468,79 @@ class MultiplayerRepository(private val context: Context) {
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val session = snapshot.getValue(MultiplayerSession::class.java)
-                trySend(session)
+                try {
+                    // Manual deserialization to handle edge cases
+                    val sessionId = snapshot.child("sessionId").getValue(String::class.java) ?: ""
+                    val baneId = snapshot.child("baneId").getValue(String::class.java) ?: ""
+                    val baneName = snapshot.child("baneName").getValue(String::class.java) ?: ""
+                    val hostEmail = snapshot.child("hostEmail").getValue(String::class.java) ?: ""
+                    val status = snapshot.child("status").getValue(String::class.java) ?: "waiting"
+                    val currentHole = snapshot.child("currentHole").getValue(Int::class.java) ?: 1
+                    val createdAt = snapshot.child("createdAt").getValue(Long::class.java) ?: 0L
+                    
+                    // Parse players manually
+                    val playersMap = mutableMapOf<String, Player>()
+                    val playersSnapshot = snapshot.child("players")
+                    
+                    for (playerSnapshot in playersSnapshot.children) {
+                        val key = playerSnapshot.key ?: continue
+                        try {
+                            // Manually deserialize player to avoid issues with scores field
+                            val email = playerSnapshot.child("email").getValue(String::class.java) ?: ""
+                            val isHost = playerSnapshot.child("isHost").getValue(Boolean::class.java) ?: false
+                            val joinedAt = playerSnapshot.child("joinedAt").getValue(Long::class.java) ?: 0L
+                            val ready = playerSnapshot.child("ready").getValue(Boolean::class.java) ?: false
+                            val finished = playerSnapshot.child("finished").getValue(Boolean::class.java) ?: false
+                            
+                            // Parse scores manually
+                            val scoresMap = mutableMapOf<String, ScoreEntry>()
+                            val scoresSnapshot = playerSnapshot.child("scores")
+                            
+                            for (scoreSnapshot in scoresSnapshot.children) {
+                                val holeKey = scoreSnapshot.key ?: continue
+                                try {
+                                    val score = scoreSnapshot.child("score").getValue(Int::class.java) ?: 0
+                                    val timestamp = scoreSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                                    scoresMap[holeKey] = ScoreEntry(score, timestamp)
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error parsing score for hole $holeKey", e)
+                                    // Skip this score and continue
+                                }
+                            }
+                            
+                            val player = Player(
+                                email = email,
+                                isHost = isHost,
+                                joinedAt = joinedAt,
+                                ready = ready,
+                                finished = finished,
+                                scores = scoresMap
+                            )
+                            
+                            playersMap[key] = player
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error deserializing player $key", e)
+                            // Skip this player and continue
+                        }
+                    }
+                    
+                    val session = MultiplayerSession(
+                        sessionId = sessionId,
+                        baneId = baneId,
+                        baneName = baneName,
+                        hostEmail = hostEmail,
+                        status = status,
+                        currentHole = currentHole,
+                        createdAt = createdAt,
+                        players = playersMap
+                    )
+                    
+                    trySend(session)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error deserializing session data", e)
+                    // Try to send null to keep the flow alive
+                    trySend(null)
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -465,10 +571,60 @@ class MultiplayerRepository(private val context: Context) {
 
             val sessions = mutableListOf<MultiplayerSession>()
             snapshot.children.forEach { child ->
-                child.getValue(MultiplayerSession::class.java)?.let { session ->
-                    if (session.status == "waiting" || session.status == "active") {
+                try {
+                    // Manual parsing to avoid deserialization issues
+                    val sessionId = child.child("sessionId").getValue(String::class.java) ?: ""
+                    val baneId = child.child("baneId").getValue(String::class.java) ?: ""
+                    val baneName = child.child("baneName").getValue(String::class.java) ?: ""
+                    val hostEmail = child.child("hostEmail").getValue(String::class.java) ?: ""
+                    val status = child.child("status").getValue(String::class.java) ?: "waiting"
+                    val currentHole = child.child("currentHole").getValue(Int::class.java) ?: 1
+                    val createdAt = child.child("createdAt").getValue(Long::class.java) ?: 0L
+                    
+                    if (status == "waiting" || status == "active") {
+                        // Parse players manually
+                        val playersMap = mutableMapOf<String, Player>()
+                        val playersSnapshot = child.child("players")
+                        
+                        for (playerSnapshot in playersSnapshot.children) {
+                            val key = playerSnapshot.key ?: continue
+                            try {
+                                val email = playerSnapshot.child("email").getValue(String::class.java) ?: ""
+                                val isHost = playerSnapshot.child("isHost").getValue(Boolean::class.java) ?: false
+                                val joinedAt = playerSnapshot.child("joinedAt").getValue(Long::class.java) ?: 0L
+                                val ready = playerSnapshot.child("ready").getValue(Boolean::class.java) ?: false
+                                val finished = playerSnapshot.child("finished").getValue(Boolean::class.java) ?: false
+                                
+                                val player = Player(
+                                    email = email,
+                                    isHost = isHost,
+                                    joinedAt = joinedAt,
+                                    ready = ready,
+                                    finished = finished,
+                                    scores = emptyMap() // Don't need scores for listing sessions
+                                )
+                                
+                                playersMap[key] = player
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error parsing player in getActiveSessions", e)
+                            }
+                        }
+                        
+                        val session = MultiplayerSession(
+                            sessionId = sessionId,
+                            baneId = baneId,
+                            baneName = baneName,
+                            hostEmail = hostEmail,
+                            status = status,
+                            currentHole = currentHole,
+                            createdAt = createdAt,
+                            players = playersMap
+                        )
+                        
                         sessions.add(session)
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing session in getActiveSessions", e)
                 }
             }
 

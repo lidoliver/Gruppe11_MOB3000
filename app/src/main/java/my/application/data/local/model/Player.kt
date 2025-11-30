@@ -7,6 +7,7 @@ package my.application.data.model
  * @param isHost Om spilleren er vert for økten
  * @param joinedAt Tidspunkt når spilleren ble med (Unix timestamp)
  * @param ready Om spilleren er klar til å starte spillet
+ * @param finished Om spilleren har fullført alle hull
  * @param scores Map med poengsum for hvert hull (nøkkel: hullnummer)
  */
 data class Player(
@@ -15,6 +16,7 @@ data class Player(
     val isHost: Boolean = false,
     val joinedAt: Long = 0,
     val ready: Boolean = false,
+    val finished: Boolean = false,
     val scores: Map<String, ScoreEntry> = emptyMap()
 )
 

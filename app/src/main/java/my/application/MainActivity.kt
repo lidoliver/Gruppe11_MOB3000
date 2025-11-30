@@ -67,6 +67,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import my.application.ui.spill.MultiplayerLobbyScreen
+import my.application.ui.spill.MultiplayerWaitingScreen
 import my.application.ui.spill.PostGameScreen
 import my.application.ui.spill.MultiplayerCourseSelectionScreen as MultiplayerCourseSelection
 import my.application.ui.spill.JoinMultiplayerSessionScreen
@@ -361,6 +362,13 @@ fun AppNavigation(intentState: State<Intent?>, intentTrigger: State<Long>) {
             composable("multiplayer_lobby/{sessionId}") { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
                 MultiplayerLobbyScreen(
+                    navController = navController,
+                    sessionId = sessionId
+                )
+            }
+            composable("multiplayer_waiting/{sessionId}") { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+                MultiplayerWaitingScreen(
                     navController = navController,
                     sessionId = sessionId
                 )

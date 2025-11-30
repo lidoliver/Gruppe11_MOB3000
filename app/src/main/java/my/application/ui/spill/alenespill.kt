@@ -310,6 +310,7 @@ fun PlayDiscGolfScreen(
                     val currentHoleScores = holeScores
                     val currentHolesData = holesData
                     val currentCourseId = courseId
+                    val currentSessionId = sessionId
 
                     // Lagre spillkort til backend før avslutning
                     coroutineScope.launch(Dispatchers.IO) {
@@ -349,36 +350,62 @@ fun PlayDiscGolfScreen(
                                     android.util.Log.e("PlayDiscGolfScreen", "Failed to save scorecard: ${result.exceptionOrNull()?.message}")
                                 }
                             }
-                        } catch (e: Exception) {
-                            android.util.Log.e("PlayDiscGolfScreen", "Error saving scorecard", e)
-                        } finally {
-                            withContext(Dispatchers.Main) {
-                                // Store game results for post-game screen
-                                val authManager = my.application.data.auth.AuthManager.getInstance(context)
-                                val userEmail = authManager.getUserEmail() ?: "Ukjent spiller"
-                                val gameResults = my.application.data.GameResults(
-                                    courseName = courseName,
-                                    totalHoles = totalHoles,
-                                    playerScores = mapOf(userEmail to holeScores),
-                                    isSinglePlayer = sessionId == null
-                                )
-                                my.application.data.GameResultsManager.setGameResults(gameResults)
 
-                                // Slett lagret økt når spillet er ferdig
-                                sessionManager.clearGameSession()
-
-                                // Clear active multiplayer session if this was a multiplayer game
-                                if (sessionId != null) {
-                                    val activeSessionManager = my.application.data.ActiveSessionManager.getInstance(context)
-                                    activeSessionManager.clearActiveSession()
+                            // Handle multiplayer vs single player differently
+                            if (currentSessionId != null) {
+                                // Multiplayer: Update scores in Firebase and mark as finished
+                                val multiplayerRepository = my.application.data.repository.MultiplayerRepository.getInstance(context)
+                                
+                                // Update all hole scores in Firebase sequentially
+                                currentHoleScores.forEachIndexed { index, score ->
+                                    val result = multiplayerRepository.updatePlayerScore(
+                                        sessionId = currentSessionId,
+                                        holeNumber = index + 1,
+                                        score = score
+                                    )
+                                    if (result.isFailure) {
+                                        android.util.Log.e("PlayDiscGolfScreen", "Failed to update score for hole ${index + 1}: ${result.exceptionOrNull()?.message}")
+                                    }
                                 }
+                                
+                                // Mark player as finished
+                                val finishResult = multiplayerRepository.setPlayerFinished(currentSessionId, true)
+                                if (finishResult.isFailure) {
+                                    android.util.Log.e("PlayDiscGolfScreen", "Failed to mark player as finished: ${finishResult.exceptionOrNull()?.message}")
+                                }
+                                
+                                withContext(Dispatchers.Main) {
+                                    // Slett lagret økt når spillet er ferdig
+                                    sessionManager.clearGameSession()
+                                    
+                                    // Navigate to waiting screen
+                                    navController.navigate("multiplayer_waiting/$currentSessionId") {
+                                        popUpTo("play_session/${currentCourseId}/$currentSessionId") { inclusive = true }
+                                    }
+                                }
+                            } else {
+                                // Single player: Navigate directly to post-game
+                                withContext(Dispatchers.Main) {
+                                    val gameResults = my.application.data.GameResults(
+                                        courseName = courseName,
+                                        totalHoles = totalHoles,
+                                        playerScores = mapOf(userEmail to currentHoleScores),
+                                        isSinglePlayer = true
+                                    )
+                                    my.application.data.GameResultsManager.setGameResults(gameResults)
 
-                                // Navigate to post-game screen
-                                val encodedCourseName = java.net.URLEncoder.encode(courseName, "UTF-8")
-                                navController.navigate("post_game/$encodedCourseName/$totalHoles/${sessionId == null}") {
-                                    popUpTo("mainmenu") { inclusive = false }
+                                    // Slett lagret økt når spillet er ferdig
+                                    sessionManager.clearGameSession()
+
+                                    // Navigate to post-game screen
+                                    val encodedCourseName = java.net.URLEncoder.encode(courseName, "UTF-8")
+                                    navController.navigate("post_game/$encodedCourseName/$totalHoles/true") {
+                                        popUpTo("mainmenu") { inclusive = false }
+                                    }
                                 }
                             }
+                        } catch (e: Exception) {
+                            android.util.Log.e("PlayDiscGolfScreen", "Error saving scorecard", e)
                         }
                     }
                 }
