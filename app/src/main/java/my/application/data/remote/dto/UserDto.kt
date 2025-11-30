@@ -21,11 +21,11 @@ data class UserDto(
  * Brukes i admin-grensesnittet for brukerstyring
  */
 data class AdminUserDto(
-    @Json(name = "email") val email: String,
+    @Json(name = "epost") val email: String,
     @Json(name = "brukernavn") val username: String?,
     @Json(name = "role") val role: String?,
-    @Json(name = "club_id") val clubId: Int?,
-    @Json(name = "club_name") val clubName: String?
+    @Json(name = "klubb_id_klubb") val clubId: Int?,
+    @Json(name = "klubbnavn") val clubName: String?
 ) {
     /** Konverterer til UserDto for kompatibilitet med eksisterende kode */
     fun toUserDto(): UserDto = UserDto(
