@@ -19,13 +19,16 @@ import my.application.ui.components.AppTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JoinMultiplayerSessionScreen(navController: NavController) {
+fun JoinMultiplayerSessionScreen(
+    navController: NavController,
+    prefilledCode: String? = null
+) {
     val context = LocalContext.current
     val repository = remember { MultiplayerRepository.getInstance(context) }
     val authManager = remember { AuthManager.getInstance(context) }
     val coroutineScope = rememberCoroutineScope()
 
-    var sessionCode by remember { mutableStateOf("") }
+    var sessionCode by remember { mutableStateOf(prefilledCode ?: "") }
     var isJoining by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var isAuthenticated by remember { mutableStateOf(false) }

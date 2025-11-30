@@ -5,11 +5,13 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -27,8 +29,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -170,6 +177,7 @@ fun ConversationScreen(
                         items(messages.reversed(), key = { it.id }) { message ->
                             ChatBubble(
                                 message = message,
+                                navController = navController,
                                 onCopyMessage = { text ->
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     val clip = ClipData.newPlainText("message", text)
@@ -256,9 +264,46 @@ fun ConversationScreen(
     }
 }
 
+// Helper function to detect session codes and create annotated string
+fun createAnnotatedMessageText(text: String, linkColor: androidx.compose.ui.graphics.Color): AnnotatedString {
+    // UUID pattern for session codes (e.g., 44a9d6b4-6bb1-4603-b9d6-55f74b071fc4)
+    val sessionCodePattern = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}".toRegex()
+    
+    return buildAnnotatedString {
+        var lastIndex = 0
+        sessionCodePattern.findAll(text).forEach { matchResult ->
+            // Add text before the match
+            append(text.substring(lastIndex, matchResult.range.first))
+            
+            // Add the clickable session code
+            pushStringAnnotation(
+                tag = "SESSION_CODE",
+                annotation = matchResult.value
+            )
+            withStyle(
+                style = SpanStyle(
+                    color = linkColor,
+                    textDecoration = TextDecoration.Underline
+                )
+            ) {
+                append(matchResult.value)
+            }
+            pop()
+            
+            lastIndex = matchResult.range.last + 1
+        }
+        
+        // Add remaining text
+        if (lastIndex < text.length) {
+            append(text.substring(lastIndex))
+        }
+    }
+}
+
 @Composable
 fun ChatBubble(
     message: ChatMessage,
+    navController: NavController,
     onCopyMessage: (String) -> Unit
 ) {
     Row(
@@ -311,15 +356,34 @@ fun ChatBubble(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top
                 ) {
-                    Text(
-                        text = message.text,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (message.isFromMe) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSecondaryContainer
-                        },
-                        modifier = Modifier.weight(1f)
+                    val textColor = if (message.isFromMe) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                    }
+                    
+                    val linkColor = if (message.isFromMe) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                    
+                    val annotatedText = createAnnotatedMessageText(message.text, linkColor)
+                    
+                    ClickableText(
+                        text = annotatedText,
+                        style = MaterialTheme.typography.bodyLarge.copy(color = textColor),
+                        modifier = Modifier.weight(1f),
+                        onClick = { offset ->
+                            annotatedText.getStringAnnotations(
+                                tag = "SESSION_CODE",
+                                start = offset,
+                                end = offset
+                            ).firstOrNull()?.let { annotation ->
+                                // Navigate to join session screen with the code
+                                navController.navigate("join_multiplayer_session?code=${annotation.item}")
+                            }
+                        }
                     )
                     IconButton(
                         onClick = { onCopyMessage(message.text) },

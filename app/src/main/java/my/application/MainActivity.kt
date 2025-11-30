@@ -293,8 +293,21 @@ fun AppNavigation(intentState: State<Intent?>, intentTrigger: State<Long>) {
             composable("course_selection_multiplayer") {
                 MultiplayerCourseSelection(navController = navController)
             }
-            composable("join_multiplayer_session") {
-                JoinMultiplayerSessionScreen(navController = navController)
+            composable(
+                route = "join_multiplayer_session?code={code}",
+                arguments = listOf(
+                    navArgument("code") { 
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val code = backStackEntry.arguments?.getString("code")
+                JoinMultiplayerSessionScreen(
+                    navController = navController,
+                    prefilledCode = code
+                )
             }
             composable(
                 route = "friend_profile/{friendEmail}/{friendName}",
