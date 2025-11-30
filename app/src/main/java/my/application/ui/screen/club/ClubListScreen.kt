@@ -216,6 +216,10 @@ fun ClubCard(
     }
 }
 
+/**
+ * Dialog for å søke om å bli medlem av en klubb
+ * Lar brukeren skrive en valgfri melding til klubbadministrator
+ */
 @Composable
 fun JoinClubDialog(
     club: ClubDto,

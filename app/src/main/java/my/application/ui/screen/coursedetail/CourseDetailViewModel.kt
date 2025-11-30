@@ -22,6 +22,11 @@ class CourseDetailViewModel(
     private val _uiState = MutableStateFlow<CourseDetailUiState>(CourseDetailUiState.Loading)
     val uiState: StateFlow<CourseDetailUiState> = _uiState
 
+    /**
+     * Laster inn spillhistorikk for en bestemt bane og spiller
+     * @param email E-postadressen til spilleren
+     * @param courseName Navnet på banen
+     */
     fun loadCourseHistory(email: String, courseName: String) {
         Log.d("CourseDetailVM", "Laster historikk for $courseName, spiller: $email")
         _uiState.value = CourseDetailUiState.Loading

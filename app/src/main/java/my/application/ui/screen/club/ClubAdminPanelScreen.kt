@@ -206,6 +206,10 @@ fun ClubAdminPanelScreen(
     }
 }
 
+/**
+ * Kort som viser en enkelt medlemssøknad
+ * Viser brukerens informasjon, melding og knapper for å godkjenne eller avvise
+ */
 @Composable
 fun JoinRequestCard(
     request: ClubJoinRequestDto,

@@ -153,11 +153,22 @@ class ClubAdminPanelViewModel(
         }
     }
 
+    /**
+     * Tømmer feil- og suksessmeldinger fra UI-tilstanden
+     */
     fun clearMessages() {
         uiState = uiState.copy(successMessage = null, error = null)
     }
 }
 
+/**
+ * UI-tilstand for klubbadmin-panelet
+ * @param clubId ID-en til klubben som administreres
+ * @param requests Liste over ventende medlemssøknader
+ * @param isLoading Indikerer om data lastes
+ * @param error Feilmelding hvis noe gikk galt
+ * @param successMessage Suksessmelding
+ */
 data class ClubAdminPanelUiState(
     val clubId: Int? = null,
     val requests: List<ClubJoinRequestDto> = emptyList(),

@@ -69,9 +69,18 @@ class ClubScreenViewModel(
     }
 }
 
+/**
+ * UI-tilstand for klubbskjermen
+ * @param isLoading Indikerer om data lastes
+ * @param isAuthenticated Indikerer om brukeren er autentisert
+ * @param clubId ID-en til brukerens klubb (hvis medlem)
+ * @param clubName Navnet på brukerens klubb (hvis medlem)
+ * @param isMember Indikerer om brukeren er medlem av en klubb
+ * @param error Feilmelding hvis noe gikk galt
+ */
 data class ClubScreenUiState(
     val isLoading: Boolean = false,
-    val isAuthenticated: Boolean = true, // Assume authenticated by default for backward compatibility
+    val isAuthenticated: Boolean = true, // Anta autentisert som standard for bakoverkompatibilitet
     val clubId: Int? = null,
     val clubName: String? = null,
     val isMember: Boolean = false,

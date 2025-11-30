@@ -691,7 +691,7 @@ fun CreateEventDialog(
         )
     }
 
-    // Time Picker Dialog
+    // Tidsvelger-dialog
     if (showTimePicker) {
         val timePickerState = rememberTimePickerState(
             initialHour = selectedHour,
@@ -729,6 +729,9 @@ fun CreateEventDialog(
     }
 }
 
+/**
+ * Hjelpefunksjon for å formatere dato og tid til norsk format
+ */
 fun formatDateTime(dateTimeString: String): String {
     return try {
         val instant = Instant.parse(dateTimeString)

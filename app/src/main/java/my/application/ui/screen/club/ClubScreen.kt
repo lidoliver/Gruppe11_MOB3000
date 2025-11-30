@@ -47,7 +47,7 @@ fun ClubScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header Section
+            // Topptekst
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -355,6 +355,9 @@ fun ClubScreen(navController: NavController) {
     }
 }
 
+/**
+ * Komponent som viser en enkelt fordel med ikon, tittel og beskrivelse
+ */
 @Composable
 fun BenefitItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,

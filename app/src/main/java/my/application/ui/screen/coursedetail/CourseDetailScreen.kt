@@ -170,10 +170,10 @@ fun CourseDetailContent(
                         )
                     }
                 }
+                }
             }
-        }
 
-        // Games list section
+        // Liste over runder
         if (courseHistory.games.isNotEmpty()) {
             item {
                 Row(
@@ -215,8 +215,10 @@ fun CourseDetailContent(
 // CompositionLocal for NavController
 val LocalNavController = compositionLocalOf<NavController?> { null }
 
-
-
+/**
+ * Kort som viser en enkelt runde med score og dato
+ * Kan klikkes for å se detaljert rundestatistikk
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameSelectionCard(

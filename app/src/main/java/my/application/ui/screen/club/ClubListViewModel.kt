@@ -104,11 +104,21 @@ class ClubListViewModel(
         }
     }
 
+    /**
+     * Tømmer feil- og suksessmeldinger fra UI-tilstanden
+     */
     fun clearMessages() {
         uiState = uiState.copy(successMessage = null, error = null)
     }
 }
 
+/**
+ * UI-tilstand for klubbliste-skjermen
+ * @param clubs Liste over klubber
+ * @param isLoading Indikerer om data lastes
+ * @param error Feilmelding hvis noe gikk galt
+ * @param successMessage Suksessmelding
+ */
 data class ClubListUiState(
     val clubs: List<ClubDto> = emptyList(),
     val isLoading: Boolean = false,

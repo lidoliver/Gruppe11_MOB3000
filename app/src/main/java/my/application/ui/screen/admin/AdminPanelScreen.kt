@@ -79,7 +79,7 @@ fun AdminPanelScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Club Request Management Card
+            // Klubbforespørselskort
             Card(
                 modifier = Modifier
                     .fillMaxWidth()

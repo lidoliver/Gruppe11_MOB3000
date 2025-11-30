@@ -139,6 +139,15 @@ class UserAdminViewModel(
     }
 }
 
+/**
+ * UI-tilstand for brukeradministrasjons-skjermen
+ * @param users Liste over alle brukere
+ * @param filteredUsers Filtrert liste over brukere basert på søkeord
+ * @param searchQuery Gjeldende søkeord
+ * @param isLoading Indikerer om data lastes
+ * @param error Feilmelding hvis noe gikk galt
+ * @param authError Indikerer om feilen er relatert til autentisering
+ */
 data class UserAdminUiState(
     val users: List<UserDto> = emptyList(),
     val filteredUsers: List<UserDto> = emptyList(),

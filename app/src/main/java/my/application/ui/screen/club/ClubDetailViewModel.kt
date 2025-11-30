@@ -95,6 +95,10 @@ class ClubDetailViewModel(
         }
     }
 
+    /**
+     * Sletter et arrangement fra klubbsiden
+     * @param eventId ID-en til arrangementet som skal slettes
+     */
     fun deleteEvent(eventId: Int) {
         viewModelScope.launch {
             clubPageRepository.deleteEvent(clubId, eventId)
@@ -102,6 +106,10 @@ class ClubDetailViewModel(
         }
     }
 
+    /**
+     * Melder brukeren på et arrangement
+     * @param eventId ID-en til arrangementet
+     */
     fun joinEvent(eventId: Int) {
         viewModelScope.launch {
             clubPageRepository.joinEvent(clubId, eventId)
@@ -109,6 +117,10 @@ class ClubDetailViewModel(
         }
     }
 
+    /**
+     * Melder brukeren av et arrangement
+     * @param eventId ID-en til arrangementet
+     */
     fun leaveEvent(eventId: Int) {
         viewModelScope.launch {
             clubPageRepository.leaveEvent(clubId, eventId)
@@ -117,6 +129,13 @@ class ClubDetailViewModel(
     }
 }
 
+/**
+ * UI-tilstand for klubbdetalj-skjermen
+ * @param isLoading Indikerer om data lastes
+ * @param isCreating Indikerer om en melding eller et arrangement opprettes
+ * @param clubPage Klubbsidedata med meldinger og arrangementer
+ * @param error Feilmelding hvis noe gikk galt
+ */
 data class ClubDetailUiState(
     val isLoading: Boolean = false,
     val isCreating: Boolean = false,
