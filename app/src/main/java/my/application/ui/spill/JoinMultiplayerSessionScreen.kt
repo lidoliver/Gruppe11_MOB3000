@@ -28,8 +28,10 @@ fun JoinMultiplayerSessionScreen(navController: NavController) {
     var sessionCode by remember { mutableStateOf("") }
     var isJoining by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    val isAuthenticated by remember {
-        mutableStateOf(authManager.getUserEmail() != null)
+    var isAuthenticated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isAuthenticated = authManager.getUserEmail() != null
     }
 
     Scaffold(
