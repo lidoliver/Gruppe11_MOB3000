@@ -128,6 +128,18 @@ fun StartRoundScreen(navController: NavController) {
                         navController.navigate("course_selection_multiplayer")
                     }
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // "Join Game" option - THIS IS WHERE YOU ENTER SESSION CODES!
+                GameModeCard(
+                    icon = Icons.Filled.QrCodeScanner,
+                    title = "Bli med i spill",
+                    description = "Skriv inn spillkode for å bli med.",
+                    onClick = {
+                        navController.navigate("join_multiplayer_session")
+                    }
+                )
             }
         }
     }
