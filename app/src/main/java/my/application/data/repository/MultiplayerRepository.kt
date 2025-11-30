@@ -145,26 +145,50 @@ class MultiplayerRepository(private val context: Context) {
      */
     suspend fun joinSession(sessionId: String): Result<Unit> {
         return try {
-            val userEmail = authManager.getUserEmail() ?: return Result.failure(
-                Exception("User not authenticated")
-            )
+            Log.d(TAG, "joinSession called - sessionId: $sessionId")
+
+            val userEmail = authManager.getUserEmail()
+            Log.d(TAG, "User email retrieved: $userEmail")
+
+            if (userEmail == null) {
+                Log.e(TAG, "User not authenticated")
+                return Result.failure(Exception("User not authenticated"))
+            }
+
+            // Ensure Firebase Auth sign-in for database access
+            Log.d(TAG, "Ensuring Firebase Auth sign-in...")
+            firebaseAuthManager.ensureFirebaseSignedIn(userEmail).onFailure { error ->
+                Log.e(TAG, "Failed to sign in to Firebase: ${error.message}")
+                return Result.failure(Exception("Failed to authenticate with Firebase: ${error.message}"))
+            }
+            Log.d(TAG, "Firebase Auth confirmed")
 
             val encodedEmail = encodeEmail(userEmail)
+            Log.d(TAG, "Encoded email: $encodedEmail")
+
             val sessionRef = database.child("games").child(sessionId)
+
+            Log.d(TAG, "Fetching session data from Firebase...")
             val snapshot = sessionRef.get().await()
 
             if (!snapshot.exists()) {
+                Log.e(TAG, "Session not found: $sessionId")
                 return Result.failure(Exception("Session not found"))
             }
 
+            Log.d(TAG, "Session exists, parsing data...")
             val session = snapshot.getValue(MultiplayerSession::class.java)
                 ?: return Result.failure(Exception("Invalid session data"))
 
+            Log.d(TAG, "Session status: ${session.status}, Host: ${session.hostEmail}")
+
             if (session.status != "waiting") {
+                Log.e(TAG, "Session already started")
                 return Result.failure(Exception("Session already started"))
             }
 
             if (session.players.containsKey(encodedEmail)) {
+                Log.d(TAG, "Player already in session")
                 return Result.success(Unit)
             }
 
@@ -176,12 +200,21 @@ class MultiplayerRepository(private val context: Context) {
                 scores = emptyMap()
             )
 
-            sessionRef.child("players").child(encodedEmail).setValue(newPlayer).await()
+            Log.d(TAG, "Adding player to session...")
+            try {
+                sessionRef.child("players").child(encodedEmail).setValue(newPlayer).await()
+                Log.d(TAG, "Successfully joined session: $sessionId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Firebase write failed", e)
+                if (e.message?.contains("Permission denied", ignoreCase = true) == true) {
+                    throw Exception("Firebase permission denied. Please check Realtime Database rules.")
+                }
+                throw e
+            }
 
-            Log.d(TAG, "Joined session: $sessionId")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Error joining session", e)
+            Log.e(TAG, "Error joining session: ${e.message}", e)
             Result.failure(e)
         }
     }

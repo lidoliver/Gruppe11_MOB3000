@@ -67,6 +67,7 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import my.application.ui.spill.MultiplayerLobbyScreen
 import my.application.ui.spill.MultiplayerCourseSelectionScreen as MultiplayerCourseSelection
+import my.application.ui.spill.JoinMultiplayerSessionScreen
 
 
 
