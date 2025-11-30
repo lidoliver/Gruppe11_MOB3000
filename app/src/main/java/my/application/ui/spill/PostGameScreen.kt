@@ -178,8 +178,8 @@ fun PostGameScreen(
                 ) {
                     Button(
                         onClick = {
-                            navController.navigate("start_runde") {
-                                popUpTo("mainmenu") { inclusive = false }
+                            navController.navigate("start_round") {
+                                popUpTo("main_menu") { inclusive = false }
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -191,8 +191,8 @@ fun PostGameScreen(
 
                     OutlinedButton(
                         onClick = {
-                            navController.navigate("mainmenu") {
-                                popUpTo("mainmenu") { inclusive = true }
+                            navController.navigate("main_menu") {
+                                popUpTo("main_menu") { inclusive = true }
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
