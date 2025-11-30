@@ -1,5 +1,6 @@
 package my.application.service
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -164,14 +165,31 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Notification channel created/verified")
         }
 
+        // Check if user is already in conversation with this sender
+        if (notificationType == "message") {
+            val senderEmail = data["senderEmail"]
+            if (senderEmail != null && isUserInConversationWith(senderEmail)) {
+                Log.d(TAG, "User is already in conversation with $senderEmail - suppressing notification")
+                return
+            }
+        }
+
         // Opprett en intent for å åpne appen når varselet trykkes
         val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             // Legg til ekstra data for å navigere til spesifikk skjerm
             notificationType?.let { putExtra("notification_type", it) }
             targetId?.let { putExtra("target_id", it) }
             data["senderEmail"]?.let { putExtra("sender_email", it) }
             data["senderName"]?.let { putExtra("sender_name", it) }
+            
+            // Also add the raw data keys in case the above don't work
+            data["type"]?.let { putExtra("type", it) }
+            data["senderEmail"]?.let { putExtra("senderEmail", it) }
+            data["senderName"]?.let { putExtra("senderName", it) }
+            data["message"]?.let { putExtra("message", it) }
+            
+            Log.d(TAG, "Intent extras added - notification_type: $notificationType, sender_email: ${data["senderEmail"]}, sender_name: ${data["senderName"]}")
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -196,6 +214,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "✅ Notification displayed with ID: $notificationId")
+    }
+
+    /**
+     * Check if the app is in foreground and user is viewing conversation with the sender
+     */
+    private fun isUserInConversationWith(senderEmail: String): Boolean {
+        return CurrentConversationTracker.isViewingConversationWith(senderEmail)
     }
 }
 
