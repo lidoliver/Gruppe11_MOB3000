@@ -69,7 +69,7 @@ import kotlinx.coroutines.launch
 import my.application.ui.spill.MultiplayerLobbyScreen
 import my.application.ui.spill.MultiplayerWaitingScreen
 import my.application.ui.spill.PostGameScreen
-import my.application.ui.spill.MultiplayerCourseSelectionScreen as MultiplayerCourseSelection
+import my.application.ui.spill.MultiplayerCourseSelection
 import my.application.ui.spill.JoinMultiplayerSessionScreen
 
 
@@ -292,8 +292,28 @@ fun AppNavigation(intentState: State<Intent?>, intentTrigger: State<Long>) {
             composable("friend_requests") {
                 FriendRequestsScreen(navController = navController)
             }
-            composable("course_selection_multiplayer") {
-                MultiplayerCourseSelection(navController = navController)
+            composable(
+                route = "course_selection_multiplayer?inviteFriendEmail={inviteFriendEmail}&inviteFriendName={inviteFriendName}",
+                arguments = listOf(
+                    navArgument("inviteFriendEmail") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("inviteFriendName") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val inviteFriendEmail = backStackEntry.arguments?.getString("inviteFriendEmail")
+                val inviteFriendName = backStackEntry.arguments?.getString("inviteFriendName")
+                MultiplayerCourseSelection(
+                    navController = navController,
+                    inviteFriendEmail = inviteFriendEmail,
+                    inviteFriendName = inviteFriendName
+                )
             }
             composable(
                 route = "join_multiplayer_session?code={code}",

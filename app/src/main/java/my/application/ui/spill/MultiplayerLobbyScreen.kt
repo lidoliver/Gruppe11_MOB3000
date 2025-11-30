@@ -17,9 +17,13 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import my.application.ui.components.AppTopBar
 import my.application.data.repository.MultiplayerRepository
+import my.application.data.repository.MessagesRepository
+import my.application.data.repository.UserRepository
+import my.application.data.repository.FriendsRepository
 import my.application.data.model.MultiplayerSession
 import my.application.data.model.Player
 import my.application.data.auth.AuthManager
+import my.application.data.friends.Friend
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +40,18 @@ fun MultiplayerLobbyScreen(
     var isReady by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var currentUserEmail by remember { mutableStateOf<String?>(null) }
+    var showInviteDialog by remember { mutableStateOf(false) }
+    var friends by remember { mutableStateOf<List<Friend>>(emptyList()) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Hent nåværende brukers e-post
+    // Hent nåværende brukers e-post og venner
     LaunchedEffect(Unit) {
         currentUserEmail = authManager.getUserEmail()
+        // Load friends list
+        val friendsRepo = FriendsRepository.getInstance()
+        friendsRepo.getFriends().onSuccess { friendsList ->
+            friends = friendsList
+        }
     }
 
     // Observer øktopdateringer
@@ -63,7 +75,8 @@ fun MultiplayerLobbyScreen(
                 canNavigateBack = true,
                 navController = navController
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -109,25 +122,47 @@ fun MultiplayerLobbyScreen(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                        Button(
-                            onClick = {
-                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                                val clip = android.content.ClipData.newPlainText("Session Code", sessionId)
-                                clipboard.setPrimaryClip(clip)
-                                // Show confirmation (optional - can add a snackbar here)
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Kopier kode",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Kopier", style = MaterialTheme.typography.labelLarge)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = {
+                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    val clip = android.content.ClipData.newPlainText("Session Code", sessionId)
+                                    clipboard.setPrimaryClip(clip)
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "Kode kopiert!",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Kopier kode",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Kopier", style = MaterialTheme.typography.labelLarge)
+                            }
+                            Button(
+                                onClick = { showInviteDialog = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondary
+                                ),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PersonAdd,
+                                    contentDescription = "Inviter venner",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Inviter", style = MaterialTheme.typography.labelLarge)
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -261,11 +296,134 @@ fun MultiplayerLobbyScreen(
             }
         }
     }
+    
+    // Invite friends dialog
+    if (showInviteDialog) {
+        InviteFriendsDialog(
+            friends = friends,
+            sessionId = sessionId,
+            onDismiss = { showInviteDialog = false },
+            onInviteSent = { friendName ->
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Invitasjon sendt til $friendName!",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            },
+            onError = { errorMsg ->
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = errorMsg,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        )
+    }
 }
 
 /**
- * Kort som viser en spiller i lobbyen med status
+ * Dialog for inviting friends to the multiplayer session
  */
+@Composable
+fun InviteFriendsDialog(
+    friends: List<Friend>,
+    sessionId: String,
+    onDismiss: () -> Unit,
+    onInviteSent: (String) -> Unit,
+    onError: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Inviter venner") },
+        text = {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (friends.isEmpty()) {
+                    item {
+                        Text(
+                            "Ingen venner tilgjengelig",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    items(friends) { friend ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                coroutineScope.launch {
+                                    try {
+                                        val userRepo = UserRepository.getInstance()
+                                        val messagesRepo = MessagesRepository()
+                                        val token = userRepo.getAuthToken()
+                                        
+                                        if (token != null) {
+                                            val cleanToken = token.removePrefix("Bearer ")
+                                            val inviteMessage = "Bli med i mitt disc golf-spill! Klikk på koden for å bli med: $sessionId"
+                                            
+                                            messagesRepo.sendMessage(
+                                                receiverEmail = friend.email,
+                                                content = inviteMessage,
+                                                token = cleanToken
+                                            ).onSuccess {
+                                                onInviteSent(friend.name)
+                                                onDismiss()
+                                            }.onFailure { error ->
+                                                onError("Kunne ikke sende til ${friend.name}: ${error.message}")
+                                            }
+                                        } else {
+                                            onError("Ikke autentisert")
+                                        }
+                                    } catch (e: Exception) {
+                                        onError("Feil: ${e.message}")
+                                    }
+                                }
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = friend.name,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = friend.email,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Lukk")
+            }
+        }
+    )
+}
+
 @Composable
 fun PlayerCard(player: Player, isHost: Boolean) {
     Card(

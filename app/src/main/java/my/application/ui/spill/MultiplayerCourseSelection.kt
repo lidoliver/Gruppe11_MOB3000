@@ -23,12 +23,19 @@ import kotlinx.coroutines.launch
 import my.application.ui.components.AppTopBar
 import my.application.ui.viewmodel.CoursesViewModel
 import my.application.data.repository.MultiplayerRepository
+import my.application.data.repository.MessagesRepository
+import my.application.data.repository.UserRepository
 
 private const val TAG = "MultiplayerCourseScreen"
 
 @Composable
-fun MultiplayerCourseSelectionScreen(navController: NavController) {
+fun MultiplayerCourseSelection(
+    navController: NavController,
+    inviteFriendEmail: String? = null,
+    inviteFriendName: String? = null
+) {
     Log.d(TAG, "=== MultiplayerCourseSelectionScreen composable called ===")
+    Log.d(TAG, "Invite friend: $inviteFriendName ($inviteFriendEmail)")
 
     val context = LocalContext.current
     val viewModel: CoursesViewModel = viewModel(
@@ -60,6 +67,7 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
 
     var creating by remember { mutableStateOf(false) }
     var createError by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val activeSessionManager = remember { my.application.data.ActiveSessionManager.getInstance(context) }
 
@@ -82,11 +90,12 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Velg Bane - Multiplayer",
+                title = if (inviteFriendName != null) "Inviter $inviteFriendName" else "Velg Bane - Multiplayer",
                 canNavigateBack = true,
                 navController = navController
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -221,9 +230,46 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                                                 totalHoles = track.holes
                                             )
                                             result.onSuccess { sessionId ->
-                                                Log.d(TAG, "Session created successfully, navigating to lobby: $sessionId")
+                                                Log.d(TAG, "Session created successfully: $sessionId")
                                                 // Save as active session (user is host)
                                                 activeSessionManager.setActiveSession(sessionId, isHost = true)
+                                                
+                                                // Send invite if friend email is provided
+                                                if (inviteFriendEmail != null && inviteFriendName != null) {
+                                                    coroutineScope.launch {
+                                                        try {
+                                                            val userRepo = UserRepository.getInstance()
+                                                            val messagesRepo = MessagesRepository()
+                                                            val token = userRepo.getAuthToken()
+                                                            
+                                                            if (token != null) {
+                                                                val cleanToken = token.removePrefix("Bearer ")
+                                                                val inviteMessage = "Bli med i mitt disc golf-spill! Klikk på koden for å bli med: $sessionId"
+                                                                
+                                                                messagesRepo.sendMessage(
+                                                                    receiverEmail = inviteFriendEmail,
+                                                                    content = inviteMessage,
+                                                                    token = cleanToken
+                                                                ).onSuccess {
+                                                                    Log.d(TAG, "Invite sent to $inviteFriendName")
+                                                                    snackbarHostState.showSnackbar(
+                                                                        message = "Invitasjon sendt til $inviteFriendName!",
+                                                                        duration = SnackbarDuration.Short
+                                                                    )
+                                                                }.onFailure { error ->
+                                                                    Log.e(TAG, "Failed to send invite: ${error.message}")
+                                                                    snackbarHostState.showSnackbar(
+                                                                        message = "Kunne ikke sende invitasjon: ${error.message}",
+                                                                        duration = SnackbarDuration.Short
+                                                                    )
+                                                                }
+                                                            }
+                                                        } catch (e: Exception) {
+                                                            Log.e(TAG, "Error sending invite", e)
+                                                        }
+                                                    }
+                                                }
+                                                
                                                 navController.navigate("multiplayer_lobby/$sessionId")
                                                 creating = false
                                             }.onFailure { exception ->

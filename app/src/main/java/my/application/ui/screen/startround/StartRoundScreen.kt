@@ -24,6 +24,8 @@ import my.application.ui.components.AppTopBar
 import my.application.ui.theme.MyApplicationTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import kotlinx.coroutines.launch
+import my.application.data.repository.MultiplayerRepository
 
 @Composable
 fun StartRoundScreen(navController: NavController) {
@@ -39,7 +41,10 @@ fun StartRoundScreen(navController: NavController) {
 
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val activeSessionManager = remember { my.application.data.ActiveSessionManager.getInstance(context) }
-    val activeSessionId by remember { mutableStateOf(activeSessionManager.getActiveSessionId()) }
+    var activeSessionId by remember { mutableStateOf(activeSessionManager.getActiveSessionId()) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
     Scaffold(
         topBar = {
             // Send tittel og tilbakenavigeringsinformasjon til vår AppTopBar
@@ -48,7 +53,8 @@ fun StartRoundScreen(navController: NavController) {
                 canNavigateBack = true,
                 navController = navController
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         if (!isAuthenticated) {
             // Not authenticated - show login prompt
@@ -129,6 +135,8 @@ fun StartRoundScreen(navController: NavController) {
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(modifier = Modifier.height(12.dp))
+                            
+                            // Button to go back to lobby
                             Button(
                                 onClick = {
                                     navController.navigate("multiplayer_lobby/$activeSessionId")
@@ -138,6 +146,41 @@ fun StartRoundScreen(navController: NavController) {
                                 Icon(Icons.Default.ArrowForward, contentDescription = null)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text("Gå tilbake til lobby")
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            // Button to leave lobby
+                            OutlinedButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        try {
+                                            val repository = MultiplayerRepository.getInstance(context)
+                                            activeSessionId?.let { sessionId ->
+                                                repository.leaveSession(sessionId)
+                                                activeSessionManager.clearActiveSession()
+                                                activeSessionId = null
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Forlot lobbyen",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                            }
+                                        } catch (e: Exception) {
+                                            snackbarHostState.showSnackbar(
+                                                message = "Kunne ikke forlate lobby: ${e.message}",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) {
+                                Icon(Icons.Default.ExitToApp, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Forlat lobby")
                             }
                         }
                     }

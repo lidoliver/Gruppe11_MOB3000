@@ -308,28 +308,8 @@ fun FriendsScreen(
                                 navController.navigate("conversation/${friend.email}/${friend.name}")
                             },
                             onInviteClick = {
-                                // Check for active session first
-                                val activeSessionManager = my.application.data.ActiveSessionManager.getInstance(context)
-                                val activeSessionId = activeSessionManager.getActiveSessionId()
-
-                                if (activeSessionId != null) {
-                                    // Clear old session first before creating new one
-                                    coroutineScope.launch {
-                                        val multiplayerRepo = MultiplayerRepository.getInstance(context)
-                                        multiplayerRepo.leaveSession(activeSessionId)
-                                        activeSessionManager.clearActiveSession()
-
-                                        // Show message and navigate
-                                        snackbarHostState.showSnackbar(
-                                            message = "Forlot gammel lobby for å invitere venn",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        navController.navigate("course_selection_multiplayer")
-                                    }
-                                } else {
-                                    // No active session, navigate to course selection
-                                    navController.navigate("course_selection_multiplayer")
-                                }
+                                // Navigate to course selection with friend info to invite after creating session
+                                navController.navigate("course_selection_multiplayer?inviteFriendEmail=${friend.email}&inviteFriendName=${friend.name}")
                             },
                             onHistoryClick = {
                                 navController.navigate("friend_history/${friend.email}/${friend.name}")
