@@ -38,7 +38,7 @@ fun PlayerHistoryScreen(
     playerEmail: String? = null,
     playerName: String? = null
 ) {
-    // Lite vw
+    // Liten
     val vm = viewModel ?: remember {
         val fakeApi = object : PlayerApi {
             override suspend fun getPlayerStats(email: String) = PlayerStats(
