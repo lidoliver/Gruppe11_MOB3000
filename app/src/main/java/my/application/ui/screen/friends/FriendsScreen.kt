@@ -20,6 +20,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +33,9 @@ import androidx.navigation.NavController
 import my.application.ui.components.AppTopBar
 import my.application.data.friends.Friend
 import my.application.data.friends.FriendStatus
+import my.application.data.repository.MultiplayerRepository
+import my.application.data.repository.MessagesRepository
+import my.application.data.repository.UserRepository
 
 @Composable
 fun FriendsScreen(
@@ -44,6 +49,9 @@ fun FriendsScreen(
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Reload friends and friend request count when screen is displayed or resumed
     // Also poll periodically (every 30 seconds) to update automatically
@@ -114,6 +122,7 @@ fun FriendsScreen(
                 navController = navController
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             // Only show add friend button when authenticated
             if (isAuthenticated) {
@@ -299,8 +308,60 @@ fun FriendsScreen(
                                 navController.navigate("conversation/${friend.email}/${friend.name}")
                             },
                             onInviteClick = {
-                                // Navigate to create multiplayer game
-                                navController.navigate("course_selection_multiplayer")
+                                // Create lobby and send invite code
+                                coroutineScope.launch {
+                                    try {
+                                        // Create a multiplayer session with default course
+                                        val multiplayerRepo = MultiplayerRepository.getInstance(context)
+                                        val result = multiplayerRepo.createSession(
+                                            courseId = "default",
+                                            courseName = "Multiplayer Session",
+                                            totalHoles = 18
+                                        )
+                                        
+                                        result.onSuccess { sessionId ->
+                                            // Send the session code as a message
+                                            val userRepo = UserRepository.getInstance()
+                                            val messagesRepo = MessagesRepository()
+                                            val token = userRepo.getAuthToken()
+                                            
+                                            if (token != null) {
+                                                // Remove "Bearer " prefix if present (MessagesRepository adds it)
+                                                val cleanToken = token.removePrefix("Bearer ")
+                                                
+                                                val inviteMessage = "Bli med i mitt disc golf-spill! Klikk på koden for å bli med: $sessionId"
+                                                messagesRepo.sendMessage(
+                                                    receiverEmail = friend.email,
+                                                    content = inviteMessage,
+                                                    token = cleanToken
+                                                ).onSuccess {
+                                                    // Navigate to the lobby
+                                                    navController.navigate("multiplayer_lobby/$sessionId")
+                                                }.onFailure { error ->
+                                                    snackbarHostState.showSnackbar(
+                                                        message = "Kunne ikke sende invitasjon: ${error.message}",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                }
+                                            } else {
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Ikke autentisert",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                            }
+                                        }.onFailure { error ->
+                                            snackbarHostState.showSnackbar(
+                                                message = "Kunne ikke opprette spill: ${error.message}",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar(
+                                            message = "Feil: ${e.message}",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
                             },
                             onHistoryClick = {
                                 navController.navigate("friend_history/${friend.email}/${friend.name}")
