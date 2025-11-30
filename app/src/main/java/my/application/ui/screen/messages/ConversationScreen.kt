@@ -1,5 +1,8 @@
 package my.application.ui.screen.messages
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,14 +14,18 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -48,6 +55,9 @@ fun ConversationScreen(
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     // Send message helper - keeps keyboard open by NOT clearing focus or hiding keyboard
     val sendMessage: () -> Unit = {
@@ -118,7 +128,8 @@ fun ConversationScreen(
                 canNavigateBack = true,
                 navController = navController
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -158,7 +169,20 @@ fun ConversationScreen(
                     ) {
                         items(messages.reversed(), key = { it.id }) { message ->
                             ChatBubble(
-                                message = message
+                                message = message,
+                                onCopyMessage = { text ->
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    val clip = ClipData.newPlainText("message", text)
+                                    clipboard.setPrimaryClip(clip)
+                                    
+                                    // Show snackbar confirmation
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "Melding kopiert",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
                             )
                         }
                     }
@@ -234,7 +258,8 @@ fun ConversationScreen(
 
 @Composable
 fun ChatBubble(
-    message: ChatMessage
+    message: ChatMessage,
+    onCopyMessage: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -281,15 +306,37 @@ fun ChatBubble(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = message.text,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (message.isFromMe) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSecondaryContainer
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = message.text,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (message.isFromMe) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { onCopyMessage(message.text) },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Kopier melding",
+                            tint = if (message.isFromMe) {
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                            } else {
+                                MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                            },
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
-                )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = message.timestamp,
