@@ -324,7 +324,7 @@ fun UserSearchItem(
 }
 
 /**
- * Generate a consistent color for a username
+ * Generer en konsistent farge basert på brukernavn
  */
 private fun generateColorForUsername(username: String): Color {
     val colors = listOf(

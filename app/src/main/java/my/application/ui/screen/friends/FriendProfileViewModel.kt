@@ -104,7 +104,7 @@ class FriendProfileViewModel(application: Application) : AndroidViewModel(applic
     }
 
     /**
-     * Clear error message
+     * Nullstill feilmelding
      */
     fun clearError() {
         _error.value = null

@@ -93,7 +93,7 @@ class LoginViewModel(
 
             uiState = when {
                 result.isSuccess -> {
-                    // After registration, automatically log in
+                    // Etter registrering, logg inn automatisk
                     login(email, password)
                     uiState
                 }

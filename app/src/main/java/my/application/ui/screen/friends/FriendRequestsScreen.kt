@@ -255,7 +255,7 @@ fun FriendRequestItem(
                 Text("Avslå")
             }
 
-            // Accept button
+            // Godta-knapp
             Button(
                 onClick = {
                     isProcessing = true

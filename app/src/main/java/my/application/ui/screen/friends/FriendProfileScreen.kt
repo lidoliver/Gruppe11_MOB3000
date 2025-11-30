@@ -386,6 +386,9 @@ fun FriendProfileScreen(
     }
 }
 
+/**
+ * Kort som viser en enkelt statistikk
+ */
 @Composable
 fun StatCard(
     title: String,

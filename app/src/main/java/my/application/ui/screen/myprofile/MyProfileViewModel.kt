@@ -1,3 +1,6 @@
+/**
+ * ViewModel for min profil-skjermen
+ */
 package my.application.ui.screen.myprofile
 
 import android.app.Application

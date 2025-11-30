@@ -98,7 +98,7 @@ fun PlayerHistoryScreen(
                     CircularProgressIndicator(modifier = Modifier.padding(24.dp))
                 }
                 is UiState.NotAuthenticated -> {
-                    // Not authenticated - show login prompt
+                    // Ikke autentisert - vis innloggingsmelding
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()

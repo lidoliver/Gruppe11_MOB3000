@@ -196,7 +196,7 @@ fun ConversationScreen(
                         enabled = !isSending
                     )
 
-                    // Send button
+                    // Send-knapp
                     FilledIconButton(
                         onClick = sendMessage,
                         modifier = Modifier.size(56.dp),

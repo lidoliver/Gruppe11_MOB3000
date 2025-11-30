@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import my.application.data.repository.UserRepository
 
 /**
- * ViewModel for Start Round Screen
- * Manages authentication state
+ * ViewModel for start runde-skjermen
+ * Håndterer autentiseringstilstand
  */
 class StartRoundViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -23,14 +23,14 @@ class StartRoundViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
-     * Check if user is authenticated
+     * Sjekk om bruker er autentisert
      */
     private fun checkAuthentication() {
         _isAuthenticated.value = userRepository.getAuthToken() != null
     }
 
     /**
-     * Refresh authentication state (call this when returning to the screen)
+     * Oppdater autentiseringstilstand (kall denne når du kommer tilbake til skjermen)
      */
     fun refreshAuthenticationState() {
         checkAuthentication()

@@ -132,7 +132,9 @@ fun StartRoundScreen(navController: NavController) {
     }
 }
 
-// ny gjenbrukbar composable for option cards
+/**
+ * Gjenbrukbar composable for spillmoduskort
+ */
 @Composable
 fun GameModeCard(
     icon: ImageVector,
