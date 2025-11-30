@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 
 /**
- * Returns true if the device is in landscape orientation
+ * Returnerer true hvis enheten er i landskapsmodus
  */
 @Composable
 fun isLandscape(): Boolean {
@@ -18,7 +18,7 @@ fun isLandscape(): Boolean {
 }
 
 /**
- * State holder for managing UI visibility in landscape mode
+ * Tilstandsholder for å håndtere UI-synlighet i landskapsmodus
  */
 class LandscapeUiState {
     var isTopBarVisible by mutableStateOf(false)

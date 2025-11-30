@@ -16,6 +16,7 @@ private val DarkColorScheme = darkColorScheme(
     tertiary = Pink80
 )
 
+// Fargeskjema for lys modus
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,

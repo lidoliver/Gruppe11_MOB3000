@@ -1,3 +1,7 @@
+/**
+ * Typografi-definisjon for applikasjonen
+ * Definerer tekstst iler for Material Design 3
+ */
 package my.application.ui.theme
 
 import androidx.compose.material3.Typography

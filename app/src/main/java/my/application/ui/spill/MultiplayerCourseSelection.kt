@@ -90,7 +90,7 @@ fun MultiplayerCourseSelectionScreen(navController: NavController) {
                 }
                 !isAuthenticated -> {
                     Log.d(TAG, "Rendering: Not authenticated state")
-                    // Not authenticated - show login prompt
+                    // Ikke autentisert - vis innloggingsmelding
                     Column(
                         modifier = Modifier
                             .align(Alignment.Center)
