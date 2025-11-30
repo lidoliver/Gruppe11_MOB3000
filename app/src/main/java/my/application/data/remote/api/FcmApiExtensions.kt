@@ -6,17 +6,23 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
- * FCM (Firebase Cloud Messaging) API endpoints
- *
- * Add these to your existing BackendApiService.kt interface
+ * FCM (Firebase Cloud Messaging) API-endepunkter
+ * Brukes for push-notifikasjoner til mobile enheter
+ * Legg disse til i din eksisterende BackendApiService.kt-interface
  */
 
-// Data classes for FCM requests/responses
+/**
+ * Request body for registrering av FCM-token
+ * Kobler brukerens e-post med deres enhet-token
+ */
 data class RegisterFcmTokenRequest(
     val userEmail: String,
     val fcmToken: String
 )
 
+/**
+ * Response fra FCM-operasjoner
+ */
 data class FcmResponse(
     val success: Boolean,
     val message: String,
@@ -24,7 +30,7 @@ data class FcmResponse(
 )
 
 /**
- * ADD THESE METHODS TO YOUR BackendApiService INTERFACE:
+ * LEGG TIL DISSE METODENE I DIN BackendApiService INTERFACE:
  *
  * // FCM Token Registration
  * @POST("api/notifications/register-token")

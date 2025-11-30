@@ -20,7 +20,10 @@ import com.google.maps.android.compose.*
 import my.application.ui.components.AppTopBar
 import my.application.data.repository.TrackRepository
 
-// Dataklasse for hullinformasjon
+/**
+ * Dataklasse for hullinformasjon
+ * Inneholder GPS-koordinater for tee og kurv, samt hullnummer og par
+ */
 data class HoleLocation(
     val holeNumber: Int,
     val teePosition: LatLng,
@@ -28,6 +31,12 @@ data class HoleLocation(
     val par: Int = 3
 )
 
+/**
+ * Skjerm som viser kartet over en disc golf-bane med alle hull
+ * Viser tee og kurv for hvert hull med markører og linjer mellom dem
+ * @param navController Navigasjonskontroller for å navigere tilbake
+ * @param courseId ID-en til banen som skal vises
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CourseMapScreen(
@@ -43,13 +52,13 @@ fun CourseMapScreen(
     var selectedHole by remember { mutableStateOf<Int?>(null) }
     var holes by remember { mutableStateOf<List<HoleLocation>>(emptyList()) }
 
-    // Standard kameraposisjon (Oslo, Norge)
+    // Standard kameraposisjon (Oslo, Norge) - brukes som fallback
     val defaultPosition = LatLng(59.9139, 10.7522)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultPosition, 15f)
     }
 
-    // Last banedata og hullkoordinater fra database
+    // Last banedata og hullkoordinater fra database ved oppstart
     LaunchedEffect(courseId) {
         loading = true
         error = null
@@ -157,13 +166,13 @@ fun CourseMapScreen(
                     }
                 }
                 else -> {
-                    // Map view
+                    // Kartvisning med alle hull
                     GoogleMap(
                         modifier = Modifier.fillMaxSize(),
                         cameraPositionState = cameraPositionState,
                         properties = MapProperties(
                             isMyLocationEnabled = false,
-                            mapType = MapType.HYBRID
+                            mapType = MapType.HYBRID // Hybrid-visning med satellitt og veier
                         ),
                         uiSettings = MapUiSettings(
                             zoomControlsEnabled = true,
@@ -171,9 +180,9 @@ fun CourseMapScreen(
                             compassEnabled = true
                         )
                     ) {
-                        // Draw markers for each hole
+                        // Tegn markører for hvert hull
                         holes.forEach { hole ->
-                            // Tee marker (green)
+                            // Tee-markør (grønn)
                             Marker(
                                 state = MarkerState(position = hole.teePosition),
                                 title = "Hole ${hole.holeNumber} - Tee",
@@ -185,7 +194,7 @@ fun CourseMapScreen(
                                 }
                             )
 
-                            // Basket marker (red)
+                            // Kurvmarkør (rød)
                             Marker(
                                 state = MarkerState(position = hole.basketPosition),
                                 title = "Hole ${hole.holeNumber} - Basket",
@@ -197,7 +206,7 @@ fun CourseMapScreen(
                                 }
                             )
 
-                            // Draw polyline between tee and basket
+                            // Tegn linje mellom tee og kurv
                             Polyline(
                                 points = listOf(hole.teePosition, hole.basketPosition),
                                 color = Color.Blue,
@@ -206,7 +215,7 @@ fun CourseMapScreen(
                         }
                     }
 
-                    // Hullinformasjonskort som overlegg
+                    // Hullinformasjonskort som overlegg ved klikk på hull
                     selectedHole?.let { holeNum ->
                         val hole = holes.find { it.holeNumber == holeNum }
                         hole?.let {

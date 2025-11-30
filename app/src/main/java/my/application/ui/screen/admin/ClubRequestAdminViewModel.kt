@@ -11,6 +11,10 @@ import my.application.data.remote.dto.ClubRequestDto
 import my.application.data.repository.AdminRepository
 import my.application.data.repository.AuthException
 
+/**
+ * ViewModel for å håndtere klubbforespørsler i admin-panelet
+ * Administrerer lasting, godkjenning og avvisning av klubbforespørsler
+ */
 class ClubRequestAdminViewModel(
     application: Application
 ) : AndroidViewModel(application) {
@@ -23,6 +27,10 @@ class ClubRequestAdminViewModel(
         loadClubRequests()
     }
 
+    /**
+     * Laster inn alle ventende klubbforespørsler fra backend
+     * Håndterer også 500-feil og "Failed to fetch"-feil som tomme tilstander
+     */
     fun loadClubRequests() {
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
@@ -46,7 +54,7 @@ class ClubRequestAdminViewModel(
                 }
                 else -> {
                     val errorMessage = result.exceptionOrNull()?.message ?: ""
-                    // Treat 500 errors or "Failed to fetch" errors as empty state
+                    // Behandle 500-feil eller "Failed to fetch"-feil som tomme tilstander
                     if (errorMessage.contains("500") || errorMessage.contains("Failed to fetch club requests")) {
                         uiState.copy(
                             clubRequests = emptyList(),
@@ -64,6 +72,13 @@ class ClubRequestAdminViewModel(
         }
     }
 
+    /**
+     * Godkjenner en klubbforespørsel
+     * Oppretter klubben og tildeler bruker som sendte forespørselen til klubbadmin
+     * @param id ID-en til klubbforespørselen som skal godkjennes
+     * @param onSuccess Callback som kalles ved vellykket godkjenning
+     * @param onError Callback som kalles ved feil, med feilmeldingen som parameter
+     */
     fun approveClubRequest(id: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
@@ -72,7 +87,7 @@ class ClubRequestAdminViewModel(
 
             when {
                 result.isSuccess -> {
-                    // Reload club requests after successful approval
+                    // Last inn klubbforespørsler på nytt etter vellykket godkjenning
                     loadClubRequests()
                     onSuccess()
                 }
@@ -85,6 +100,13 @@ class ClubRequestAdminViewModel(
         }
     }
 
+    /**
+     * Avviser en klubbforespørsel
+     * Sletter forespørselen fra databasen
+     * @param id ID-en til klubbforespørselen som skal avvises
+     * @param onSuccess Callback som kalles ved vellykket avvisning
+     * @param onError Callback som kalles ved feil, med feilmeldingen som parameter
+     */
     fun rejectClubRequest(id: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
@@ -93,7 +115,7 @@ class ClubRequestAdminViewModel(
 
             when {
                 result.isSuccess -> {
-                    // Reload club requests after successful rejection
+                    // Last inn klubbforespørsler på nytt etter vellykket avvisning
                     loadClubRequests()
                     onSuccess()
                 }
@@ -107,6 +129,13 @@ class ClubRequestAdminViewModel(
     }
 }
 
+/**
+ * UI-tilstand for klubbforespørsel-admin-skjermen
+ * @param clubRequests Liste over ventende klubbforespørsler
+ * @param isLoading Indikerer om data lastes
+ * @param error Feilmelding hvis noe gikk galt
+ * @param authError Indikerer om feilen er relatert til autentisering
+ */
 data class ClubRequestAdminUiState(
     val clubRequests: List<ClubRequestDto> = emptyList(),
     val isLoading: Boolean = false,

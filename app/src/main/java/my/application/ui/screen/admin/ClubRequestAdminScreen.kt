@@ -23,6 +23,11 @@ import kotlinx.coroutines.launch
 import my.application.data.remote.dto.ClubRequestDto
 import my.application.ui.components.AppTopBar
 
+/**
+ * Admin-skjerm for å håndtere klubbforespørsler
+ * Viser ventende forespørsler om opprettelse av klubber
+ * Admin kan godkjenne eller avvise forespørsler
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClubRequestAdminScreen(
@@ -45,7 +50,7 @@ fun ClubRequestAdminScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Handle auth errors
+    // Håndter autentiseringsfeil - naviger tilbake til innlogging
     LaunchedEffect(uiState.authError) {
         if (uiState.authError) {
             snackbarHostState.showSnackbar(
@@ -288,6 +293,13 @@ fun ClubRequestAdminScreen(
     }
 }
 
+/**
+ * Kort som viser en enkelt klubbforespørsel
+ * Viser klubbnavn, beskrivelse, hvem som søkte og handlingsknapper
+ * @param request Klubbforespørselen som skal vises
+ * @param onApprove Callback når admin godkjenner forespørselen
+ * @param onReject Callback når admin avviser forespørselen
+ */
 @Composable
 fun ClubRequestCard(
     request: ClubRequestDto,
